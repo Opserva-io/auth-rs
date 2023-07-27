@@ -1,0 +1,39 @@
+# auth-rs
+
+`auth-rs` provides a simple authentication and authorization service for use in other services.
+
+## Features
+
+- [ ] Authentication
+- [ ] Authorization
+- [X] Password hashing
+- [ ] JWT generation
+- [ ] JWT verification
+- [X] MongoDB integration
+- [X] MongoDB Atlas integration
+
+## Dependencies
+
+A couple of dependencies are required in order to build `auth-rs`:
+
+* [actix-web](https://crates.io/crates/actix-web)
+* [actix-cors](https://crates.io/crates/actix-cors)
+* [uuid](https://crates.io/crates/uuid)
+* [mongodb](https://crates.io/crates/mongodb)
+* [chrono](https://crates.io/crates/chrono)
+* [serde](https://crates.io/crates/serde)
+* [serde_json](https://crates.io/crates/serde_json)
+* [futures](https://crates.io/crates/futures)
+* [dotenvy](https://crates.io/crates/dotenvy)
+* [argon2](https://crates.io/crates/argon2)
+* [regex](https://crates.io/crates/regex)
+* [email_address](https://crates.io/crates/email_address)
+
+## About
+
+This library is maintained by CodeDead. You can find more about us using the following links:
+* [Website](https://codedead.com)
+* [Twitter](https://twitter.com/C0DEDEAD)
+* [Facebook](https://facebook.com/deadlinecodedead)
+
+Copyright © 2023 CodeDead
