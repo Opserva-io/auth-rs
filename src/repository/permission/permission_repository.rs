@@ -19,7 +19,7 @@ pub enum Error {
     EmptyId,
     EmptyName,
     NameAlreadyTaken,
-    PermissionNotFound,
+    PermissionNotFound(String),
     MongoDbError(MongoError),
 }
 
@@ -30,7 +30,7 @@ impl fmt::Display for Error {
             Error::EmptyId => write!(f, "Empty Permission ID"),
             Error::EmptyName => write!(f, "Empty Permission name"),
             Error::NameAlreadyTaken => write!(f, "Permission name already taken"),
-            Error::PermissionNotFound => write!(f, "Permission not found"),
+            Error::PermissionNotFound(id) => write!(f, "Permission not found: {}", id),
             Error::MongoDbError(e) => write!(f, "MongoDB error: {}", e),
         }
     }
@@ -72,7 +72,7 @@ impl PermissionRepository {
                 if r.is_some() {
                     Ok(r.unwrap())
                 } else {
-                    Err(Error::PermissionNotFound)
+                    Err(Error::PermissionNotFound(permission_id))
                 }
             }
             Err(e) => Err(e),
@@ -178,8 +178,9 @@ impl PermissionRepository {
             Err(e) => return Err(e),
         };
 
+        let permission_id = permission.id.clone();
         let filter = doc! {
-            "_id": permission.id,
+            "_id": &permission_id,
         };
 
         let now: DateTime<Utc> = SystemTime::now().into();
@@ -203,7 +204,7 @@ impl PermissionRepository {
         };
 
         if permission.is_none() {
-            return Err(Error::PermissionNotFound);
+            return Err(Error::PermissionNotFound(permission_id));
         }
 
         Ok(permission.unwrap())

@@ -117,7 +117,7 @@ pub async fn delete_permission(path: web::Path<String>, pool: web::Data<Config>)
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
             match e {
-                Error::PermissionNotFound => HttpResponse::NotFound().finish(),
+                Error::PermissionNotFound(_) => HttpResponse::NotFound().finish(),
                 _ => HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string())),
             }
         }

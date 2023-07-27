@@ -19,7 +19,7 @@ pub enum Error {
     EmptyUsername,
     EmptyCollection,
     EmptyEmail,
-    UserNotFound,
+    UserNotFound(String),
     UsernameAlreadyTaken,
     EmailAlreadyTaken,
     InvalidEmail,
@@ -33,7 +33,7 @@ impl Display for Error {
             Error::EmptyUsername => write!(f, "Empty username"),
             Error::EmptyCollection => write!(f, "Empty collection"),
             Error::EmptyEmail => write!(f, "Empty email"),
-            Error::UserNotFound => write!(f, "User not found"),
+            Error::UserNotFound(id) => write!(f, "User not found: {}", id),
             Error::UsernameAlreadyTaken => write!(f, "Username already taken"),
             Error::EmailAlreadyTaken => write!(f, "Email already taken"),
             Error::InvalidEmail => write!(f, "Invalid email address"),
@@ -91,7 +91,7 @@ impl UserRepository {
         match self.find_by_id(&user_id, db).await {
             Ok(user) => match user {
                 Some(u) => Ok(u),
-                None => Err(Error::UserNotFound),
+                None => Err(Error::UserNotFound(user_id)),
             },
             Err(e) => Err(e),
         }
@@ -213,8 +213,9 @@ impl UserRepository {
             }
         };
 
+        let user_id = user.id.clone();
         let filter = doc! {
-            "_id": &user.id,
+            "_id": &user_id,
         };
 
         let now: DateTime<Utc> = SystemTime::now().into();
@@ -240,7 +241,7 @@ impl UserRepository {
                 if let Some(u) = user {
                     Ok(u)
                 } else {
-                    Err(Error::UserNotFound)
+                    Err(Error::UserNotFound(user_id))
                 }
             }
             Err(e) => Err(Error::MongoDbError(e)),

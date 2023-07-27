@@ -28,7 +28,7 @@ impl Display for ConvertError {
     }
 }
 
-async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<(), String> {
+async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<(), RoleError> {
     if roles.is_none() {
         return Ok(());
     }
@@ -43,9 +43,13 @@ async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<()
             .await;
 
         match res {
-            Ok(_) => (),
+            Ok(d) => {
+                if d.is_none() {
+                    return Err(RoleError::RoleNotFound(role));
+                }
+            },
             Err(e) => {
-                return Err(e.to_string());
+                return Err(e);
             }
         };
     }
@@ -305,7 +309,7 @@ pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpRespo
     {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
-            Error::UserNotFound => HttpResponse::NotFound().finish(),
+            Error::UserNotFound(_) => HttpResponse::NotFound().finish(),
             _ => HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string())),
         },
     }

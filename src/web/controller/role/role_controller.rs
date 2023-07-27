@@ -115,7 +115,7 @@ pub async fn validate_permissions(
             Ok(d) => match d {
                 Some(_) => {}
                 None => {
-                    return Err(PermissionError::PermissionNotFound);
+                    return Err(PermissionError::PermissionNotFound(p));
                 }
             },
             Err(e) => return Err(e),
@@ -290,7 +290,7 @@ pub async fn delete(path: web::Path<String>, pool: web::Data<Config>) -> HttpRes
     {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
-            Error::RoleNotFound => HttpResponse::NotFound().finish(),
+            Error::RoleNotFound(_) => HttpResponse::NotFound().finish(),
             _ => HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string())),
         },
     }

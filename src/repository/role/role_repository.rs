@@ -19,7 +19,8 @@ pub enum Error {
     EmptyId,
     EmptyName,
     NameAlreadyTaken,
-    RoleNotFound,
+    RoleNotFound(String),
+
     MongoDbError(MongoError),
 }
 
@@ -30,7 +31,7 @@ impl fmt::Display for Error {
             Error::EmptyId => write!(f, "Empty Role ID"),
             Error::EmptyName => write!(f, "Empty Role name"),
             Error::NameAlreadyTaken => write!(f, "Role name already taken"),
-            Error::RoleNotFound => write!(f, "Role not found"),
+            Error::RoleNotFound(id) => write!(f, "Role not found: {}", id),
             Error::MongoDbError(e) => write!(f, "MongoDB error: {}", e),
         }
     }
@@ -72,7 +73,7 @@ impl RoleRepository {
                 if r.is_some() {
                     Ok(r.unwrap())
                 } else {
-                    Err(Error::RoleNotFound)
+                    Err(Error::RoleNotFound(role_id))
                 }
             }
             Err(e) => Err(e),
@@ -174,8 +175,9 @@ impl RoleRepository {
             Err(e) => return Err(e),
         }
 
+        let role_id = role.id.clone();
         let filter = doc! {
-            "_id": role.id.clone(),
+            "_id": &role_id,
         };
 
         let now: DateTime<Utc> = SystemTime::now().into();
@@ -200,7 +202,7 @@ impl RoleRepository {
         };
 
         if role.is_none() {
-            return Err(Error::RoleNotFound);
+            return Err(Error::RoleNotFound(role_id));
         }
 
         Ok(role.unwrap())
