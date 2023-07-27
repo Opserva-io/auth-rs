@@ -12,6 +12,7 @@ use mongodb::{Client, Database};
 pub struct Config {
     pub database: Database,
     pub services: Services,
+    pub salt: String,
 }
 
 impl Config {
@@ -36,6 +37,7 @@ impl Config {
         permission_collection: String,
         role_collection: String,
         user_collection: String,
+        salt: String,
     ) -> Config {
         let mut client_options = match ClientOptions::parse(db_connection_string).await {
             Ok(d) => d,
@@ -73,6 +75,7 @@ impl Config {
         Config {
             database: db,
             services,
+            salt,
         }
     }
 }

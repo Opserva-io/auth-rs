@@ -53,12 +53,18 @@ async fn main() -> std::io::Result<()> {
         Err(_) => panic!("No user collection specified"),
     };
 
+    let salt = match env::var("HASH_SALT") {
+        Ok(d) => d,
+        Err(_) => panic!("No salt specified"),
+    };
+
     let config = Config::new(
         &conn_string,
         &database,
         permission_collection,
         role_collection,
         user_collection,
+        salt,
     )
     .await;
 
