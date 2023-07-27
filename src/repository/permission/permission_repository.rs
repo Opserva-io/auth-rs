@@ -1,6 +1,8 @@
 use crate::repository::permission::permission::Permission;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
+use mongodb::bson::doc;
+use mongodb::bson::Bson;
 use mongodb::{error::Error as MongoError, Database};
 use std::fmt;
 use std::fmt::Debug;
@@ -44,8 +46,7 @@ impl PermissionRepository {
     }
 
     pub async fn create(&self, permission: Permission, db: &Database) -> Result<Permission, Error> {
-        // Check if the name is already taken
-        match self.find_by_name(&permission.name, db).await {
+        match self.find_by_name(&permission.name.to_lowercase(), db).await {
             Ok(p) => {
                 if p.is_some() {
                     return Err(Error::NameAlreadyTaken);
@@ -96,7 +97,7 @@ impl PermissionRepository {
         id_vec: Vec<String>,
         db: &Database,
     ) -> Result<Vec<Permission>, Error> {
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": {
                 "$in": id_vec,
             },
@@ -119,7 +120,7 @@ impl PermissionRepository {
             return Err(Error::EmptyId);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": id,
         };
 
@@ -144,9 +145,13 @@ impl PermissionRepository {
             return Err(Error::EmptyName);
         }
 
-        let filter = mongodb::bson::doc! {
-            "name": name,
+        let regex_pattern = format!("^{}$", regex::escape(name));
+        let re = mongodb::bson::Regex {
+            pattern: regex_pattern,
+            options: String::from("i"),
         };
+
+        let filter = doc! { "name": { "$regex": Bson::RegularExpression(re) } };
 
         let permission = match db
             .collection::<Permission>(&self.collection)
@@ -162,7 +167,7 @@ impl PermissionRepository {
 
     pub async fn update(&self, permission: Permission, db: &Database) -> Result<Permission, Error> {
         // Check if the name is already taken
-        match self.find_by_name(&permission.name, db).await {
+        match self.find_by_name(&permission.name.to_lowercase(), db).await {
             Ok(p) => {
                 if let Some(p) = p {
                     if p.id != permission.id {
@@ -173,14 +178,14 @@ impl PermissionRepository {
             Err(e) => return Err(e),
         };
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": permission.id,
         };
 
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
 
-        let update = mongodb::bson::doc! {
+        let update = doc! {
             "$set": {
                 "name": permission.name,
                 "description": permission.description,
@@ -209,7 +214,7 @@ impl PermissionRepository {
             return Err(Error::EmptyId);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": id,
         };
 

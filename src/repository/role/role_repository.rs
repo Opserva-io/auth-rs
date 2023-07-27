@@ -1,6 +1,8 @@
 use crate::repository::role::role::Role;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
+use mongodb::bson::doc;
+use mongodb::bson::Bson;
 use mongodb::error::Error as MongoError;
 use mongodb::Database;
 use std::fmt;
@@ -45,7 +47,7 @@ impl RoleRepository {
 
     pub async fn create(&self, role: Role, db: &Database) -> Result<Role, Error> {
         // Check if the name is already taken
-        match self.find_by_name(&role.name, db).await {
+        match self.find_by_name(&role.name.to_lowercase(), db).await {
             Ok(r) => {
                 if r.is_some() {
                     return Err(Error::NameAlreadyTaken);
@@ -95,7 +97,7 @@ impl RoleRepository {
         ids: Vec<String>,
         db: &Database,
     ) -> Result<Vec<Role>, Error> {
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": {
                 "$in": ids,
             },
@@ -118,7 +120,7 @@ impl RoleRepository {
             return Err(Error::EmptyId);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": id,
         };
 
@@ -139,9 +141,13 @@ impl RoleRepository {
             return Err(Error::EmptyName);
         }
 
-        let filter = mongodb::bson::doc! {
-            "name": name,
+        let regex_pattern = format!("^{}$", regex::escape(name));
+        let re = mongodb::bson::Regex {
+            pattern: regex_pattern,
+            options: String::from("i"),
         };
+
+        let filter = doc! { "name": { "$regex": Bson::RegularExpression(re) } };
 
         let role = match db
             .collection::<Role>(&self.collection)
@@ -157,7 +163,7 @@ impl RoleRepository {
 
     pub async fn update(&self, role: Role, db: &Database) -> Result<Role, Error> {
         // Check if the name is already taken
-        match self.find_by_name(&role.name, db).await {
+        match self.find_by_name(&role.name.to_lowercase(), db).await {
             Ok(r) => {
                 if let Some(p) = r {
                     if p.id != role.id {
@@ -168,14 +174,14 @@ impl RoleRepository {
             Err(e) => return Err(e),
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": role.id.clone(),
         };
 
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
 
-        let update = mongodb::bson::doc! {
+        let update = doc! {
             "$set": {
                 "name": role.name,
                 "description": role.description,
@@ -205,7 +211,7 @@ impl RoleRepository {
             return Err(Error::EmptyId);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": id,
         };
 

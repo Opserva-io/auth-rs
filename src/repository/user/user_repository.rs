@@ -1,6 +1,8 @@
 use crate::repository::user::user::User;
 use chrono::{DateTime, Utc};
+use email_address::EmailAddress;
 use futures::TryStreamExt;
+use mongodb::bson::{doc, Bson};
 use mongodb::error::Error as MongoError;
 use mongodb::Database;
 use std::fmt::{Display, Formatter};
@@ -20,6 +22,7 @@ pub enum Error {
     UserNotFound,
     UsernameAlreadyTaken,
     EmailAlreadyTaken,
+    InvalidEmail,
     MongoDbError(MongoError),
 }
 
@@ -33,6 +36,7 @@ impl Display for Error {
             Error::UserNotFound => write!(f, "User not found"),
             Error::UsernameAlreadyTaken => write!(f, "Username already taken"),
             Error::EmailAlreadyTaken => write!(f, "Email already taken"),
+            Error::InvalidEmail => write!(f, "Invalid email address"),
             Error::MongoDbError(e) => write!(f, "MongoDB error: {}", e),
         }
     }
@@ -48,6 +52,10 @@ impl UserRepository {
     }
 
     pub async fn create(&self, user: User, db: &Database) -> Result<User, Error> {
+        if !EmailAddress::is_valid(&user.email) {
+            return Err(Error::InvalidEmail);
+        }
+
         match self.find_by_username(&user.username, db).await {
             Ok(user) => {
                 if user.is_some() {
@@ -59,7 +67,7 @@ impl UserRepository {
             }
         };
 
-        match self.find_by_email(&user.email, db).await {
+        match self.find_by_email(&user.email.to_lowercase(), db).await {
             Ok(user) => {
                 if user.is_some() {
                     return Err(Error::EmailAlreadyTaken);
@@ -107,20 +115,18 @@ impl UserRepository {
             return Err(Error::EmptyId);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": id,
         };
 
-        let user = match db
+        match db
             .collection::<User>(&self.collection)
             .find_one(filter, None)
             .await
         {
-            Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
-        };
-
-        Ok(user)
+            Ok(d) => Ok(d),
+            Err(e) => Err(Error::MongoDbError(e)),
+        }
     }
 
     pub async fn find_by_username(
@@ -132,9 +138,13 @@ impl UserRepository {
             return Err(Error::EmptyUsername);
         }
 
-        let filter = mongodb::bson::doc! {
-            "username": username,
+        let regex_pattern = format!("^{}$", regex::escape(username));
+        let re = mongodb::bson::Regex {
+            pattern: regex_pattern,
+            options: String::from("i"),
         };
+
+        let filter = doc! { "username": { "$regex": Bson::RegularExpression(re) } };
 
         let user = match db
             .collection::<User>(&self.collection)
@@ -153,7 +163,7 @@ impl UserRepository {
             return Err(Error::EmptyEmail);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "email": email,
         };
 
@@ -170,7 +180,14 @@ impl UserRepository {
     }
 
     pub async fn update(&self, user: User, db: &Database) -> Result<User, Error> {
-        match self.find_by_username(&user.username, db).await {
+        if !EmailAddress::is_valid(&user.email) {
+            return Err(Error::InvalidEmail);
+        }
+
+        match self
+            .find_by_username(&user.username.to_lowercase(), db)
+            .await
+        {
             Ok(u) => {
                 if let Some(p) = u {
                     if p.id != user.id {
@@ -183,7 +200,7 @@ impl UserRepository {
             }
         };
 
-        match self.find_by_email(&user.email, db).await {
+        match self.find_by_email(&user.email.to_lowercase(), db).await {
             Ok(u) => {
                 if let Some(p) = u {
                     if p.id != user.id {
@@ -196,14 +213,14 @@ impl UserRepository {
             }
         };
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": &user.id,
         };
 
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
 
-        let update = mongodb::bson::doc! {
+        let update = doc! {
             "$set": {
                 "username": &user.username,
                 "email": &user.email,
@@ -235,7 +252,7 @@ impl UserRepository {
             return Err(Error::EmptyId);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": id,
         };
 

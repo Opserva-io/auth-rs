@@ -10,9 +10,9 @@ use crate::web::dto::user::create_user::CreateUser;
 use crate::web::dto::user::update_user::UpdateUser;
 use crate::web::dto::user::user_dto::UserDto;
 use actix_web::{delete, get, post, put, web, HttpResponse};
-use std::fmt::{Display, Formatter};
-use argon2::{Argon2, PasswordHasher};
 use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHasher};
+use std::fmt::{Display, Formatter};
 
 pub enum ConvertError {
     RoleError(RoleError),
@@ -128,7 +128,7 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
     let password = &user.password.as_bytes();
     let salt = match SaltString::from_b64(&pool.salt) {
         Ok(s) => s,
-        Err(e) => {
+        Err(_) => {
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to generate salt"));
         }
@@ -136,9 +136,7 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
 
     let argon2 = Argon2::default();
     let password_hash = match argon2.hash_password(password, &salt) {
-        Ok(e) => {
-            e.to_string()
-        }
+        Ok(e) => e.to_string(),
         Err(_) => {
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to hash password"));
