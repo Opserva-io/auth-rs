@@ -11,7 +11,6 @@ pub struct UserDto {
     pub first_name: String,
     #[serde(rename = "lastName")]
     pub last_name: String,
-    pub password: String,
     pub roles: Option<Vec<RoleDto>>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
@@ -28,7 +27,6 @@ impl From<User> for UserDto {
             email: value.email,
             first_name: value.first_name,
             last_name: value.last_name,
-            password: value.password,
             roles: None,
             created_at: value.created_at,
             updated_at: value.updated_at,
@@ -45,7 +43,6 @@ impl From<&User> for UserDto {
             email: value.email.clone(),
             first_name: value.first_name.clone(),
             last_name: value.last_name.clone(),
-            password: value.password.clone(),
             roles: None,
             created_at: value.created_at.clone(),
             updated_at: value.updated_at.clone(),
