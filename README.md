@@ -1,6 +1,9 @@
 # auth-rs
 
 `auth-rs` provides a simple authentication and authorization service for use in other services.
+The service is written in Rust and uses the [actix-web](https://crates.io/crates/actix-web) framework.
+
+Users, when authenticated, will be given a JWT token which can be used to access other services.
 
 ## Features
 
@@ -11,6 +14,22 @@
 - [ ] JWT verification
 - [X] MongoDB integration
 - [X] MongoDB Atlas integration
+
+## Building
+
+### cargo
+
+You can build `auth-rs` using `cargo`:
+
+```shell
+cargo build
+```
+
+You can build a `release` version of `auth-rs` using `cargo`:
+
+```shell
+cargo build --release
+```
 
 ## Dependencies
 
