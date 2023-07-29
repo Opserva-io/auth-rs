@@ -1,6 +1,7 @@
 use crate::repository::permission::permission_repository::PermissionRepository;
 use crate::repository::role::role_repository::RoleRepository;
 use crate::repository::user::user_repository::UserRepository;
+use crate::services::jwt::jwt_service::JwtService;
 use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
 use crate::services::user::user_service::UserService;
@@ -29,6 +30,8 @@ impl Config {
     /// * `role_collection` - A String that holds the role collection name.
     /// * `user_collection` - A String that holds the user collection name.
     /// * `salt` - A String that holds the salt to hash passwords.
+    /// * `jwt_secret` - A String that holds the JWT secret.
+    /// * `jwt_expiration` - A usize that holds the JWT expiration time in seconds.
     ///
     /// # Returns
     ///
@@ -40,6 +43,8 @@ impl Config {
         role_collection: String,
         user_collection: String,
         salt: String,
+        jwt_secret: String,
+        jwt_expiration: usize,
     ) -> Config {
         let mut client_options = match ClientOptions::parse(db_connection_string).await {
             Ok(d) => d,
@@ -67,6 +72,7 @@ impl Config {
             r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
         )
         .unwrap();
+
         let user_repository = match UserRepository::new(user_collection, email_regex) {
             Ok(d) => d,
             Err(e) => panic!("Failed to initialize User repository: {:?}", e),
@@ -75,8 +81,9 @@ impl Config {
         let permission_service = PermissionService::new(permission_repository);
         let role_service = RoleService::new(role_repository);
         let user_service = UserService::new(user_repository);
+        let jwt_service = JwtService::new(jwt_secret, jwt_expiration);
 
-        let services = Services::new(permission_service, role_service, user_service);
+        let services = Services::new(permission_service, role_service, user_service, jwt_service);
 
         Config {
             database: db,

@@ -23,6 +23,7 @@ futures = "0.3.28"
 dotenvy = "0.15.7"
 argon2 = "0.5.1"
 regex = "1.9.1"
+jsonwebtoken = "8.3.0"
 
 [profile.dev]
 panic = "abort"

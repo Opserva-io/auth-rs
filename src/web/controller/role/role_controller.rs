@@ -10,6 +10,25 @@ use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::role::update_role::UpdateRole;
 use actix_web::{delete, get, post, put, web, HttpResponse};
 
+/// # Summary
+///
+/// Convert a Role into a RoleDto
+///  
+/// # Arguments
+///
+/// * `role` - A Role
+/// * `config` - A reference to the Config
+///
+/// # Example
+///
+/// ```
+/// let role = Role::new("role1".to_string(), None);
+/// let role_dto = get_role_dto_from_role(role, &config);
+/// ```
+///
+/// # Returns
+///
+/// * `Result<RoleDto, PermissionError>` - The result containing the RoleDto or the PermissionError that occurred
 pub async fn get_role_dto_from_role(
     role: Role,
     config: &Config,

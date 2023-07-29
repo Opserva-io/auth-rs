@@ -1,8 +1,10 @@
+use crate::web::controller::authentication::authentication_controller;
 use crate::web::controller::permission::permission_controller;
 use crate::web::controller::role::role_controller;
 use crate::web::controller::user::user_controller;
 use actix_web::web;
 
+pub mod authentication;
 pub mod permission;
 pub mod role;
 pub mod user;
@@ -39,5 +41,7 @@ impl Controller {
                 .service(user_controller::admin_update_password)
                 .service(user_controller::delete),
         );
+
+        cfg.service(web::scope("/authentication").service(authentication_controller::login));
     }
 }

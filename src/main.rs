@@ -58,6 +58,19 @@ async fn main() -> std::io::Result<()> {
         Err(_) => panic!("No salt specified"),
     };
 
+    let jwt_secret = match env::var("JWT_SECRET") {
+        Ok(d) => d,
+        Err(_) => panic!("No JWT secret specified"),
+    };
+
+    let jwt_expiration = match env::var("JWT_EXPIRATION") {
+        Ok(d) => {
+            let res: usize = d.trim().parse().expect("JWT_EXPIRATION must be a number");
+            res
+        }
+        Err(_) => panic!("No JWT expiration specified"),
+    };
+
     let config = Config::new(
         &conn_string,
         &database,
@@ -65,6 +78,8 @@ async fn main() -> std::io::Result<()> {
         role_collection,
         user_collection,
         salt,
+        jwt_secret,
+        jwt_expiration,
     )
     .await;
 

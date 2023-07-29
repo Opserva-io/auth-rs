@@ -4,9 +4,9 @@ use futures::TryStreamExt;
 use mongodb::bson::{doc, Bson};
 use mongodb::error::Error as MongoError;
 use mongodb::Database;
+use regex::Regex;
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
-use regex::Regex;
 
 #[derive(Clone)]
 pub struct UserRepository {
@@ -29,6 +29,24 @@ pub enum Error {
 }
 
 impl Display for Error {
+    /// # Summary
+    ///
+    /// Display the Error.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - The Formatter.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let error = Error::InvalidEmail(String::from("email"));
+    /// println!("{}", error);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `std::fmt::Result` - The result of the operation.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match &self {
             Error::EmptyId => write!(f, "Empty User ID"),
@@ -46,14 +64,69 @@ impl Display for Error {
 }
 
 impl UserRepository {
+    /// # Summary
+    ///
+    /// Create a new UserRepository.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The name of the collection.
+    /// * `email_regex` - The email regex.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use regex::Regex;
+    /// use repository::user::user_repository::UserRepository;
+    ///
+    /// let email_regex = Regex::new(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-
+    /// zA-Z0-9-.]+$").unwrap();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<UserRepository, Error>` - The result of the operation.
     pub fn new(collection: String, email_regex: Regex) -> Result<UserRepository, Error> {
         if collection.is_empty() {
             return Err(Error::EmptyCollection);
         }
 
-        Ok(UserRepository { collection, email_regex })
+        Ok(UserRepository {
+            collection,
+            email_regex,
+        })
     }
 
+    /// # Summary
+    ///
+    /// Create a new User entity.
+    ///
+    /// # Arguments
+    ///
+    /// * `user` - The User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user = User {
+    ///   id: String::from("id"),
+    ///   username: String::from("username"),
+    ///   email: String::from("email"),
+    ///   password: String::from("password"),
+    ///   created_at: Utc::now(),
+    ///   updated_at: Utc::now(),
+    /// };
+    ///
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = user_repository.create(user, &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<User, Error>` - The result of the operation.
     pub async fn create(&self, user: User, db: &Database) -> Result<User, Error> {
         if !&self.email_regex.is_match(&user.email) {
             return Err(Error::InvalidEmail(user.email));
@@ -100,6 +173,25 @@ impl UserRepository {
         }
     }
 
+    /// # Summary
+    ///
+    /// Find all User entities.
+    ///
+    /// # Arguments
+    ///
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let users = user_repository.find_all(&db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<User>, Error>` - The result of the operation.
     pub async fn find_all(&self, db: &Database) -> Result<Vec<User>, Error> {
         let cursor = match db
             .collection::<User>(&self.collection)
@@ -113,6 +205,26 @@ impl UserRepository {
         Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
     }
 
+    /// # Summary
+    ///
+    /// Find a User entity by its ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = user_repository.find_by_id(&String::from("id"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<User>, Error>` - The result of the operation.
     pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<User>, Error> {
         if id.is_empty() {
             return Err(Error::EmptyId);
@@ -132,6 +244,26 @@ impl UserRepository {
         }
     }
 
+    /// # Summary
+    ///
+    /// Find a User entity by its username.
+    ///
+    /// # Arguments
+    ///
+    /// * `username` - The username of the User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = user_repository.find_by_username(&String::from("username"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<User>, Error>` - The result of the operation.
     pub async fn find_by_username(
         &self,
         username: &str,
@@ -161,6 +293,26 @@ impl UserRepository {
         Ok(user)
     }
 
+    /// # Summary
+    ///
+    /// Find a User entity by its email.
+    ///
+    /// # Arguments
+    ///
+    /// * `email` - The email of the User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = user_repository.find_by_email(&String::from("email"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<User>, Error>` - The result of the operation.
     pub async fn find_by_email(&self, email: &str, db: &Database) -> Result<Option<User>, Error> {
         if email.is_empty() {
             return Err(Error::EmptyEmail);
@@ -182,6 +334,26 @@ impl UserRepository {
         Ok(user)
     }
 
+    /// # Summary
+    ///
+    /// Insert a User entity.
+    ///
+    /// # Arguments
+    ///
+    /// * `user` - The User entity to insert.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = User::new(String::from("username"), String::from("email"), String::from("password"));
+    ///
+    /// user.first_name = String::from("first_name");
+    ///
+    /// let user = user_repository.update(user, &db);
+    /// ```
     pub async fn update(&self, user: User, db: &Database) -> Result<User, Error> {
         if !self.email_regex.is_match(&user.email) {
             return Err(Error::InvalidEmail(user.email));
@@ -251,7 +423,33 @@ impl UserRepository {
         }
     }
 
-    pub async fn update_password(&self, id: &str, password: &str, db: &Database) -> Result<(), Error> {
+    /// # Summary
+    ///
+    /// Update the password of a User entity.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the User entity.
+    /// * `password` - The new password of the User entity.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    ///
+    /// user_repository.update_password(&String::from("id"), &String::from("password"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), Error>` - The result of the operation.
+    pub async fn update_password(
+        &self,
+        id: &str,
+        password: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
         if id.is_empty() {
             return Err(Error::EmptyId);
         }
@@ -283,6 +481,27 @@ impl UserRepository {
         }
     }
 
+    /// # Summary
+    ///
+    /// Delete a User entity.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    ///
+    /// user_repository.delete(&String::from("id"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), Error>` - The result of the operation.
     pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
         if id.is_empty() {
             return Err(Error::EmptyId);

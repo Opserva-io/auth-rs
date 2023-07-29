@@ -10,7 +10,7 @@ Users, when authenticated, will be given a JWT token which can be used to access
 - [ ] Authentication
 - [ ] Authorization
 - [X] Password hashing
-- [ ] JWT generation
+- [X] JWT generation
 - [ ] JWT verification
 - [X] MongoDB integration
 - [X] MongoDB Atlas integration
@@ -47,6 +47,7 @@ A couple of dependencies are required in order to build `auth-rs`:
 * [argon2](https://crates.io/crates/argon2)
 * [regex](https://crates.io/crates/regex)
 * [email_address](https://crates.io/crates/email_address)
+* [jsonwebtoken](https://crates.io/crates/jsonwebtoken)
 
 ## About
 
