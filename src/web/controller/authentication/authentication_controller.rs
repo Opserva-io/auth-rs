@@ -1,7 +1,5 @@
 use crate::configuration::config::Config;
 use crate::errors::internal_server_error::InternalServerError;
-use crate::repository::permission::permission_repository::Error as PermissionError;
-use crate::repository::role::role_repository::Error as RoleError;
 use crate::repository::user::user::User;
 use crate::web::dto::login::login_request::LoginRequest;
 use crate::web::dto::login::login_response::LoginResponse;
@@ -11,32 +9,7 @@ use crate::web::dto::user::user_dto::SimpleUserDto;
 use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
-use std::fmt::{Display, Formatter};
-
-pub enum ConvertError {
-    RoleError(RoleError),
-    PermissionError(PermissionError),
-}
-
-impl Display for ConvertError {
-    /// # Summary
-    ///
-    /// Display the error
-    ///
-    /// # Arguments
-    ///
-    /// * `f` - The formatter
-    ///
-    /// # Returns
-    ///
-    /// * `std::fmt::Result` - The result
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ConvertError::RoleError(e) => write!(f, "{}", e),
-            ConvertError::PermissionError(e) => write!(f, "{}", e),
-        }
-    }
-}
+use crate::web::controller::user::user_controller::ConvertError;
 
 /// # Summary
 ///
