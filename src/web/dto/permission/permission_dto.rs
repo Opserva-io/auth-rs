@@ -81,3 +81,76 @@ impl From<&Permission> for PermissionDto {
         }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct SimplePermissionDto {
+    pub id: String,
+    pub name: String,
+    pub description: Option<String>,
+}
+
+impl From<Permission> for SimplePermissionDto {
+    /// # Summary
+    ///
+    /// Convert a Permission entity into a SimplePermissionDto.
+    ///
+    /// # Arguments
+    ///
+    /// * `permission` - The Permission entity to be converted.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission = Permission::new(
+    ///    String::from("id"),
+    ///    String::from("name"),
+    ///    Some(String::from("description")),
+    /// );
+    ///
+    /// let permission_dto = SimplePermissionDto::from(permission);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `SimplePermissionDto` - The new SimplePermissionDto.
+    fn from(permission: Permission) -> Self {
+        SimplePermissionDto {
+            id: permission.id,
+            name: permission.name,
+            description: permission.description,
+        }
+    }
+}
+
+impl From<&Permission> for SimplePermissionDto {
+    /// # Summary
+    ///
+    /// Convert a reference Permission entity into a SimplePermissionDto.
+    ///
+    /// # Arguments
+    ///
+    /// * `permission` - The Permission entity to be converted.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission = Permission::new(
+    ///   String::from("id"),
+    ///   String::from("name"),
+    ///   Some(String::from("description")),
+    /// );
+    ///
+    /// let permission_dto = SimplePermissionDto::from(permission);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `SimplePermissionDto` - The new SimplePermissionDto.
+    fn from(value: &Permission) -> Self {
+        SimplePermissionDto {
+            id: value.id.clone(),
+            name: value.name.clone(),
+            description: value.description.clone(),
+        }
+    }
+}

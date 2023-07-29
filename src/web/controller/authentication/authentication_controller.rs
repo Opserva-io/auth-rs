@@ -2,7 +2,7 @@ use crate::configuration::config::Config;
 use crate::errors::internal_server_error::InternalServerError;
 use crate::web::dto::login::login_request::LoginRequest;
 use crate::web::dto::login::login_response::LoginResponse;
-use actix_web::{post, web, HttpResponse};
+use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 
@@ -61,4 +61,41 @@ pub async fn login(
         None => HttpResponse::InternalServerError()
             .json(InternalServerError::new("Failed to generate JWT token")),
     }
+}
+
+#[get("/current")]
+pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResponse {
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if auth_str.starts_with("Bearer ") {
+                let token = auth_str["Bearer ".len()..].to_string();
+
+                let username = match pool.services.jwt_service.verify_jwt_token(&token) {
+                    Ok(user) => user,
+                    Err(e) => {
+                        return HttpResponse::Forbidden().finish();
+                    }
+                };
+
+                let user = match pool
+                    .services
+                    .user_service
+                    .find_by_email(&username, &pool.database)
+                    .await
+                {
+                    Ok(u) => match u {
+                        Some(user) => user,
+                        None => {
+                            return HttpResponse::Forbidden().finish();
+                        }
+                    },
+                    Err(_) => {
+                        return HttpResponse::Forbidden().finish();
+                    }
+                };
+            }
+        }
+    }
+
+    HttpResponse::Forbidden().finish()
 }

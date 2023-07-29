@@ -12,6 +12,13 @@ pub mod user;
 pub struct Controller {}
 
 impl Controller {
+    /// # Summary
+    ///
+    /// Configure the routes for the web server.
+    ///
+    /// # Arguments
+    ///
+    /// * `cfg` - The web server configuration.
     pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         cfg.service(
             web::scope("/permissions")
