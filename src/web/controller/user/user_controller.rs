@@ -7,6 +7,7 @@ use crate::repository::user::user::User;
 use crate::repository::user::user_repository::Error;
 use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::user::create_user::CreateUser;
+use crate::web::dto::user::update_password::{AdminUpdatePassword, UpdatePassword};
 use crate::web::dto::user::update_user::UpdateUser;
 use crate::web::dto::user::user_dto::UserDto;
 use actix_web::{delete, get, post, put, web, HttpResponse};
@@ -47,7 +48,7 @@ async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<()
                 if d.is_none() {
                     return Err(RoleError::RoleNotFound(role));
                 }
-            },
+            }
             Err(e) => {
                 return Err(e);
             }
@@ -80,7 +81,7 @@ async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, Conve
                 let role_dto =
                     match crate::web::controller::role::role_controller::get_role_dto_from_role(
                         r.clone(),
-                        &pool,
+                        pool,
                     )
                     .await
                     {
@@ -293,6 +294,142 @@ pub async fn update(
 
     match convert_user_to_dto(res, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
+        }
+    }
+}
+
+#[put("/{id}/password")]
+pub async fn update_password(
+    id: web::Path<String>,
+    update_password: web::Json<UpdatePassword>,
+    pool: web::Data<Config>,
+) -> HttpResponse {
+    let user = match pool
+        .services
+        .user_service
+        .find_by_id(&id.into_inner(), &pool.database)
+        .await
+    {
+        Ok(d) => {
+            if d.is_some() {
+                d.unwrap()
+            } else {
+                return HttpResponse::NotFound().finish();
+            }
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new(&e.to_string()));
+        }
+    };
+
+    let update_password = update_password.into_inner();
+    if update_password.old_password.is_empty() {
+        return HttpResponse::BadRequest()
+            .json(BadRequest::new("Empty old passwords are not allowed"));
+    }
+
+    if update_password.new_password.is_empty() {
+        return HttpResponse::BadRequest()
+            .json(BadRequest::new("Empty new passwords are not allowed"));
+    }
+
+    let argon2 = Argon2::default();
+    let salt = match SaltString::from_b64(&pool.salt) {
+        Ok(s) => s,
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to generate salt"));
+        }
+    };
+
+    let old_password_hash = &update_password.old_password.as_bytes();
+    let old_password_hash = match argon2.hash_password(old_password_hash, &salt) {
+        Ok(e) => e.to_string(),
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to hash password"));
+        }
+    };
+
+    if old_password_hash != user.password {
+        return HttpResponse::Forbidden().finish();
+    }
+
+    let new_password_hash = &update_password.new_password.as_bytes();
+    let new_password_hash = match argon2.hash_password(new_password_hash, &salt) {
+        Ok(e) => e.to_string(),
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to hash password"));
+        }
+    };
+
+    match pool
+        .services
+        .user_service
+        .update_password(&user.id, &new_password_hash, &pool.database)
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
+        }
+    }
+}
+
+#[put("/{id}/password/admin")]
+pub async fn admin_update_password(
+    id: web::Path<String>,
+    admin_update_password: web::Json<AdminUpdatePassword>,
+    pool: web::Data<Config>,
+) -> HttpResponse {
+    let user = match pool
+        .services
+        .user_service
+        .find_by_id(&id.into_inner(), &pool.database)
+        .await
+    {
+        Ok(d) => {
+            if d.is_some() {
+                d.unwrap()
+            } else {
+                return HttpResponse::NotFound().finish();
+            }
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new(&e.to_string()));
+        }
+    };
+
+    if admin_update_password.password.is_empty() {
+        return HttpResponse::BadRequest()
+            .json(BadRequest::new("Empty passwords are not allowed"));
+    }
+
+    let argon2 = Argon2::default();
+    let salt = match SaltString::from_b64(&pool.salt) {
+        Ok(s) => s,
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to generate salt"));
+        }
+    };
+
+    let password_hash = &admin_update_password.password.as_bytes();
+    let password_hash = match argon2.hash_password(password_hash, &salt) {
+        Ok(e) => e.to_string(),
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to hash password"));
+        }
+    };
+
+    match pool.services.user_service.update_password(&user.id, &password_hash, &pool.database).await {
+        Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
             HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
         }

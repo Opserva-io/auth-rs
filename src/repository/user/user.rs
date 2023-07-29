@@ -23,6 +23,32 @@ pub struct User {
 }
 
 impl From<CreateUser> for User {
+    /// # Summary
+    ///
+    /// Convert a CreateUser into a User.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The CreateUser to convert.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let create_user = CreateUser {
+    ///   username: String::from("username"),
+    ///   email: String::from("email"),
+    ///   first_name: String::from("first_name"),
+    ///   last_name: String::from("last_name"),
+    ///   password: String::from("password"),
+    ///   roles: Some(vec![String::from("role")]),
+    /// };
+    ///
+    /// let user = User::from(create_user);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `User` - The new User.
     fn from(value: CreateUser) -> Self {
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();

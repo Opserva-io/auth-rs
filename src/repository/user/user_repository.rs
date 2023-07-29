@@ -1,16 +1,17 @@
 use crate::repository::user::user::User;
 use chrono::{DateTime, Utc};
-use email_address::EmailAddress;
 use futures::TryStreamExt;
 use mongodb::bson::{doc, Bson};
 use mongodb::error::Error as MongoError;
 use mongodb::Database;
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
+use regex::Regex;
 
 #[derive(Clone)]
 pub struct UserRepository {
     pub collection: String,
+    pub email_regex: Regex,
 }
 
 #[derive(Clone, Debug)]
@@ -19,11 +20,12 @@ pub enum Error {
     EmptyUsername,
     EmptyCollection,
     EmptyEmail,
+    EmptyPassword,
     UserNotFound(String),
     UsernameAlreadyTaken,
     EmailAlreadyTaken,
-    InvalidEmail,
-    MongoDbError(MongoError),
+    InvalidEmail(String),
+    MongoDb(MongoError),
 }
 
 impl Display for Error {
@@ -33,27 +35,28 @@ impl Display for Error {
             Error::EmptyUsername => write!(f, "Empty username"),
             Error::EmptyCollection => write!(f, "Empty collection"),
             Error::EmptyEmail => write!(f, "Empty email"),
+            Error::EmptyPassword => write!(f, "Empty password"),
             Error::UserNotFound(id) => write!(f, "User not found: {}", id),
             Error::UsernameAlreadyTaken => write!(f, "Username already taken"),
             Error::EmailAlreadyTaken => write!(f, "Email already taken"),
-            Error::InvalidEmail => write!(f, "Invalid email address"),
-            Error::MongoDbError(e) => write!(f, "MongoDB error: {}", e),
+            Error::InvalidEmail(email) => write!(f, "Invalid email address: {}", email),
+            Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
         }
     }
 }
 
 impl UserRepository {
-    pub fn new(collection: String) -> Result<UserRepository, Error> {
+    pub fn new(collection: String, email_regex: Regex) -> Result<UserRepository, Error> {
         if collection.is_empty() {
             return Err(Error::EmptyCollection);
         }
 
-        Ok(UserRepository { collection })
+        Ok(UserRepository { collection, email_regex })
     }
 
     pub async fn create(&self, user: User, db: &Database) -> Result<User, Error> {
-        if !EmailAddress::is_valid(&user.email) {
-            return Err(Error::InvalidEmail);
+        if !&self.email_regex.is_match(&user.email) {
+            return Err(Error::InvalidEmail(user.email));
         }
 
         match self.find_by_username(&user.username, db).await {
@@ -85,7 +88,7 @@ impl UserRepository {
 
         match result {
             Ok(_) => {}
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         match self.find_by_id(&user_id, db).await {
@@ -104,7 +107,7 @@ impl UserRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
@@ -125,7 +128,7 @@ impl UserRepository {
             .await
         {
             Ok(d) => Ok(d),
-            Err(e) => Err(Error::MongoDbError(e)),
+            Err(e) => Err(Error::MongoDb(e)),
         }
     }
 
@@ -152,7 +155,7 @@ impl UserRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(user)
@@ -173,15 +176,15 @@ impl UserRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(user)
     }
 
     pub async fn update(&self, user: User, db: &Database) -> Result<User, Error> {
-        if !EmailAddress::is_valid(&user.email) {
-            return Err(Error::InvalidEmail);
+        if !self.email_regex.is_match(&user.email) {
+            return Err(Error::InvalidEmail(user.email));
         }
 
         match self
@@ -244,7 +247,39 @@ impl UserRepository {
                     Err(Error::UserNotFound(user_id))
                 }
             }
-            Err(e) => Err(Error::MongoDbError(e)),
+            Err(e) => Err(Error::MongoDb(e)),
+        }
+    }
+
+    pub async fn update_password(&self, id: &str, password: &str, db: &Database) -> Result<(), Error> {
+        if id.is_empty() {
+            return Err(Error::EmptyId);
+        }
+
+        if password.is_empty() {
+            return Err(Error::EmptyPassword);
+        }
+
+        let filter = doc! {
+            "_id": id,
+        };
+
+        let now: DateTime<Utc> = SystemTime::now().into();
+        let now: String = now.to_rfc3339();
+
+        let update = doc! {
+            "$set": {
+                "password": password,
+                "updated_at": now,
+            },
+        };
+
+        let collection = db.collection::<User>(&self.collection);
+        let result = collection.update_one(filter, update, None).await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => Err(Error::MongoDb(e)),
         }
     }
 
@@ -262,7 +297,7 @@ impl UserRepository {
 
         match result {
             Ok(_) => Ok(()),
-            Err(e) => Err(Error::MongoDbError(e)),
+            Err(e) => Err(Error::MongoDb(e)),
         }
     }
 }

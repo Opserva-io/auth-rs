@@ -7,6 +7,7 @@ use crate::services::user::user_service::UserService;
 use crate::services::Services;
 use mongodb::options::{ClientOptions, ServerApi, ServerApiVersion};
 use mongodb::{Client, Database};
+use regex::Regex;
 
 #[derive(Clone)]
 pub struct Config {
@@ -27,6 +28,7 @@ impl Config {
     /// * `permission_collection` - A String that holds the permission collection name.
     /// * `role_collection` - A String that holds the role collection name.
     /// * `user_collection` - A String that holds the user collection name.
+    /// * `salt` - A String that holds the salt to hash passwords.
     ///
     /// # Returns
     ///
@@ -50,7 +52,7 @@ impl Config {
         client_options.server_api = Some(server_api);
 
         let client = Client::with_options(client_options).expect("Failed to initialize client");
-        let db = client.database(&database);
+        let db = client.database(database);
 
         let permission_repository = match PermissionRepository::new(permission_collection) {
             Ok(d) => d,
@@ -61,7 +63,11 @@ impl Config {
             Err(e) => panic!("Failed to initialize Role repository: {:?}", e),
         };
 
-        let user_repository = match UserRepository::new(user_collection) {
+        let email_regex = Regex::new(
+            r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
+        )
+        .unwrap();
+        let user_repository = match UserRepository::new(user_collection, email_regex) {
             Ok(d) => d,
             Err(e) => panic!("Failed to initialize User repository: {:?}", e),
         };

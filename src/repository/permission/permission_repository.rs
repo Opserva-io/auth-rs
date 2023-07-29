@@ -20,10 +20,28 @@ pub enum Error {
     EmptyName,
     NameAlreadyTaken,
     PermissionNotFound(String),
-    MongoDbError(MongoError),
+    MongoDb(MongoError),
 }
 
 impl fmt::Display for Error {
+    /// # Summary
+    ///
+    /// Display the error message.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - The formatter.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let error = Error::EmptyCollection;
+    /// println!("{}", error);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `fmt::Result` - The result of the display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self {
             Error::EmptyCollection => write!(f, "Empty collection"),
@@ -31,12 +49,29 @@ impl fmt::Display for Error {
             Error::EmptyName => write!(f, "Empty Permission name"),
             Error::NameAlreadyTaken => write!(f, "Permission name already taken"),
             Error::PermissionNotFound(id) => write!(f, "Permission not found: {}", id),
-            Error::MongoDbError(e) => write!(f, "MongoDB error: {}", e),
+            Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
         }
     }
 }
 
 impl PermissionRepository {
+    /// # Summary
+    ///
+    /// Create a new PermissionRepository.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The name of the collection.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `PermissionRepository` - The new PermissionRepository.
     pub fn new(collection: String) -> Result<PermissionRepository, Error> {
         if collection.is_empty() {
             return Err(Error::EmptyCollection);
@@ -45,6 +80,30 @@ impl PermissionRepository {
         Ok(PermissionRepository { collection })
     }
 
+    /// # Summary
+    ///
+    /// Create a new Permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `permission` - The permission to create.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permission = Permission::from(CreatePermission {
+    ///    name: String::from("Permission Name"),
+    ///    description: Some(String::from("Permission Description")),
+    /// });
+    ///
+    /// let permission = permission_repository.create(permission, &db).await;
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Permission, Error>` - The result of the creation.
     pub async fn create(&self, permission: Permission, db: &Database) -> Result<Permission, Error> {
         match self.find_by_name(&permission.name.to_lowercase(), db).await {
             Ok(p) => {
@@ -63,7 +122,7 @@ impl PermissionRepository {
             .await
         {
             Ok(r) => r,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         let r = self.find_by_id(&permission_id, db).await;
@@ -79,6 +138,24 @@ impl PermissionRepository {
         }
     }
 
+    /// # Summary
+    ///
+    /// Find all Permission entities
+    ///
+    /// # Arguments
+    ///
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permissions = permission_repository.find_all(&db).await;
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<Permission>, Error>` - The result of the operation.
     pub async fn find_all(&self, db: &Database) -> Result<Vec<Permission>, Error> {
         let cursor = match db
             .collection::<Permission>(&self.collection)
@@ -86,12 +163,31 @@ impl PermissionRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
     }
 
+    /// # Summary
+    ///
+    /// Find a vector of Permissions by their ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id_vec` - The vector of IDs to find.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permissions = permission_repository.find_by_id_vec(vec![String::from("permission_id")], &db).await;
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<Permission>, Error>` - The result of the operation.
     pub async fn find_by_id_vec(
         &self,
         id_vec: Vec<String>,
@@ -109,12 +205,36 @@ impl PermissionRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
     }
 
+    /// # Summary
+    ///
+    /// Find a Permission by its ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the Permission to find.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permission = permission_repository.find_by_id(String::from("permission_id"), &db).await;
+    ///
+    /// match permission {
+    ///    Ok(p) => println!("Permission: {:?}", p),
+    ///    Err(e) => println!("Error: {:?}", e),
+    /// }
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<Permission>, Error>` - The result of the operation.
     pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<Permission>, Error> {
         if id.is_empty() {
             return Err(Error::EmptyId);
@@ -130,12 +250,36 @@ impl PermissionRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(permission)
     }
 
+    /// # Summary
+    ///
+    /// Find a Permission by its name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the Permission to find.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permission = permission_repository.find_by_name(String::from("permission_name"), &db).await;
+    ///
+    /// match permission {
+    ///   Ok(p) => println!("Permission: {:?}", p),
+    ///   Err(e) => println!("Error: {:?}", e),
+    /// }
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<Permission>, Error>` - The result of the operation.
     pub async fn find_by_name(
         &self,
         name: &str,
@@ -159,12 +303,40 @@ impl PermissionRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(permission)
     }
 
+    /// # Summary
+    ///
+    /// Update a Permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `permission` - The Permission to update.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permission = permission_repository.find_by_id(String::from("permission_id"), &db).await;
+    ///
+    /// match permission {
+    ///  Ok(p) => {
+    ///   let mut permission = p;
+    ///   permission.name = String::from("new_permission_name");
+    ///   permission_repository.update(permission, &db).await;
+    ///  },
+    ///  Err(e) => println!("Error: {:?}", e),
+    /// }
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Permission, Error>` - The result of the operation.
     pub async fn update(&self, permission: Permission, db: &Database) -> Result<Permission, Error> {
         // Check if the name is already taken
         match self.find_by_name(&permission.name.to_lowercase(), db).await {
@@ -200,7 +372,7 @@ impl PermissionRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         if permission.is_none() {
@@ -210,6 +382,25 @@ impl PermissionRepository {
         Ok(permission.unwrap())
     }
 
+    /// # Summary
+    ///
+    /// Delete a Permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the Permission to delete.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// permission_repository.delete(String::from("permission_id"), &db).await;
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), Error>` - The result of the operation.
     pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
         if id.is_empty() {
             return Err(Error::EmptyId);
@@ -225,7 +416,7 @@ impl PermissionRepository {
             .await
         {
             Ok(_) => {}
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(())

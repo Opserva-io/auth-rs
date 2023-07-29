@@ -139,6 +139,38 @@ impl UserService {
 
     /// # Summary
     ///
+    /// Update a User entity's password.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the User entity to be updated.
+    /// * `password` - The new password of the User entity.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user_repository = UserRepository::new(String::from("users"));
+    /// let user_service = UserService::new(user_repository);
+    /// let db = mongodb::Database::new();
+    ///
+    /// user_service.update_password("id", "password", &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `()` - The update operation was successful.
+    /// * `Error` - The Error that occurred.
+    pub async fn update_password(
+        &self,
+        id: &str,
+        password: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
+        self.user_repository.update_password(id, password, db).await
+    }
+
+    /// # Summary
+    ///
     /// Delete a User entity by ID.
     ///
     /// # Arguments

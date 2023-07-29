@@ -34,6 +34,9 @@ impl Controller {
                 .service(user_controller::create)
                 .service(user_controller::find_all)
                 .service(user_controller::find_by_id)
+                .service(user_controller::update)
+                .service(user_controller::update_password)
+                .service(user_controller::admin_update_password)
                 .service(user_controller::delete),
         );
     }
