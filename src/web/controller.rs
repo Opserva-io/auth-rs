@@ -49,6 +49,10 @@ impl Controller {
                 .service(user_controller::delete),
         );
 
-        cfg.service(web::scope("/authentication").service(authentication_controller::login));
+        cfg.service(
+            web::scope("/authentication")
+                .service(authentication_controller::login)
+                .service(authentication_controller::current_user),
+        );
     }
 }

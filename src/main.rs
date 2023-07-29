@@ -1,4 +1,5 @@
 use crate::configuration::config::Config;
+use crate::configuration::jwt_config::JwtConfig;
 use crate::web::controller::Controller;
 use actix_cors::Cors;
 use actix_web::{web as a_web, App, HttpServer};
@@ -78,8 +79,7 @@ async fn main() -> std::io::Result<()> {
         role_collection,
         user_collection,
         salt,
-        jwt_secret,
-        jwt_expiration,
+        JwtConfig::new(jwt_secret, jwt_expiration),
     )
     .await;
 

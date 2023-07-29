@@ -1,3 +1,4 @@
+use crate::configuration::jwt_config::JwtConfig;
 use jsonwebtoken::{encode, DecodingKey, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -56,8 +57,7 @@ impl Display for Error {
 
 #[derive(Clone)]
 pub struct JwtService {
-    pub secret: String,
-    pub expiration: usize,
+    pub jwt_config: JwtConfig,
 }
 
 impl JwtService {
@@ -67,20 +67,19 @@ impl JwtService {
     ///
     /// # Arguments
     ///
-    /// * `secret` - The secret to use for signing and verifying JWTs.
-    /// * `expiration` - The expiration time in seconds.
+    /// * `jwt_config` - The configuration for the JwtService.
     ///
     /// # Example
     ///
     /// ```
-    /// let jwt_service = JwtService::new(String::from("secret"), 3600);
+    /// let jwt_service = JwtService::new(jwt_config);
     /// ```
     ///
     /// # Returns
     ///
     /// * `JwtService` - The new JwtService.
-    pub fn new(secret: String, expiration: usize) -> JwtService {
-        JwtService { secret, expiration }
+    pub fn new(jwt_config: JwtConfig) -> JwtService {
+        JwtService { jwt_config }
     }
 
     /// # Summary
@@ -102,7 +101,7 @@ impl JwtService {
     /// * `Option<String>` - The JWT token.
     pub fn generate_jwt_token(&self, subject: &str) -> Option<String> {
         let now = chrono::Utc::now();
-        let exp = now + chrono::Duration::seconds(self.expiration as i64);
+        let exp = now + chrono::Duration::seconds(self.jwt_config.jwt_expiration as i64);
         let iat = now;
 
         let claims = Claims::new(
@@ -114,7 +113,7 @@ impl JwtService {
         match encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(&self.secret.as_bytes()),
+            &EncodingKey::from_secret(self.jwt_config.jwt_secret.as_bytes()),
         ) {
             Ok(t) => Some(t),
             Err(_) => None,
@@ -141,7 +140,7 @@ impl JwtService {
     pub fn verify_jwt_token(&self, token: &str) -> Result<String, Error> {
         let token_data = jsonwebtoken::decode::<Claims>(
             token,
-            &DecodingKey::from_secret(&self.secret.as_bytes()),
+            &DecodingKey::from_secret(self.jwt_config.jwt_secret.as_bytes()),
             &jsonwebtoken::Validation::default(),
         );
 
