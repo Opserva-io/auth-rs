@@ -230,4 +230,38 @@ impl UserService {
         info!("Deleting User: {}", id);
         self.user_repository.delete(id, db).await
     }
+
+    /// # Summary
+    ///
+    /// Delete a Role from all Users.
+    ///
+    /// # Arguments
+    ///
+    /// * `role_id` - The ID of the Role entity to be deleted from all Users.
+    /// * `db` - The Database to be used.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user_repository = UserRepository::new(String::from("users"));
+    /// let user_service = UserService::new(user_repository);
+    /// let db = mongodb::Database::new();
+    ///
+    /// user_service.delete_role_from_all_users("role_id", &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `()` - The delete operation was successful.
+    /// * `Error` - The Error that occurred.
+    pub async fn delete_role_from_all_users(
+        &self,
+        role_id: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
+        info!("Deleting Role from all Users: {}", role_id);
+        self.user_repository
+            .delete_role_from_all_users(role_id, db)
+            .await
+    }
 }

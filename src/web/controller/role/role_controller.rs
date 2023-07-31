@@ -316,7 +316,7 @@ pub async fn delete(path: web::Path<String>, pool: web::Data<Config>) -> HttpRes
     match pool
         .services
         .role_service
-        .delete(&path, &pool.database)
+        .delete(&path, &pool.database, &pool.services.user_service)
         .await
     {
         Ok(_) => HttpResponse::Ok().finish(),

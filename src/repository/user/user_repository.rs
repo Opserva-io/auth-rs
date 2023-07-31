@@ -519,4 +519,52 @@ impl UserRepository {
             Err(e) => Err(Error::MongoDb(e)),
         }
     }
+
+    /// # Summary
+    ///
+    /// Delete a role from all users.
+    ///
+    /// # Arguments
+    ///
+    /// * `role_id` - The id of the role.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    ///
+    /// user_repository.delete_role_from_all_users(&String::from("role_id"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), Error>` - The result of the operation.
+    pub async fn delete_role_from_all_users(
+        &self,
+        role_id: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
+        if role_id.is_empty() {
+            return Err(Error::EmptyId);
+        }
+
+        let filter = doc! {};
+
+        let update = doc! {
+            "$pull": {
+                "roles": role_id,
+            }
+        };
+
+        match db
+            .collection::<User>(&self.collection)
+            .update_many(filter, update, None)
+            .await
+        {
+            Ok(_) => Ok(()),
+            Err(e) => Err(Error::MongoDb(e)),
+        }
+    }
 }

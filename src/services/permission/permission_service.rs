@@ -2,6 +2,7 @@ use log::info;
 use crate::repository::permission::permission::Permission;
 use crate::repository::permission::permission_repository::{Error, PermissionRepository};
 use mongodb::Database;
+use crate::services::role::role_service::RoleService;
 
 #[derive(Clone)]
 pub struct PermissionService {
@@ -184,6 +185,7 @@ impl PermissionService {
     ///
     /// * `permission` - The Permission entity to update.
     /// * `db` - The Database to be used.
+    /// * `role_service` - The reference RoleService to be used.
     ///
     /// # Example
     ///
@@ -191,16 +193,17 @@ impl PermissionService {
     /// let permission_repository = PermissionRepository::new(String::from("permissions"));
     /// let permission_service = PermissionService::new(permission_repository);
     /// let db = mongodb::Database::new();
+    /// let role_service = RoleService::new(RoleRepository::new(String::from("roles")));
     ///
-    /// let permission = permission_service.update(Permission::new(String::from("name")), &db);
+    /// let res = permission_service.delete(String::from("id"), &db, role_service);
     /// ```
     ///
     /// # Returns
     ///
     /// * `()` - The operation was successful.
     /// * `Error` - The Error that occurred.
-    pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
+    pub async fn delete(&self, id: &str, db: &Database, role_service: &RoleService) -> Result<(), Error> {
         info!("Deleting Permission by ID: {}", id);
-        self.permission_repository.delete(id, db).await
+        self.permission_repository.delete(id, db, role_service).await
     }
 }

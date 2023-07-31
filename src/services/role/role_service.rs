@@ -2,6 +2,7 @@ use crate::repository::role::role::Role;
 use crate::repository::role::role_repository::{Error, RoleRepository};
 use log::info;
 use mongodb::Database;
+use crate::services::user::user_service::UserService;
 
 #[derive(Clone)]
 pub struct RoleService {
@@ -182,6 +183,36 @@ impl RoleService {
     ///
     /// * `id` - The id of the Role entity.
     /// * `db` - The Database to be used.
+    /// * `user_service` - The UserService to be used.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let role_repository = RoleRepository::new(String::from("roles"));
+    /// let role_service = RoleService::new(role_repository);
+    /// let db = mongodb::Database::new();
+    /// let user_service = UserService::new(user_repository);
+    /// let id = "id";
+    /// let result = role_service.delete(id, &db, &user_service);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `()` - The operation was successful.
+    /// * `Error` - The Error that occurred.
+    pub async fn delete(&self, id: &str, db: &Database, user_service: &UserService) -> Result<(), Error> {
+        info!("Deleting Role by ID: {}", id);
+        self.role_repository.delete(id, db, user_service).await
+    }
+
+    /// # Summary
+    ///
+    /// Delete a Permission entity from all Role entities.
+    ///
+    /// # Arguments
+    ///
+    /// * `permission_id` - The id of the Permission entity.
+    /// * `db` - The Database to be used.
     ///
     /// # Example
     ///
@@ -190,15 +221,21 @@ impl RoleService {
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
     ///
-    /// let role = role_service.delete("id", &db);
+    /// let res = role_service.delete_permission_from_all_roles("id", &db).await;
     /// ```
     ///
     /// # Returns
     ///
     /// * `()` - The operation was successful.
     /// * `Error` - The Error that occurred.
-    pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
-        info!("Deleting Role by ID: {}", id);
-        self.role_repository.delete(id, db).await
+    pub async fn delete_permission_from_all_roles(
+        &self,
+        permission_id: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
+        info!("Deleting permission {} from all Role entities", permission_id);
+        self.role_repository
+            .delete_permission_from_all_roles(permission_id, db)
+            .await
     }
 }

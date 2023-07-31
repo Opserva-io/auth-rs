@@ -1,4 +1,6 @@
 use crate::repository::role::role::Role;
+use crate::repository::user::user_repository::Error as UserError;
+use crate::services::user::user_service::UserService;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use mongodb::bson::doc;
@@ -21,6 +23,7 @@ pub enum Error {
     NameAlreadyTaken,
     RoleNotFound(String),
     MongoDb(MongoError),
+    User(UserError),
 }
 
 impl fmt::Display for Error {
@@ -43,6 +46,7 @@ impl fmt::Display for Error {
             Error::NameAlreadyTaken => write!(f, "Role name already taken"),
             Error::RoleNotFound(id) => write!(f, "Role not found: {}", id),
             Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
+            Error::User(e) => write!(f, "User error: {}", e),
         }
     }
 }
@@ -408,6 +412,7 @@ impl RoleRepository {
     ///
     /// * `id` - A string slice that holds the ID.
     /// * `db` - A reference to a Database instance.
+    /// * `user_service` - A UserService instance.
     ///
     /// # Example
     ///
@@ -426,7 +431,12 @@ impl RoleRepository {
     /// # Returns
     ///
     /// A Result with an empty return value or an Error.
-    pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
+    pub async fn delete(
+        &self,
+        id: &str,
+        db: &Database,
+        user_service: &UserService,
+    ) -> Result<(), Error> {
         if id.is_empty() {
             return Err(Error::EmptyId);
         }
@@ -438,6 +448,64 @@ impl RoleRepository {
         match db
             .collection::<Role>(&self.collection)
             .delete_one(filter, None)
+            .await
+        {
+            Ok(_) => {
+                match user_service.delete_role_from_all_users(id, db).await {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(Error::User(e)),
+                }
+            }
+            Err(e) => Err(Error::MongoDb(e)),
+        }
+    }
+
+    /// # Summary
+    ///
+    /// Delete a permission from all roles.
+    ///
+    /// # Arguments
+    ///
+    /// * `permission_id` - A string slice that holds the permission ID.
+    /// * `db` - A reference to a Database instance.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let role_repository = match RoleRepository::new("roles".to_string()) {
+    ///   Ok(d) => d,
+    ///   Err(e) => panic!("Failed to initialize Role repository: {:?}", e),
+    /// };
+    ///
+    /// match role_repository.delete_permission_from_all_roles("permission_id", &db).await {
+    ///   Ok(_) => (),
+    ///   Err(e) => panic!("Failed to delete permission from all roles: {:?}", e),
+    /// };
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// A Result with an empty return value or an Error.
+    pub async fn delete_permission_from_all_roles(
+        &self,
+        permission_id: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
+        if permission_id.is_empty() {
+            return Err(Error::EmptyId);
+        }
+
+        let filter = doc! {};
+
+        let update = doc! {
+            "$pull": {
+                "permissions": permission_id,
+            }
+        };
+
+        match db
+            .collection::<Role>(&self.collection)
+            .update_many(filter, update, None)
             .await
         {
             Ok(_) => Ok(()),

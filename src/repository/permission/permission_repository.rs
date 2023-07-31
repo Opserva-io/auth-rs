@@ -1,4 +1,6 @@
 use crate::repository::permission::permission::Permission;
+use crate::repository::role::role_repository::Error as RoleError;
+use crate::services::role::role_service::RoleService;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use mongodb::bson::doc;
@@ -21,6 +23,7 @@ pub enum Error {
     NameAlreadyTaken,
     PermissionNotFound(String),
     MongoDb(MongoError),
+    Role(RoleError),
 }
 
 impl fmt::Display for Error {
@@ -50,6 +53,7 @@ impl fmt::Display for Error {
             Error::NameAlreadyTaken => write!(f, "Permission name already taken"),
             Error::PermissionNotFound(id) => write!(f, "Permission not found: {}", id),
             Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
+            Error::Role(e) => write!(f, "Role error: {}", e),
         }
     }
 }
@@ -390,18 +394,24 @@ impl PermissionRepository {
     ///
     /// * `id` - The ID of the Permission to delete.
     /// * `db` - The database to use.
+    /// * `role_service` - The reference RoleService to use.
     ///
     /// # Example
     ///
     /// ```
     /// let permission_repository = PermissionRepository::new(String::from("permissions"));
-    /// permission_repository.delete(String::from("permission_id"), &db).await;
+    /// permission_repository.delete(String::from("permission_id"), &db, role_repository).await;
     /// ```
     ///
     /// # Returns
     ///
     /// * `Result<(), Error>` - The result of the operation.
-    pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
+    pub async fn delete(
+        &self,
+        id: &str,
+        db: &Database,
+        role_service: &RoleService,
+    ) -> Result<(), Error> {
         if id.is_empty() {
             return Err(Error::EmptyId);
         }
@@ -415,7 +425,12 @@ impl PermissionRepository {
             .delete_one(filter, None)
             .await
         {
-            Ok(_) => {}
+            Ok(_) => {
+                match role_service.delete_permission_from_all_roles(id, db).await {
+                    Ok(_) => (),
+                    Err(e) => return Err(Error::Role(e)),
+                };
+            }
             Err(e) => return Err(Error::MongoDb(e)),
         };
 

@@ -136,7 +136,7 @@ pub async fn delete_permission(path: web::Path<String>, pool: web::Data<Config>)
     let res = pool
         .services
         .permission_service
-        .delete(&path, &pool.database)
+        .delete(&path, &pool.database, &pool.services.role_service)
         .await;
     match res {
         Ok(_) => HttpResponse::Ok().finish(),
