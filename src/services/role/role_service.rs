@@ -1,5 +1,6 @@
 use crate::repository::role::role::Role;
 use crate::repository::role::role_repository::{Error, RoleRepository};
+use log::info;
 use mongodb::Database;
 
 #[derive(Clone)]
@@ -54,6 +55,7 @@ impl RoleService {
     /// * `Role` - The created Role entity.
     /// * `Error` - The Error that occurred.
     pub async fn create(&self, role: Role, db: &Database) -> Result<Role, Error> {
+        info!("Creating Role: {}", role);
         self.role_repository.create(role, db).await
     }
 
@@ -80,6 +82,7 @@ impl RoleService {
     /// * `Vec<Role>` - The Role entities.
     /// * `Error` - The Error that occurred.
     pub async fn find_all(&self, db: &Database) -> Result<Vec<Role>, Error> {
+        info!("Finding all roles");
         self.role_repository.find_all(db).await
     }
 
@@ -107,6 +110,7 @@ impl RoleService {
     /// * `Option<Role>` - The optional Role entity.
     /// * `Error` - The Error that occurred.
     pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<Role>, Error> {
+        info!("Finding Role by ID: {}", id);
         self.role_repository.find_by_id(id, db).await
     }
 
@@ -138,6 +142,7 @@ impl RoleService {
         id_vec: Vec<String>,
         db: &Database,
     ) -> Result<Vec<Role>, Error> {
+        info!("Finding roles by id vec: {:?}", id_vec);
         self.role_repository.find_by_id_vec(id_vec, db).await
     }
 
@@ -165,6 +170,7 @@ impl RoleService {
     /// * `Role` - The updated Role entity.
     /// * `Error` - The Error that occurred.
     pub async fn update(&self, role: Role, db: &Database) -> Result<Role, Error> {
+        info!("Updating Role: {}", role);
         self.role_repository.update(role, db).await
     }
 
@@ -192,6 +198,7 @@ impl RoleService {
     /// * `()` - The operation was successful.
     /// * `Error` - The Error that occurred.
     pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
+        info!("Deleting Role by ID: {}", id);
         self.role_repository.delete(id, db).await
     }
 }

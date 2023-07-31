@@ -1,6 +1,7 @@
 use crate::configuration::config::Config;
 use crate::errors::internal_server_error::InternalServerError;
 use crate::repository::user::user::User;
+use crate::web::controller::user::user_controller::ConvertError;
 use crate::web::dto::login::login_request::LoginRequest;
 use crate::web::dto::login::login_response::LoginResponse;
 use crate::web::dto::permission::permission_dto::SimplePermissionDto;
@@ -9,7 +10,7 @@ use crate::web::dto::user::user_dto::SimpleUserDto;
 use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
-use crate::web::controller::user::user_controller::ConvertError;
+use log::error;
 
 /// # Summary
 ///
@@ -110,14 +111,16 @@ pub async fn login(
                 return HttpResponse::BadRequest().finish();
             }
         },
-        Err(_) => {
+        Err(e) => {
+            error!("Failed to find user by email: {}", e);
             return HttpResponse::BadRequest().finish();
         }
     };
 
     let salt = match SaltString::from_b64(&pool.salt) {
         Ok(s) => s,
-        Err(_) => {
+        Err(e) => {
+            error!("Failed to generate salt: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to generate salt"));
         }
@@ -126,7 +129,8 @@ pub async fn login(
     let argon2 = Argon2::default();
     let password_hash = match argon2.hash_password(login_request.password.as_bytes(), &salt) {
         Ok(e) => e.to_string(),
-        Err(_) => {
+        Err(e) => {
+            error!("Failed to hash password: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to hash password"));
         }
@@ -150,7 +154,8 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
                 let username = match pool.services.jwt_service.verify_jwt_token(token) {
                     Ok(user) => user,
-                    Err(_) => {
+                    Err(e) => {
+                        error!("Failed to verify JWT token: {}", e);
                         return HttpResponse::Forbidden().finish();
                     }
                 };
@@ -167,14 +172,18 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                             return HttpResponse::Forbidden().finish();
                         }
                     },
-                    Err(_) => {
+                    Err(e) => {
+                        error!("Failed to find user by email: {}", e);
                         return HttpResponse::Forbidden().finish();
                     }
                 };
 
                 return match convert_user_to_simple_dto(user, &pool).await {
                     Ok(u) => HttpResponse::Ok().json(u),
-                    Err(_) => HttpResponse::Forbidden().finish(),
+                    Err(e) => {
+                        error!("Failed to convert User to SimpleUserDto: {}", e);
+                        HttpResponse::Forbidden().finish()
+                    }
                 };
             }
         }

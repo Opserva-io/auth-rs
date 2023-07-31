@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use crate::web::dto::permission::create_permission::CreatePermission;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -48,5 +49,36 @@ impl From<CreatePermission> for Permission {
             created_at: now.clone(),
             updated_at: now,
         }
+    }
+}
+
+impl Display for Permission {
+    /// # Summary
+    ///
+    /// Display the Permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - The Formatter.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission = Permission {
+    ///   id: String::from("id"),
+    ///   name: String::from("Permission Name"),
+    ///   description: Some(String::from("Permission Description")),
+    ///   created_at: String::from("2021-01-01T00:00:00.000Z"),
+    ///   updated_at: String::from("2021-01-01T00:00:00.000Z"),
+    /// };
+    ///
+    /// println!("{}", permission);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `std::fmt::Result` - The result of the operation.
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Permission: {{ id: {}, name: {}, description: {}, created_at: {}, updated_at: {} }}", self.id, self.name, self.description.as_ref().unwrap_or(&String::from("None")), self.created_at, self.updated_at)
     }
 }

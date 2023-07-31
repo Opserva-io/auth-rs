@@ -5,6 +5,7 @@ use actix_cors::Cors;
 use actix_web::{web as a_web, App, HttpServer};
 use dotenvy::dotenv;
 use std::env;
+use actix_web::middleware::Logger;
 
 mod configuration;
 mod errors;
@@ -15,6 +16,7 @@ mod web;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+    env_logger::init();
 
     let addr = match env::var("SERVER_ADDR") {
         Ok(d) => d,
@@ -84,7 +86,9 @@ async fn main() -> std::io::Result<()> {
     .await;
 
     HttpServer::new(move || {
+        let logger = Logger::default();
         App::new()
+            .wrap(logger)
             .app_data(a_web::Data::new(config.clone()))
             .wrap(Cors::permissive())
             .configure(Controller::configure_routes)

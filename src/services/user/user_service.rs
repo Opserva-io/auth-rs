@@ -1,5 +1,6 @@
 use crate::repository::user::user::User;
 use crate::repository::user::user_repository::{Error, UserRepository};
+use log::info;
 use mongodb::Database;
 
 #[derive(Clone)]
@@ -54,6 +55,7 @@ impl UserService {
     /// * `User` - The created User entity.
     /// * `Error` - The Error that occurred.
     pub async fn create(&self, user: User, db: &Database) -> Result<User, Error> {
+        info!("Creating User: {}", user);
         self.user_repository.create(user, db).await
     }
 
@@ -80,6 +82,7 @@ impl UserService {
     /// * `Vec<User>` - The found User entities.
     /// * `Error` - The Error that occurred.
     pub async fn find_all(&self, db: &Database) -> Result<Vec<User>, Error> {
+        info!("Finding all users");
         self.user_repository.find_all(db).await
     }
 
@@ -107,6 +110,7 @@ impl UserService {
     /// * `Option<User>` - The created User entity.
     /// * `Error` - The Error that occurred.
     pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<User>, Error> {
+        info!("Finding User by ID: {}", id);
         self.user_repository.find_by_id(id, db).await
     }
 
@@ -134,6 +138,7 @@ impl UserService {
     /// * `Option<User>` - The found User entity.
     /// * `Error` - The Error that occurred.
     pub async fn find_by_email(&self, email: &str, db: &Database) -> Result<Option<User>, Error> {
+        info!("Finding User by email: {}", email);
         self.user_repository.find_by_email(email, db).await
     }
 
@@ -161,6 +166,7 @@ impl UserService {
     /// * `User` - The updated User entity.
     /// * `Error` - The Error that occurred.
     pub async fn update(&self, user: User, db: &Database) -> Result<User, Error> {
+        info!("Updating User: {}", user);
         self.user_repository.update(user, db).await
     }
 
@@ -193,6 +199,7 @@ impl UserService {
         password: &str,
         db: &Database,
     ) -> Result<(), Error> {
+        info!("Updating User password: {}", id);
         self.user_repository.update_password(id, password, db).await
     }
 
@@ -220,6 +227,7 @@ impl UserService {
     /// * `()` - The delete operation was successful.
     /// * `Error` - The Error that occurred.
     pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
+        info!("Deleting User: {}", id);
         self.user_repository.delete(id, db).await
     }
 }

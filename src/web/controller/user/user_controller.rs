@@ -13,6 +13,7 @@ use crate::web::dto::user::user_dto::UserDto;
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
+use log::error;
 use std::fmt::{Display, Formatter};
 
 pub enum ConvertError {
@@ -122,6 +123,7 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
         match validate_roles(&user_dto.roles, &pool).await {
             Ok(_) => (),
             Err(e) => {
+                error!("Error validating roles: {}", e);
                 return HttpResponse::InternalServerError()
                     .json(InternalServerError::new(&e.to_string()));
             }
@@ -133,7 +135,8 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
     let password = &user.password.as_bytes();
     let salt = match SaltString::from_b64(&pool.salt) {
         Ok(s) => s,
-        Err(_) => {
+        Err(e) => {
+            error!("Error generating salt: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to generate salt"));
         }
@@ -142,7 +145,8 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
     let argon2 = Argon2::default();
     let password_hash = match argon2.hash_password(password, &salt) {
         Ok(e) => e.to_string(),
-        Err(_) => {
+        Err(e) => {
+            error!("Error hashing password: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to hash password"));
         }
@@ -158,6 +162,7 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
     {
         Ok(d) => d,
         Err(e) => {
+            error!("Error creating User: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -166,6 +171,7 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
     match convert_user_to_dto(res, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
+            error!("Error converting User to UserDto: {}", e);
             HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
         }
     }
@@ -176,6 +182,7 @@ pub async fn find_all(pool: web::Data<Config>) -> HttpResponse {
     let res = match pool.services.user_service.find_all(&pool.database).await {
         Ok(d) => d,
         Err(e) => {
+            error!("Error finding all Users: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -186,6 +193,7 @@ pub async fn find_all(pool: web::Data<Config>) -> HttpResponse {
         let user_dto = match convert_user_to_dto(u.clone(), &pool).await {
             Ok(d) => d,
             Err(e) => {
+                error!("Error converting User to UserDto: {}", e);
                 return HttpResponse::InternalServerError()
                     .json(InternalServerError::new(&e.to_string()));
             }
@@ -199,10 +207,12 @@ pub async fn find_all(pool: web::Data<Config>) -> HttpResponse {
 
 #[get("/{id}")]
 pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
+    let id = id.into_inner();
+
     let user = match pool
         .services
         .user_service
-        .find_by_id(&id.into_inner(), &pool.database)
+        .find_by_id(&id, &pool.database)
         .await
     {
         Ok(d) => {
@@ -213,6 +223,7 @@ pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpR
             }
         }
         Err(e) => {
+            error!("Error finding User by ID {}: {}", id, e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -221,6 +232,7 @@ pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpR
     match convert_user_to_dto(user, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
+            error!("Error converting User to UserDto: {}", e);
             HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
         }
     }
@@ -232,10 +244,12 @@ pub async fn update(
     user_dto: web::Json<UpdateUser>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
+    let id = id.into_inner();
+
     let mut user = match pool
         .services
         .user_service
-        .find_by_id(&id.into_inner(), &pool.database)
+        .find_by_id(&id, &pool.database)
         .await
     {
         Ok(d) => {
@@ -246,6 +260,7 @@ pub async fn update(
             }
         }
         Err(e) => {
+            error!("Error finding User by ID {}: {}", id, e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -266,6 +281,7 @@ pub async fn update(
         match validate_roles(&user_dto.roles, &pool).await {
             Ok(_) => (),
             Err(e) => {
+                error!("Error validating roles: {}", e);
                 return HttpResponse::InternalServerError()
                     .json(InternalServerError::new(&e.to_string()));
             }
@@ -287,6 +303,7 @@ pub async fn update(
     {
         Ok(d) => d,
         Err(e) => {
+            error!("Error updating User: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -295,6 +312,7 @@ pub async fn update(
     match convert_user_to_dto(res, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
+            error!("Error converting User to UserDto: {}", e);
             HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
         }
     }
@@ -306,10 +324,12 @@ pub async fn update_password(
     update_password: web::Json<UpdatePassword>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
+    let id = id.into_inner();
+
     let user = match pool
         .services
         .user_service
-        .find_by_id(&id.into_inner(), &pool.database)
+        .find_by_id(&id, &pool.database)
         .await
     {
         Ok(d) => {
@@ -320,6 +340,7 @@ pub async fn update_password(
             }
         }
         Err(e) => {
+            error!("Error finding User by ID {}: {}", id, e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -339,7 +360,8 @@ pub async fn update_password(
     let argon2 = Argon2::default();
     let salt = match SaltString::from_b64(&pool.salt) {
         Ok(s) => s,
-        Err(_) => {
+        Err(e) => {
+            error!("Error generating salt: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to generate salt"));
         }
@@ -348,7 +370,8 @@ pub async fn update_password(
     let old_password_hash = &update_password.old_password.as_bytes();
     let old_password_hash = match argon2.hash_password(old_password_hash, &salt) {
         Ok(e) => e.to_string(),
-        Err(_) => {
+        Err(e) => {
+            error!("Error hashing password: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to hash password"));
         }
@@ -361,7 +384,8 @@ pub async fn update_password(
     let new_password_hash = &update_password.new_password.as_bytes();
     let new_password_hash = match argon2.hash_password(new_password_hash, &salt) {
         Ok(e) => e.to_string(),
-        Err(_) => {
+        Err(e) => {
+            error!("Error hashing password: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to hash password"));
         }
@@ -375,6 +399,7 @@ pub async fn update_password(
     {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
+            error!("Error updating password: {}", e);
             HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
         }
     }
@@ -386,10 +411,12 @@ pub async fn admin_update_password(
     admin_update_password: web::Json<AdminUpdatePassword>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
+    let id = id.into_inner();
+
     let user = match pool
         .services
         .user_service
-        .find_by_id(&id.into_inner(), &pool.database)
+        .find_by_id(&id, &pool.database)
         .await
     {
         Ok(d) => {
@@ -400,20 +427,21 @@ pub async fn admin_update_password(
             }
         }
         Err(e) => {
+            error!("Error finding User by ID {}: {}", id, e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
     };
 
     if admin_update_password.password.is_empty() {
-        return HttpResponse::BadRequest()
-            .json(BadRequest::new("Empty passwords are not allowed"));
+        return HttpResponse::BadRequest().json(BadRequest::new("Empty passwords are not allowed"));
     }
 
     let argon2 = Argon2::default();
     let salt = match SaltString::from_b64(&pool.salt) {
         Ok(s) => s,
-        Err(_) => {
+        Err(e) => {
+            error!("Error generating salt: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to generate salt"));
         }
@@ -422,15 +450,22 @@ pub async fn admin_update_password(
     let password_hash = &admin_update_password.password.as_bytes();
     let password_hash = match argon2.hash_password(password_hash, &salt) {
         Ok(e) => e.to_string(),
-        Err(_) => {
+        Err(e) => {
+            error!("Error hashing password: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to hash password"));
         }
     };
 
-    match pool.services.user_service.update_password(&user.id, &password_hash, &pool.database).await {
+    match pool
+        .services
+        .user_service
+        .update_password(&user.id, &password_hash, &pool.database)
+        .await
+    {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
+            error!("Error updating password: {}", e);
             HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
         }
     }
@@ -447,7 +482,10 @@ pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpRespo
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
             Error::UserNotFound(_) => HttpResponse::NotFound().finish(),
-            _ => HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string())),
+            _ => {
+                error!("Error deleting User: {}", e);
+                HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
+            }
         },
     }
 }

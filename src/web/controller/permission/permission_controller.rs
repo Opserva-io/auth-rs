@@ -1,15 +1,19 @@
 use crate::configuration::config::Config;
-use crate::errors::internal_server_error::InternalServerError;
-use crate::web::dto::permission::permission_dto::PermissionDto;
-use actix_web::{get, web, HttpResponse, post, put, delete};
 use crate::errors::bad_request::BadRequest;
+use crate::errors::internal_server_error::InternalServerError;
 use crate::repository::permission::permission::Permission;
 use crate::repository::permission::permission_repository::Error;
 use crate::web::dto::permission::create_permission::CreatePermission;
+use crate::web::dto::permission::permission_dto::PermissionDto;
 use crate::web::dto::permission::update_permission::UpdatePermission;
+use actix_web::{delete, get, post, put, web, HttpResponse};
+use log::error;
 
 #[post("/")]
-pub async fn create_permission(pool: web::Data<Config>, info: web::Json<CreatePermission>) -> HttpResponse {
+pub async fn create_permission(
+    pool: web::Data<Config>,
+    info: web::Json<CreatePermission>,
+) -> HttpResponse {
     if info.name.is_empty() {
         return HttpResponse::BadRequest().json(BadRequest::new("Empty name"));
     }
@@ -24,6 +28,7 @@ pub async fn create_permission(pool: web::Data<Config>, info: web::Json<CreatePe
     {
         Ok(d) => d,
         Err(e) => {
+            error!("Error while creating Permission: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -42,6 +47,7 @@ pub async fn find_all_permissions(pool: web::Data<Config>) -> HttpResponse {
     {
         Ok(d) => d,
         Err(e) => {
+            error!("Error while finding all permissions: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -68,6 +74,7 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
             None => return HttpResponse::NotFound().finish(),
         },
         Err(e) => {
+            error!("Error while finding Permission with ID {}: {}", path, e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -77,8 +84,16 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
 }
 
 #[put("/{id}")]
-pub async fn update_permission(path: web::Path<String>, update: web::Json<UpdatePermission>, pool: web::Data<Config>) -> HttpResponse {
-    let res = pool.services.permission_service.find_by_id(&path, &pool.database).await;
+pub async fn update_permission(
+    path: web::Path<String>,
+    update: web::Json<UpdatePermission>,
+    pool: web::Data<Config>,
+) -> HttpResponse {
+    let res = pool
+        .services
+        .permission_service
+        .find_by_id(&path, &pool.database)
+        .await;
     let mut permission = match res {
         Ok(p) => {
             if p.is_none() {
@@ -88,6 +103,7 @@ pub async fn update_permission(path: web::Path<String>, update: web::Json<Update
             p.unwrap()
         }
         Err(e) => {
+            error!("Error while finding Permission with ID {}: {}", path, e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -98,10 +114,15 @@ pub async fn update_permission(path: web::Path<String>, update: web::Json<Update
     permission.name = update.name;
     permission.description = update.description;
 
-    let res = pool.services.permission_service.update(permission, &pool.database).await;
+    let res = pool
+        .services
+        .permission_service
+        .update(permission, &pool.database)
+        .await;
     let res = match res {
         Ok(p) => p,
         Err(e) => {
+            error!("Error while updating Permission with ID {}: {}", path, e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -112,14 +133,19 @@ pub async fn update_permission(path: web::Path<String>, update: web::Json<Update
 
 #[delete("/{id}")]
 pub async fn delete_permission(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
-    let res = pool.services.permission_service.delete(&path, &pool.database).await;
+    let res = pool
+        .services
+        .permission_service
+        .delete(&path, &pool.database)
+        .await;
     match res {
         Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => {
-            match e {
-                Error::PermissionNotFound(_) => HttpResponse::NotFound().finish(),
-                _ => HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string())),
+        Err(e) => match e {
+            Error::PermissionNotFound(_) => HttpResponse::NotFound().finish(),
+            _ => {
+                error!("Error while deleting Permission with ID {}: {}", path, e);
+                HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
             }
-        }
+        },
     }
 }

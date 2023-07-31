@@ -48,6 +48,8 @@ A couple of dependencies are required in order to build `auth-rs`:
 * [regex](https://crates.io/crates/regex)
 * [email_address](https://crates.io/crates/email_address)
 * [jsonwebtoken](https://crates.io/crates/jsonwebtoken)
+* [env_logger](https://crates.io/crates/env_logger)
+* [log](https://crates.io/crates/log)
 
 ## About
 

@@ -1,6 +1,7 @@
 use crate::web::dto::user::create_user::CreateUser;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -65,5 +66,41 @@ impl From<CreateUser> for User {
             updated_at: now,
             enabled: true,
         }
+    }
+}
+
+impl Display for User {
+    /// # Summary
+    ///
+    /// Display the User.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - The Formatter.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user = User {
+    ///   id: String::from("id"),
+    ///   username: String::from("username"),
+    ///   email: String::from("email"),
+    ///   first_name: String::from("first_name"),
+    ///   last_name: String::from("last_name"),
+    ///   password: String::from("password"),
+    ///   roles: Some(vec![String::from("role")]),
+    ///   created_at: String::from("created_at"),
+    ///   updated_at: String::from("updated_at"),
+    ///   enabled: true,
+    /// };
+    ///
+    /// println!("{}", user);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `std::fmt::Result` - The result of the operation.
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "User: {{ id: {}, username: {}, email: {}, first_name: {}, last_name: {}, roles: {:?}, created_at: {}, updated_at: {} }}", self.id, self.username, self.email, self.first_name, self.last_name, self.roles.as_ref().unwrap_or(&vec![]), self.created_at, self.updated_at)
     }
 }

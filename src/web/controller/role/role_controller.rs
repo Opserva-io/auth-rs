@@ -9,6 +9,7 @@ use crate::web::dto::role::create_role::CreateRole;
 use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::role::update_role::UpdateRole;
 use actix_web::{delete, get, post, put, web, HttpResponse};
+use log::error;
 
 /// # Summary
 ///
@@ -155,6 +156,7 @@ pub async fn create(role_dto: web::Json<CreateRole>, pool: web::Data<Config>) ->
         match validate_permissions(role_dto.permissions.clone(), &pool).await {
             Ok(_) => (),
             Err(e) => {
+                error!("Error validating permissions: {}", e);
                 return HttpResponse::InternalServerError()
                     .json(InternalServerError::new(&e.to_string()));
             }
@@ -171,6 +173,7 @@ pub async fn create(role_dto: web::Json<CreateRole>, pool: web::Data<Config>) ->
     {
         Ok(d) => d,
         Err(e) => {
+            error!("Error creating Role: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -179,6 +182,7 @@ pub async fn create(role_dto: web::Json<CreateRole>, pool: web::Data<Config>) ->
     match get_role_dto_from_role(res, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
+            error!("Error converting Role to RoleDto: {}", e);
             HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
         }
     }
@@ -189,6 +193,7 @@ pub async fn find_all_roles(pool: web::Data<Config>) -> HttpResponse {
     let res = match pool.services.role_service.find_all(&pool.database).await {
         Ok(d) => d,
         Err(e) => {
+            error!("Error finding all Roles: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -199,6 +204,7 @@ pub async fn find_all_roles(pool: web::Data<Config>) -> HttpResponse {
         let role_dto = match get_role_dto_from_role(r.clone(), &pool).await {
             Ok(d) => d,
             Err(e) => {
+                error!("Error converting Role to RoleDto: {}", e);
                 return HttpResponse::InternalServerError()
                     .json(InternalServerError::new(&e.to_string()));
             }
@@ -223,6 +229,7 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
             None => return HttpResponse::NotFound().finish(),
         },
         Err(e) => {
+            error!("Error finding Role by ID {}: {}", path, e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -231,6 +238,7 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
     match get_role_dto_from_role(res, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
+            error!("Error converting Role to RoleDto: {}", e);
             HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
         }
     }
@@ -259,6 +267,7 @@ pub async fn update(
             None => return HttpResponse::NotFound().finish(),
         },
         Err(e) => {
+            error!("Error finding Role by ID {}: {}", path, e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -268,6 +277,7 @@ pub async fn update(
         match validate_permissions(update.permissions.clone(), &pool).await {
             Ok(_) => (),
             Err(e) => {
+                error!("Error validating permissions: {}", e);
                 return HttpResponse::InternalServerError()
                     .json(InternalServerError::new(&e.to_string()));
             }
@@ -286,6 +296,7 @@ pub async fn update(
     {
         Ok(d) => d,
         Err(e) => {
+            error!("Error updating Role: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new(&e.to_string()));
         }
@@ -294,6 +305,7 @@ pub async fn update(
     match get_role_dto_from_role(res, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
+            error!("Error converting Role to RoleDto: {}", e);
             HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
         }
     }
@@ -310,7 +322,10 @@ pub async fn delete(path: web::Path<String>, pool: web::Data<Config>) -> HttpRes
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => match e {
             Error::RoleNotFound(_) => HttpResponse::NotFound().finish(),
-            _ => HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string())),
+            _ => {
+                error!("Error deleting Role: {}", e);
+                HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
+            }
         },
     }
 }
