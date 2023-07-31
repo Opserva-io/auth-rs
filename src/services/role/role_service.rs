@@ -149,6 +149,33 @@ impl RoleService {
 
     /// # Summary
     ///
+    /// Find a role by its name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - A string slice that holds the name.
+    /// * `db` - A reference to a Database instance.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let role_repository = RoleRepository::new(String::from("roles"));
+    /// let role_service = RoleService::new(role_repository);
+    /// let db = mongodb::Database::new();
+    ///
+    /// let role = role_service.find_by_name("name", &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// A Result with an Option of a Role instance or an Error.
+    pub async fn find_by_name(&self, name: &str, db: &Database) -> Result<Option<Role>, Error> {
+        info!("Finding Role by name: {}", name);
+        self.role_repository.find_by_name(name, db).await
+    }
+
+    /// # Summary
+    ///
     /// Update a Role entity.
     ///
     /// # Arguments

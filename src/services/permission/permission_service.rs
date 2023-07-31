@@ -1,8 +1,8 @@
-use log::info;
 use crate::repository::permission::permission::Permission;
 use crate::repository::permission::permission_repository::{Error, PermissionRepository};
-use mongodb::Database;
 use crate::services::role::role_service::RoleService;
+use log::info;
+use mongodb::Database;
 
 #[derive(Clone)]
 pub struct PermissionService {
@@ -151,6 +151,39 @@ impl PermissionService {
 
     /// # Summary
     ///
+    /// Find a Permission by its name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the Permission to find.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permission = permission_repository.find_by_name(String::from("permission_name"), &db).await;
+    ///
+    /// match permission {
+    ///   Ok(p) => println!("Permission: {:?}", p),
+    ///   Err(e) => println!("Error: {:?}", e),
+    /// }
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<Permission>, Error>` - The result of the operation.
+    pub async fn find_by_name(
+        &self,
+        name: &str,
+        db: &Database,
+    ) -> Result<Option<Permission>, Error> {
+        info!("Finding Permission by name: {}", name);
+        self.permission_repository.find_by_name(name, db).await
+    }
+
+    /// # Summary
+    ///
     /// Create a Permission entity.
     ///
     /// # Arguments
@@ -202,8 +235,15 @@ impl PermissionService {
     ///
     /// * `()` - The operation was successful.
     /// * `Error` - The Error that occurred.
-    pub async fn delete(&self, id: &str, db: &Database, role_service: &RoleService) -> Result<(), Error> {
+    pub async fn delete(
+        &self,
+        id: &str,
+        db: &Database,
+        role_service: &RoleService,
+    ) -> Result<(), Error> {
         info!("Deleting Permission by ID: {}", id);
-        self.permission_repository.delete(id, db, role_service).await
+        self.permission_repository
+            .delete(id, db, role_service)
+            .await
     }
 }

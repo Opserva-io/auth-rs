@@ -1,5 +1,8 @@
 use crate::web::dto::user::create_user::CreateUser;
+use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHasher};
 use chrono::{DateTime, Utc};
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
@@ -21,6 +24,79 @@ pub struct User {
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
     pub enabled: bool,
+}
+
+impl User {
+    /// # Summary
+    ///
+    /// Create a new User.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the User.
+    /// * `username` - The username of the User.
+    /// * `email` - The email of the User.
+    /// * `first_name` - The first name of the User.
+    /// * `last_name` - The last name of the User.
+    /// * `password` - The password of the User.
+    /// * `roles` - The roles of the User.
+    /// * `created_at` - The created at of the User.
+    /// * `updated_at` - The updated at of the User.
+    /// * `enabled` - The enabled of the User.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user = User::new(String::from("User Id"), String::from("User Username"), String::from("User Email"), String::from("User First Name"), String::from("User Last Name"), String::from("User Password"), Some(vec![String::from("Role Id")]), String::from("User Created At"), String::from("User Updated At"), true);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `User` - The new User.
+    pub fn new(
+        username: String,
+        email: String,
+        first_name: String,
+        last_name: String,
+        password: String,
+        roles: Option<Vec<String>>,
+        enabled: bool,
+        salt: &str,
+    ) -> User {
+        let password = password.as_bytes();
+        let salt = match SaltString::from_b64(&salt) {
+            Ok(s) => s,
+            Err(e) => {
+                error!("Error generating salt: {}", e);
+                panic!("Failed to generate salt");
+            }
+        };
+
+        let argon2 = Argon2::default();
+        let password_hash = match argon2.hash_password(password, &salt) {
+            Ok(e) => e.to_string(),
+            Err(e) => {
+                error!("Error hashing password: {}", e);
+                panic!("Failed to hash password");
+            }
+        };
+
+        let now: DateTime<Utc> = SystemTime::now().into();
+        let now: String = now.to_rfc3339();
+
+        User {
+            id: uuid::Uuid::new_v4().to_string(),
+            username,
+            email,
+            first_name,
+            last_name,
+            password: password_hash,
+            roles,
+            created_at: now.clone(),
+            updated_at: now,
+            enabled,
+        }
+    }
 }
 
 impl From<CreateUser> for User {

@@ -18,6 +18,45 @@ pub struct Role {
     pub updated_at: String,
 }
 
+impl Role {
+    /// # Summary
+    ///
+    /// Create a new Role.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the Role.
+    /// * `description` - The description of the Role.
+    /// * `permissions` - The Permissions of the Role.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let role = Role::new(String::from("Role Name"), Some(String::from("Role Description")), Some(vec![String::from("Permission Id")]));
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Role` - The new Role.
+    pub fn new(
+        name: String,
+        description: Option<String>,
+        permissions: Option<Vec<String>>,
+    ) -> Self {
+        let now: DateTime<Utc> = SystemTime::now().into();
+        let now: String = now.to_rfc3339();
+
+        Role {
+            id: uuid::Uuid::new_v4().to_string(),
+            name,
+            description,
+            permissions,
+            created_at: now.clone(),
+            updated_at: now,
+        }
+    }
+}
+
 impl From<RoleDto> for Role {
     /// # Summary
     ///
