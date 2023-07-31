@@ -64,7 +64,7 @@ impl User {
         salt: &str,
     ) -> User {
         let password = password.as_bytes();
-        let salt = match SaltString::from_b64(&salt) {
+        let salt = match SaltString::from_b64(salt) {
             Ok(s) => s,
             Err(e) => {
                 error!("Error generating salt: {}", e);

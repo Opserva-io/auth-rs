@@ -118,7 +118,7 @@ impl EnvReader {
             default_user_enabled,
         );
 
-        let config = Config::new(
+        Config::new(
             addr,
             port,
             &conn_string,
@@ -129,8 +129,6 @@ impl EnvReader {
             salt,
             JwtConfig::new(jwt_secret, jwt_expiration),
         )
-        .await;
-
-        config
+        .await
     }
 }

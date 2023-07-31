@@ -7,11 +7,12 @@ Users, when authenticated, will be given a JWT token which can be used to access
 
 ## Features
 
-- [ ] Authentication
-- [ ] Authorization
+- [X] Authentication
+- [X] Authorization
+- [ ] Audit trail
 - [X] Password hashing
 - [X] JWT generation
-- [ ] JWT verification
+- [X] JWT verification
 - [X] MongoDB integration
 - [X] MongoDB Atlas integration
 
@@ -37,6 +38,7 @@ A couple of dependencies are required in order to build `auth-rs`:
 
 * [actix-web](https://crates.io/crates/actix-web)
 * [actix-cors](https://crates.io/crates/actix-cors)
+* [actix-web-grants](https://crates.io/crates/actix-web-grants)
 * [uuid](https://crates.io/crates/uuid)
 * [mongodb](https://crates.io/crates/mongodb)
 * [chrono](https://crates.io/crates/chrono)
