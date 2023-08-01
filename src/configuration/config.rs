@@ -1,4 +1,4 @@
-use log::info;
+use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
 use crate::repository::permission::permission::Permission;
@@ -12,11 +12,11 @@ use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
 use crate::services::user::user_service::UserService;
 use crate::services::Services;
+use log::info;
+use mongodb::bson::doc;
 use mongodb::options::{ClientOptions, IndexOptions, ServerApi, ServerApiVersion};
 use mongodb::{Client, Database, IndexModel};
-use mongodb::bson::doc;
 use regex::Regex;
-use crate::configuration::db_config::DbConfig;
 
 #[derive(Clone)]
 pub struct Config {
@@ -83,7 +83,7 @@ impl Config {
         let email_regex = Regex::new(
             r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-.][a-z0-9]+)*\.[a-z]{2,6})",
         )
-            .unwrap();
+        .unwrap();
 
         let user_repository =
             match UserRepository::new(db_config.user_collection.clone(), email_regex.clone()) {
@@ -283,7 +283,8 @@ impl Config {
             .options(options)
             .build();
 
-        self.database.collection::<Permission>(&self.permission_collection)
+        self.database
+            .collection::<Permission>(&self.permission_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -294,7 +295,8 @@ impl Config {
             .options(options)
             .build();
 
-        self.database.collection::<Permission>(&self.permission_collection)
+        self.database
+            .collection::<Permission>(&self.permission_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -315,7 +317,8 @@ impl Config {
             .options(options)
             .build();
 
-        self.database.collection::<Role>(&self.role_collection)
+        self.database
+            .collection::<Role>(&self.role_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -326,7 +329,8 @@ impl Config {
             .options(options)
             .build();
 
-        self.database.collection::<Role>(&self.role_collection)
+        self.database
+            .collection::<Role>(&self.role_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -347,7 +351,8 @@ impl Config {
             .options(options)
             .build();
 
-        self.database.collection::<Permission>(&self.user_collection)
+        self.database
+            .collection::<Permission>(&self.user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -358,7 +363,8 @@ impl Config {
             .options(options)
             .build();
 
-        self.database.collection::<Permission>(&self.user_collection)
+        self.database
+            .collection::<Permission>(&self.user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -369,7 +375,8 @@ impl Config {
             .options(options)
             .build();
 
-        self.database.collection::<Permission>(&self.user_collection)
+        self.database
+            .collection::<Permission>(&self.user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -510,6 +517,6 @@ impl Config {
             &self.salt,
             email_regex,
         )
-            .await;
+        .await;
     }
 }
