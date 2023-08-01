@@ -1,5 +1,6 @@
 use crate::repository::user::user::User;
 use crate::repository::user::user_repository::{Error, UserRepository};
+use log::info;
 use mongodb::Database;
 
 #[derive(Clone)]
@@ -54,6 +55,7 @@ impl UserService {
     /// * `User` - The created User entity.
     /// * `Error` - The Error that occurred.
     pub async fn create(&self, user: User, db: &Database) -> Result<User, Error> {
+        info!("Creating User: {}", user);
         self.user_repository.create(user, db).await
     }
 
@@ -80,6 +82,7 @@ impl UserService {
     /// * `Vec<User>` - The found User entities.
     /// * `Error` - The Error that occurred.
     pub async fn find_all(&self, db: &Database) -> Result<Vec<User>, Error> {
+        info!("Finding all users");
         self.user_repository.find_all(db).await
     }
 
@@ -107,7 +110,36 @@ impl UserService {
     /// * `Option<User>` - The created User entity.
     /// * `Error` - The Error that occurred.
     pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<User>, Error> {
+        info!("Finding User by ID: {}", id);
         self.user_repository.find_by_id(id, db).await
+    }
+
+    /// # Summary
+    ///
+    /// Find a User entity by email.
+    ///
+    /// # Arguments
+    ///
+    /// * `email` - The email of the User entity.
+    /// * `db` - The Database to be used.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user_repository = UserRepository::new(String::from("users"));
+    /// let user_service = UserService::new(user_repository);
+    /// let db = mongodb::Database::new();
+    ///
+    /// let user = user_service.find_by_email("email", &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Option<User>` - The found User entity.
+    /// * `Error` - The Error that occurred.
+    pub async fn find_by_email(&self, email: &str, db: &Database) -> Result<Option<User>, Error> {
+        info!("Finding User by email: {}", email);
+        self.user_repository.find_by_email(email, db).await
     }
 
     /// # Summary
@@ -134,7 +166,41 @@ impl UserService {
     /// * `User` - The updated User entity.
     /// * `Error` - The Error that occurred.
     pub async fn update(&self, user: User, db: &Database) -> Result<User, Error> {
+        info!("Updating User: {}", user);
         self.user_repository.update(user, db).await
+    }
+
+    /// # Summary
+    ///
+    /// Update a User entity's password.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the User entity to be updated.
+    /// * `password` - The new password of the User entity.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user_repository = UserRepository::new(String::from("users"));
+    /// let user_service = UserService::new(user_repository);
+    /// let db = mongodb::Database::new();
+    ///
+    /// user_service.update_password("id", "password", &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `()` - The update operation was successful.
+    /// * `Error` - The Error that occurred.
+    pub async fn update_password(
+        &self,
+        id: &str,
+        password: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
+        info!("Updating User password: {}", id);
+        self.user_repository.update_password(id, password, db).await
     }
 
     /// # Summary
@@ -161,6 +227,41 @@ impl UserService {
     /// * `()` - The delete operation was successful.
     /// * `Error` - The Error that occurred.
     pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
+        info!("Deleting User: {}", id);
         self.user_repository.delete(id, db).await
+    }
+
+    /// # Summary
+    ///
+    /// Delete a Role from all Users.
+    ///
+    /// # Arguments
+    ///
+    /// * `role_id` - The ID of the Role entity to be deleted from all Users.
+    /// * `db` - The Database to be used.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user_repository = UserRepository::new(String::from("users"));
+    /// let user_service = UserService::new(user_repository);
+    /// let db = mongodb::Database::new();
+    ///
+    /// user_service.delete_role_from_all_users("role_id", &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `()` - The delete operation was successful.
+    /// * `Error` - The Error that occurred.
+    pub async fn delete_role_from_all_users(
+        &self,
+        role_id: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
+        info!("Deleting Role from all Users: {}", role_id);
+        self.user_repository
+            .delete_role_from_all_users(role_id, db)
+            .await
     }
 }

@@ -1,14 +1,17 @@
 use crate::repository::user::user::User;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
+use mongodb::bson::{doc, Bson};
 use mongodb::error::Error as MongoError;
 use mongodb::Database;
+use regex::Regex;
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
 
 #[derive(Clone)]
 pub struct UserRepository {
     pub collection: String,
+    pub email_regex: Regex,
 }
 
 #[derive(Clone, Debug)]
@@ -17,37 +20,118 @@ pub enum Error {
     EmptyUsername,
     EmptyCollection,
     EmptyEmail,
-    UserNotFound,
+    EmptyPassword,
+    UserNotFound(String),
     UsernameAlreadyTaken,
     EmailAlreadyTaken,
-    MongoDbError(MongoError),
+    InvalidEmail(String),
+    MongoDb(MongoError),
 }
 
 impl Display for Error {
+    /// # Summary
+    ///
+    /// Display the Error.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - The Formatter.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let error = Error::InvalidEmail(String::from("email"));
+    /// println!("{}", error);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `std::fmt::Result` - The result of the operation.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match &self {
             Error::EmptyId => write!(f, "Empty User ID"),
             Error::EmptyUsername => write!(f, "Empty username"),
             Error::EmptyCollection => write!(f, "Empty collection"),
             Error::EmptyEmail => write!(f, "Empty email"),
-            Error::UserNotFound => write!(f, "User not found"),
+            Error::EmptyPassword => write!(f, "Empty password"),
+            Error::UserNotFound(id) => write!(f, "User not found: {}", id),
             Error::UsernameAlreadyTaken => write!(f, "Username already taken"),
             Error::EmailAlreadyTaken => write!(f, "Email already taken"),
-            Error::MongoDbError(e) => write!(f, "MongoDB error: {}", e),
+            Error::InvalidEmail(email) => write!(f, "Invalid email address: {}", email),
+            Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
         }
     }
 }
 
 impl UserRepository {
-    pub fn new(collection: String) -> Result<UserRepository, Error> {
+    /// # Summary
+    ///
+    /// Create a new UserRepository.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection` - The name of the collection.
+    /// * `email_regex` - The email regex.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use regex::Regex;
+    /// use repository::user::user_repository::UserRepository;
+    ///
+    /// let email_regex = Regex::new(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-
+    /// zA-Z0-9-.]+$").unwrap();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<UserRepository, Error>` - The result of the operation.
+    pub fn new(collection: String, email_regex: Regex) -> Result<UserRepository, Error> {
         if collection.is_empty() {
             return Err(Error::EmptyCollection);
         }
 
-        Ok(UserRepository { collection })
+        Ok(UserRepository {
+            collection,
+            email_regex,
+        })
     }
 
+    /// # Summary
+    ///
+    /// Create a new User entity.
+    ///
+    /// # Arguments
+    ///
+    /// * `user` - The User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user = User {
+    ///   id: String::from("id"),
+    ///   username: String::from("username"),
+    ///   email: String::from("email"),
+    ///   password: String::from("password"),
+    ///   created_at: Utc::now(),
+    ///   updated_at: Utc::now(),
+    /// };
+    ///
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = user_repository.create(user, &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<User, Error>` - The result of the operation.
     pub async fn create(&self, user: User, db: &Database) -> Result<User, Error> {
+        if !&self.email_regex.is_match(&user.email) {
+            return Err(Error::InvalidEmail(user.email));
+        }
+
         match self.find_by_username(&user.username, db).await {
             Ok(user) => {
                 if user.is_some() {
@@ -59,7 +143,7 @@ impl UserRepository {
             }
         };
 
-        match self.find_by_email(&user.email, db).await {
+        match self.find_by_email(&user.email.to_lowercase(), db).await {
             Ok(user) => {
                 if user.is_some() {
                     return Err(Error::EmailAlreadyTaken);
@@ -77,18 +161,37 @@ impl UserRepository {
 
         match result {
             Ok(_) => {}
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         match self.find_by_id(&user_id, db).await {
             Ok(user) => match user {
                 Some(u) => Ok(u),
-                None => Err(Error::UserNotFound),
+                None => Err(Error::UserNotFound(user_id)),
             },
             Err(e) => Err(e),
         }
     }
 
+    /// # Summary
+    ///
+    /// Find all User entities.
+    ///
+    /// # Arguments
+    ///
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let users = user_repository.find_all(&db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<User>, Error>` - The result of the operation.
     pub async fn find_all(&self, db: &Database) -> Result<Vec<User>, Error> {
         let cursor = match db
             .collection::<User>(&self.collection)
@@ -96,33 +199,71 @@ impl UserRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
     }
 
+    /// # Summary
+    ///
+    /// Find a User entity by its ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = user_repository.find_by_id(&String::from("id"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<User>, Error>` - The result of the operation.
     pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<User>, Error> {
         if id.is_empty() {
             return Err(Error::EmptyId);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": id,
         };
 
-        let user = match db
+        match db
             .collection::<User>(&self.collection)
             .find_one(filter, None)
             .await
         {
-            Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
-        };
-
-        Ok(user)
+            Ok(d) => Ok(d),
+            Err(e) => Err(Error::MongoDb(e)),
+        }
     }
 
+    /// # Summary
+    ///
+    /// Find a User entity by its username.
+    ///
+    /// # Arguments
+    ///
+    /// * `username` - The username of the User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = user_repository.find_by_username(&String::from("username"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<User>, Error>` - The result of the operation.
     pub async fn find_by_username(
         &self,
         username: &str,
@@ -132,9 +273,13 @@ impl UserRepository {
             return Err(Error::EmptyUsername);
         }
 
-        let filter = mongodb::bson::doc! {
-            "username": username,
+        let regex_pattern = format!("^{}$", regex::escape(username));
+        let re = mongodb::bson::Regex {
+            pattern: regex_pattern,
+            options: String::from("i"),
         };
+
+        let filter = doc! { "username": { "$regex": Bson::RegularExpression(re) } };
 
         let user = match db
             .collection::<User>(&self.collection)
@@ -142,18 +287,38 @@ impl UserRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(user)
     }
 
+    /// # Summary
+    ///
+    /// Find a User entity by its email.
+    ///
+    /// # Arguments
+    ///
+    /// * `email` - The email of the User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = user_repository.find_by_email(&String::from("email"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<User>, Error>` - The result of the operation.
     pub async fn find_by_email(&self, email: &str, db: &Database) -> Result<Option<User>, Error> {
         if email.is_empty() {
             return Err(Error::EmptyEmail);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "email": email,
         };
 
@@ -163,14 +328,41 @@ impl UserRepository {
             .await
         {
             Ok(d) => d,
-            Err(e) => return Err(Error::MongoDbError(e)),
+            Err(e) => return Err(Error::MongoDb(e)),
         };
 
         Ok(user)
     }
 
+    /// # Summary
+    ///
+    /// Insert a User entity.
+    ///
+    /// # Arguments
+    ///
+    /// * `user` - The User entity to insert.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = User::new(String::from("username"), String::from("email"), String::from("password"));
+    ///
+    /// user.first_name = String::from("first_name");
+    ///
+    /// let user = user_repository.update(user, &db);
+    /// ```
     pub async fn update(&self, user: User, db: &Database) -> Result<User, Error> {
-        match self.find_by_username(&user.username, db).await {
+        if !self.email_regex.is_match(&user.email) {
+            return Err(Error::InvalidEmail(user.email));
+        }
+
+        match self
+            .find_by_username(&user.username.to_lowercase(), db)
+            .await
+        {
             Ok(u) => {
                 if let Some(p) = u {
                     if p.id != user.id {
@@ -183,7 +375,7 @@ impl UserRepository {
             }
         };
 
-        match self.find_by_email(&user.email, db).await {
+        match self.find_by_email(&user.email.to_lowercase(), db).await {
             Ok(u) => {
                 if let Some(p) = u {
                     if p.id != user.id {
@@ -196,14 +388,15 @@ impl UserRepository {
             }
         };
 
-        let filter = mongodb::bson::doc! {
-            "_id": &user.id,
+        let user_id = user.id.clone();
+        let filter = doc! {
+            "_id": &user_id,
         };
 
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
 
-        let update = mongodb::bson::doc! {
+        let update = doc! {
             "$set": {
                 "username": &user.username,
                 "email": &user.email,
@@ -223,19 +416,98 @@ impl UserRepository {
                 if let Some(u) = user {
                     Ok(u)
                 } else {
-                    Err(Error::UserNotFound)
+                    Err(Error::UserNotFound(user_id))
                 }
             }
-            Err(e) => Err(Error::MongoDbError(e)),
+            Err(e) => Err(Error::MongoDb(e)),
         }
     }
 
+    /// # Summary
+    ///
+    /// Update the password of a User entity.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the User entity.
+    /// * `password` - The new password of the User entity.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    ///
+    /// user_repository.update_password(&String::from("id"), &String::from("password"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), Error>` - The result of the operation.
+    pub async fn update_password(
+        &self,
+        id: &str,
+        password: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
+        if id.is_empty() {
+            return Err(Error::EmptyId);
+        }
+
+        if password.is_empty() {
+            return Err(Error::EmptyPassword);
+        }
+
+        let filter = doc! {
+            "_id": id,
+        };
+
+        let now: DateTime<Utc> = SystemTime::now().into();
+        let now: String = now.to_rfc3339();
+
+        let update = doc! {
+            "$set": {
+                "password": password,
+                "updated_at": now,
+            },
+        };
+
+        let collection = db.collection::<User>(&self.collection);
+        let result = collection.update_one(filter, update, None).await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => Err(Error::MongoDb(e)),
+        }
+    }
+
+    /// # Summary
+    ///
+    /// Delete a User entity.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    ///
+    /// user_repository.delete(&String::from("id"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), Error>` - The result of the operation.
     pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
         if id.is_empty() {
             return Err(Error::EmptyId);
         }
 
-        let filter = mongodb::bson::doc! {
+        let filter = doc! {
             "_id": id,
         };
 
@@ -244,7 +516,55 @@ impl UserRepository {
 
         match result {
             Ok(_) => Ok(()),
-            Err(e) => Err(Error::MongoDbError(e)),
+            Err(e) => Err(Error::MongoDb(e)),
+        }
+    }
+
+    /// # Summary
+    ///
+    /// Delete a role from all users.
+    ///
+    /// # Arguments
+    ///
+    /// * `role_id` - The id of the role.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    ///
+    /// user_repository.delete_role_from_all_users(&String::from("role_id"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), Error>` - The result of the operation.
+    pub async fn delete_role_from_all_users(
+        &self,
+        role_id: &str,
+        db: &Database,
+    ) -> Result<(), Error> {
+        if role_id.is_empty() {
+            return Err(Error::EmptyId);
+        }
+
+        let filter = doc! {};
+
+        let update = doc! {
+            "$pull": {
+                "roles": role_id,
+            }
+        };
+
+        match db
+            .collection::<User>(&self.collection)
+            .update_many(filter, update, None)
+            .await
+        {
+            Ok(_) => Ok(()),
+            Err(e) => Err(Error::MongoDb(e)),
         }
     }
 }

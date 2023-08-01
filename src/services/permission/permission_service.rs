@@ -1,5 +1,7 @@
 use crate::repository::permission::permission::Permission;
 use crate::repository::permission::permission_repository::{Error, PermissionRepository};
+use crate::services::role::role_service::RoleService;
+use log::info;
 use mongodb::Database;
 
 #[derive(Clone)]
@@ -56,6 +58,7 @@ impl PermissionService {
     /// * `Option<Permission>` - The Permission entity.
     /// * `Error` - The Error that occurred.
     pub async fn create(&self, permission: Permission, db: &Database) -> Result<Permission, Error> {
+        info!("Creating Permission: {}", permission);
         self.permission_repository.create(permission, db).await
     }
 
@@ -82,6 +85,7 @@ impl PermissionService {
     /// * `Vec<Permission>` - The Permission entities.
     /// * `Error` - The Error that occurred.
     pub async fn find_all(&self, db: &Database) -> Result<Vec<Permission>, Error> {
+        info!("Finding all permissions");
         self.permission_repository.find_all(db).await
     }
 
@@ -113,6 +117,7 @@ impl PermissionService {
         id_vec: Vec<String>,
         db: &Database,
     ) -> Result<Vec<Permission>, Error> {
+        info!("Finding permissions by id_vec: {:?}", id_vec);
         self.permission_repository.find_by_id_vec(id_vec, db).await
     }
 
@@ -140,7 +145,41 @@ impl PermissionService {
     /// * `Option<Permission>` - The Permission entity.
     /// * `Error` - The Error that occurred.
     pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<Permission>, Error> {
+        info!("Finding Permission by ID: {}", id);
         self.permission_repository.find_by_id(id, db).await
+    }
+
+    /// # Summary
+    ///
+    /// Find a Permission by its name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the Permission to find.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permission = permission_repository.find_by_name(String::from("permission_name"), &db).await;
+    ///
+    /// match permission {
+    ///   Ok(p) => println!("Permission: {:?}", p),
+    ///   Err(e) => println!("Error: {:?}", e),
+    /// }
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<Permission>, Error>` - The result of the operation.
+    pub async fn find_by_name(
+        &self,
+        name: &str,
+        db: &Database,
+    ) -> Result<Option<Permission>, Error> {
+        info!("Finding Permission by name: {}", name);
+        self.permission_repository.find_by_name(name, db).await
     }
 
     /// # Summary
@@ -167,6 +206,7 @@ impl PermissionService {
     /// * `Permission` - The Permission entity.
     /// * `Error` - The Error that occurred.
     pub async fn update(&self, permission: Permission, db: &Database) -> Result<Permission, Error> {
+        info!("Updating Permission: {}", permission);
         self.permission_repository.update(permission, db).await
     }
 
@@ -178,6 +218,7 @@ impl PermissionService {
     ///
     /// * `permission` - The Permission entity to update.
     /// * `db` - The Database to be used.
+    /// * `role_service` - The reference RoleService to be used.
     ///
     /// # Example
     ///
@@ -185,15 +226,24 @@ impl PermissionService {
     /// let permission_repository = PermissionRepository::new(String::from("permissions"));
     /// let permission_service = PermissionService::new(permission_repository);
     /// let db = mongodb::Database::new();
+    /// let role_service = RoleService::new(RoleRepository::new(String::from("roles")));
     ///
-    /// let permission = permission_service.update(Permission::new(String::from("name")), &db);
+    /// let res = permission_service.delete(String::from("id"), &db, role_service);
     /// ```
     ///
     /// # Returns
     ///
     /// * `()` - The operation was successful.
     /// * `Error` - The Error that occurred.
-    pub async fn delete(&self, id: &str, db: &Database) -> Result<(), Error> {
-        self.permission_repository.delete(id, db).await
+    pub async fn delete(
+        &self,
+        id: &str,
+        db: &Database,
+        role_service: &RoleService,
+    ) -> Result<(), Error> {
+        info!("Deleting Permission by ID: {}", id);
+        self.permission_repository
+            .delete(id, db, role_service)
+            .await
     }
 }
