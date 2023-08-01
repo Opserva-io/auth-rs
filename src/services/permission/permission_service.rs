@@ -246,4 +246,32 @@ impl PermissionService {
             .delete(id, db, role_service)
             .await
     }
+
+    /// # Summary
+    ///
+    /// Search for Permission entities by text.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to search for.
+    /// * `db` - The Database to be used.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permission_service = PermissionService::new(permission_repository);
+    /// let db = mongodb::Database::new();
+    ///
+    /// let permissions = permission_service.search(String::from("text"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Vec<Permission>` - The Permission entities.
+    /// * `Error` - The Error that occurred.
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Permission>, Error> {
+        info!("Searching for Permission by text: {}", text);
+        self.permission_repository.search(text, db).await
+    }
 }

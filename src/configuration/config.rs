@@ -1,4 +1,4 @@
-use crate::configuration::collection_config::CollectionConfig;
+use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
 use crate::repository::permission::permission::Permission;
@@ -12,8 +12,10 @@ use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
 use crate::services::user::user_service::UserService;
 use crate::services::Services;
-use mongodb::options::{ClientOptions, ServerApi, ServerApiVersion};
-use mongodb::{Client, Database};
+use log::info;
+use mongodb::bson::doc;
+use mongodb::options::{ClientOptions, IndexOptions, ServerApi, ServerApiVersion};
+use mongodb::{Client, Database, IndexModel};
 use regex::Regex;
 
 #[derive(Clone)]
@@ -23,6 +25,9 @@ pub struct Config {
     pub database: Database,
     pub services: Services,
     pub salt: String,
+    pub permission_collection: String,
+    pub role_collection: String,
+    pub user_collection: String,
 }
 
 impl Config {
@@ -34,12 +39,10 @@ impl Config {
     ///
     /// * `address` - A String that holds the server address.
     /// * `port` - A u16 that holds the server port.
-    /// * `db_connection_string` - A string slice that holds the database connection string.
-    /// * `database` - A string slice that holds the database name.
-    /// * `collection_config` - A CollectionConfig instance.
+    /// * `db_config` - A DbConfig instance.
     /// * `default_user_config` - A DefaultUserConfig instance.
-    /// * `generate_default_user` - A bool that indicates if the default user should be generated.
-    /// * `salt` - A String that holds the salt to hash passwords.
+    /// * `generate_default_user` - A bool that indicates whether to generate a default user or not.
+    /// * `salt` - A String that holds the salt.
     /// * `jwt_config` - A JwtConfig instance.
     ///
     /// # Returns
@@ -48,15 +51,13 @@ impl Config {
     pub async fn new(
         address: String,
         port: u16,
-        db_connection_string: &str,
-        database: &str,
-        collection_config: CollectionConfig,
+        db_config: DbConfig,
         default_user_config: DefaultUserConfig,
         generate_default_user: bool,
         salt: String,
         jwt_config: JwtConfig,
     ) -> Config {
-        let mut client_options = match ClientOptions::parse(db_connection_string).await {
+        let mut client_options = match ClientOptions::parse(&db_config.connection_string).await {
             Ok(d) => d,
             Err(e) => {
                 panic!("Failed to parse options: {:?}", e);
@@ -67,25 +68,25 @@ impl Config {
         client_options.server_api = Some(server_api);
 
         let client = Client::with_options(client_options).expect("Failed to initialize client");
-        let db = client.database(database);
+        let db = client.database(&db_config.database_name);
 
         let permission_repository =
-            match PermissionRepository::new(collection_config.permission_collection) {
+            match PermissionRepository::new(db_config.permission_collection.clone()) {
                 Ok(d) => d,
                 Err(e) => panic!("Failed to initialize Permission repository: {:?}", e),
             };
-        let role_repository = match RoleRepository::new(collection_config.role_collection) {
+        let role_repository = match RoleRepository::new(db_config.role_collection.clone()) {
             Ok(d) => d,
             Err(e) => panic!("Failed to initialize Role repository: {:?}", e),
         };
 
         let email_regex = Regex::new(
-            r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
+            r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-.][a-z0-9]+)*\.[a-z]{2,6})",
         )
         .unwrap();
 
         let user_repository =
-            match UserRepository::new(collection_config.user_collection, email_regex.clone()) {
+            match UserRepository::new(db_config.user_collection.clone(), email_regex.clone()) {
                 Ok(d) => d,
                 Err(e) => panic!("Failed to initialize User repository: {:?}", e),
             };
@@ -103,11 +104,20 @@ impl Config {
             database: db,
             services,
             salt,
+            permission_collection: db_config.permission_collection,
+            role_collection: db_config.role_collection,
+            user_collection: db_config.user_collection,
         };
 
         if generate_default_user {
             cfg.initialize_database(default_user_config, email_regex)
                 .await;
+        }
+
+        if db_config.create_indexes {
+            cfg.create_permission_indexes().await;
+            cfg.create_role_indexes().await;
+            cfg.create_user_indexes().await;
         }
 
         cfg
@@ -256,6 +266,120 @@ impl Config {
             }
             Err(e) => panic!("Failed to find user: {:?}", e),
         }
+    }
+
+    /// # Summary
+    ///
+    /// Create default indexes for the Permission collection.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the indexes could not be created.
+    pub async fn create_permission_indexes(&self) {
+        info!("Creating indexes for the Permission collection");
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "name": 1u32 })
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Permission>(&self.permission_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "name": "text", "_id": "text" })
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Permission>(&self.permission_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+    }
+
+    /// # Summary
+    ///
+    /// Create default indexes for the Role collection.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the indexes could not be created.
+    pub async fn create_role_indexes(&self) {
+        info!("Creating indexes for the Role collection");
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "name": 1u32 })
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Role>(&self.role_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "name": "text", "_id": "text" })
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Role>(&self.role_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+    }
+
+    /// # Summary
+    ///
+    /// Create default indexes for the User collection.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the indexes could not be created.
+    pub async fn create_user_indexes(&self) {
+        info!("Creating indexes for the User collection");
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "username": 1u32})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Permission>(&self.user_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "email": 1u32})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Permission>(&self.user_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "_id": "text", "username": "text", "email": "text", "firstName": "text", "lastName": "text"})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Permission>(&self.user_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
     }
 
     /// # Summary

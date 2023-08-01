@@ -9,7 +9,8 @@ The service is written in Rust and uses the [actix-web](https://crates.io/crates
 
 Users, when authenticated, will be given a JWT token which can be used to access other services.
 
-A [React](https://react.dev/)-based frontend for `auth-rs` is also available [here](https://github.com/Opserva-io/auth-js).
+A [React](https://react.dev/)-based frontend for `auth-rs` is also
+available [here](https://github.com/Opserva-io/auth-js).
 
 ## Features
 
@@ -32,30 +33,31 @@ A [React](https://react.dev/)-based frontend for `auth-rs` is also available [he
 
 The following environment variables can be used to configure `auth-rs`:
 
-| Variable                 | Default | Type        | Description                                                          |
-|--------------------------|---------|-------------|----------------------------------------------------------------------|
-| SERVER_ADDR              | N/A     | `IPAddress` | The server address                                                   |
-| SERVER_PORT              | N/A     | `u16`       | The port that the server will use                                    |
-| DB_CONNECTION_STRING     | N/A     | `String`    | The MongoDB connection string                                        |
-| DB_DATABASE              | N/A     | `String`    | The MongoDB Database that will be used by `auth-rs`                  |
-| DB_PERMISSION_COLLECTION | N/A     | `String`    | The collection that holds the `Permission` entities                  |
-| DB_ROLE_COLLECTION       | N/A     | `String`    | The collection that holds the `Role` entities                        |
-| DB_USER_COLLECTION       | N/A     | `String`    | The collection that holds the `User` entities                        |
-| HASH_SALT                | N/A     | `String`    | The salt to use to hash passwords using `argon2`                     |
-| JWT_SECRET               | N/A     | `String`    | The JWT secret                                                       |
-| JWT_EXPIRATION           | N/A     | `usize`     | The JWT expiration time in seconds                                   |
-| RUST_LOG                 | N/A     | `String`    | The default log level                                                |
-| RUST_BACKTRACE           | N/A     | `String`    | Controls whether or not backtraces are displayed when a panic occurs |
-| GENERATE_DEFAULT_USER    | N/A     | `bool`      | Sets whether a default administrator user should be generated        |
-| DEFAULT_USER_USERNAME    | N/A     | `String`    | The default user's username                                          |
-| DEFAULT_USER_EMAIL       | N/A     | `String`    | The default user's email address                                     |
-| DEFAULT_USER_PASSWORD    | N/A     | `String`    | The default user's password                                          |
-| DEFAULT_USER_ENABLED     | N/A     | `bool`      | Sets whether the default user is enabled or not                      |
+| Variable                 | Default       | Type        | Description                                                          |
+|--------------------------|---------------|-------------|----------------------------------------------------------------------|
+| SERVER_ADDR              | `127.0.0.1`   | `IPAddress` | The server address                                                   |
+| SERVER_PORT              | `8080`        | `u16`       | The port that the server will use                                    |
+| DB_CONNECTION_STRING     | N/A           | `String`    | The MongoDB connection string                                        |
+| DB_DATABASE              | N/A           | `String`    | The MongoDB Database that will be used by `auth-rs`                  |
+| DB_PERMISSION_COLLECTION | `permissions` | `String`    | The collection that holds the `Permission` entities                  |
+| DB_ROLE_COLLECTION       | `roles`       | `String`    | The collection that holds the `Role` entities                        |
+| DB_USER_COLLECTION       | `users`       | `String`    | The collection that holds the `User` entities                        |
+| DB_CREATE_INDEXES        | `true`        | `bool`      | Automatically create collection indexes                              |
+| HASH_SALT                | N/A           | `String`    | The salt to use to hash passwords using `argon2`                     |
+| JWT_SECRET               | N/A           | `String`    | The JWT secret                                                       |
+| JWT_EXPIRATION           | `3600`        | `usize`     | The JWT expiration time in seconds                                   |
+| RUST_LOG                 | N/A           | `String`    | The default log level                                                |
+| RUST_BACKTRACE           | N/A           | `String`    | Controls whether or not backtraces are displayed when a panic occurs |
+| GENERATE_DEFAULT_USER    | `true`        | `bool`      | Sets whether a default administrator user should be generated        |
+| DEFAULT_USER_USERNAME    | N/A           | `String`    | The default user's username                                          |
+| DEFAULT_USER_EMAIL       | N/A           | `String`    | The default user's email address                                     |
+| DEFAULT_USER_PASSWORD    | N/A           | `String`    | The default user's password                                          |
+| DEFAULT_USER_ENABLED     | N/A           | `bool`      | Sets whether the default user is enabled or not                      |
 
 ## API
 
-`auth-rs` exposes a REST API that can be used to interact with the service.
-Other (micro)services can use this API to authenticate and authorize users.
+`auth-rs` exposes a REST API that can be used to interact with the service using Create, Read, Update and Delete (CRUD) requests.
+Other (micro)services can use this API to authenticate and authorize users (and generate and verify JWT tokens).
 
 See the [full API documentation](#) for more information.
 
@@ -68,7 +70,7 @@ See the [full API documentation](#) for more information.
 ```http
 POST /authentication/login
 {
-  "email": "email",
+  "username": "username",
   "password": "password"
 }
 ```
@@ -217,6 +219,44 @@ Authorization: Bearer access token here
 ]
 ```
 
+### Searching
+
+You can search for `users`, `roles` and `permissions` by using the `text` query parameter. Searching is case-insensitive.
+
+#### Request
+
+```http
+GET /users/?text=admin
+Authorization: Bearer token here
+```
+
+#### Response
+
+```http
+[
+  {
+    "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
+    "username": "admin",
+    "email": "test@codedead.com",
+    "firstName": "Test",
+    "lastName": "Test",
+    "roles": [
+      {
+        "id": "16a639cc-2240-4d2f-8def-bea0a729dd9e",
+        "name": "DEFAULT",
+        "description": "The default role",
+        "permissions": [],
+        "createdAt": "2023-08-01T00:16:27.223266792+00:00",
+        "updatedAt": "2023-08-01T00:16:27.223266792+00:00"
+      }
+    ],
+    "createdAt": "2023-08-01T00:17:43.807272087+00:00",
+    "updatedAt": "2023-08-01T00:17:43.807272087+00:00",
+    "enabled": true
+  }
+]
+```
+
 ## Building
 
 In order to build `auth-rs`, you will need to have Rust installed.
@@ -265,4 +305,4 @@ This library is maintained by CodeDead. You can find more about us using the fol
 * [Twitter](https://twitter.com/C0DEDEAD)
 * [Facebook](https://facebook.com/deadlinecodedead)
 
-Copyright © 2023 CodeDead
+Copyright © 2023 [CodeDead](https://codedead.com)

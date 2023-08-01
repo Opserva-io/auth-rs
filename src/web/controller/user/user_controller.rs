@@ -6,6 +6,7 @@ use crate::repository::role::role_repository::Error as RoleError;
 use crate::repository::user::user::User;
 use crate::repository::user::user_repository::Error;
 use crate::web::dto::role::role_dto::RoleDto;
+use crate::web::dto::search::search_request::SearchRequest;
 use crate::web::dto::user::create_user::CreateUser;
 use crate::web::dto::user::update_password::{AdminUpdatePassword, UpdatePassword};
 use crate::web::dto::user::update_user::UpdateUser;
@@ -230,15 +231,33 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
 
 #[get("/")]
 #[has_permissions("CAN_READ_USER")]
-pub async fn find_all(pool: web::Data<Config>) -> HttpResponse {
-    let res = match pool.services.user_service.find_all(&pool.database).await {
-        Ok(d) => d,
-        Err(e) => {
-            error!("Error finding all Users: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new(&e.to_string()));
-        }
-    };
+pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>) -> HttpResponse {
+    let res;
+
+    if search.text.is_none() {
+        res = match pool.services.user_service.find_all(&pool.database).await {
+            Ok(d) => d,
+            Err(e) => {
+                error!("Error while finding all Users: {}", e);
+                return HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string()));
+            }
+        };
+    } else {
+        res = match pool
+            .services
+            .user_service
+            .search(&search.text.clone().unwrap(), &pool.database)
+            .await
+        {
+            Ok(d) => d,
+            Err(e) => {
+                error!("Error while searching for Users: {}", e);
+                return HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string()));
+            }
+        };
+    }
 
     let mut user_dto_list: Vec<UserDto> = vec![];
     for u in &res {

@@ -20,6 +20,7 @@ pub enum Error {
     EmptyCollection,
     EmptyId,
     EmptyName,
+    EmptyTextSearch,
     NameAlreadyTaken,
     PermissionNotFound(String),
     MongoDb(MongoError),
@@ -50,6 +51,7 @@ impl fmt::Display for Error {
             Error::EmptyCollection => write!(f, "Empty collection"),
             Error::EmptyId => write!(f, "Empty Permission ID"),
             Error::EmptyName => write!(f, "Empty Permission name"),
+            Error::EmptyTextSearch => write!(f, "Empty text search"),
             Error::NameAlreadyTaken => write!(f, "Permission name already taken"),
             Error::PermissionNotFound(id) => write!(f, "Permission not found: {}", id),
             Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
@@ -435,5 +437,47 @@ impl PermissionRepository {
         };
 
         Ok(())
+    }
+
+    /// # Summary
+    ///
+    /// Search for Permissions.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to search for.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let permission_repository = PermissionRepository::new(String::from("permissions"));
+    /// let permissions = permission_repository.search(String::from("permission_name"), &db).await;
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<Permission>, Error>` - The result of the operation.
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Permission>, Error> {
+        if text.is_empty() {
+            return Err(Error::EmptyTextSearch);
+        }
+
+        let filter = doc! {
+            "$text": {
+                "$search": text,
+            },
+        };
+
+        let cursor = match db
+            .collection::<Permission>(&self.collection)
+            .find(filter, None)
+            .await
+        {
+            Ok(d) => d,
+            Err(e) => return Err(Error::MongoDb(e)),
+        };
+
+        Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
     }
 }
