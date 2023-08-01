@@ -6,6 +6,7 @@ use crate::repository::permission::permission_repository::Error;
 use crate::web::dto::permission::create_permission::CreatePermission;
 use crate::web::dto::permission::permission_dto::PermissionDto;
 use crate::web::dto::permission::update_permission::UpdatePermission;
+use crate::web::dto::search::search_request::SearchRequest;
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
 use log::error;
@@ -40,20 +41,41 @@ pub async fn create_permission(
 
 #[get("/")]
 #[has_permissions("CAN_READ_PERMISSION")]
-pub async fn find_all_permissions(pool: web::Data<Config>) -> HttpResponse {
-    let res = match pool
-        .services
-        .permission_service
-        .find_all(&pool.database)
-        .await
-    {
-        Ok(d) => d,
-        Err(e) => {
-            error!("Error while finding all permissions: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new(&e.to_string()));
-        }
-    };
+pub async fn find_all_permissions(
+    search: web::Query<SearchRequest>,
+    pool: web::Data<Config>,
+) -> HttpResponse {
+    let res;
+
+    if search.text.is_none() {
+        res = match pool
+            .services
+            .permission_service
+            .find_all(&pool.database)
+            .await
+        {
+            Ok(d) => d,
+            Err(e) => {
+                error!("Error while finding all permissions: {}", e);
+                return HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string()));
+            }
+        };
+    } else {
+        res = match pool
+            .services
+            .permission_service
+            .search(&search.text.clone().unwrap(), &pool.database)
+            .await
+        {
+            Ok(d) => d,
+            Err(e) => {
+                error!("Error while searching for permissions: {}", e);
+                return HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string()));
+            }
+        };
+    }
 
     let dto_list = res
         .into_iter()

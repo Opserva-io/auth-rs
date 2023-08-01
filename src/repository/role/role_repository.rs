@@ -20,6 +20,7 @@ pub enum Error {
     EmptyCollection,
     EmptyId,
     EmptyName,
+    EmptyTextSearch,
     NameAlreadyTaken,
     RoleNotFound(String),
     MongoDb(MongoError),
@@ -43,6 +44,7 @@ impl fmt::Display for Error {
             Error::EmptyCollection => write!(f, "Empty collection"),
             Error::EmptyId => write!(f, "Empty Role ID"),
             Error::EmptyName => write!(f, "Empty Role name"),
+            Error::EmptyTextSearch => write!(f, "Empty text search"),
             Error::NameAlreadyTaken => write!(f, "Role name already taken"),
             Error::RoleNotFound(id) => write!(f, "Role not found: {}", id),
             Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
@@ -509,5 +511,54 @@ impl RoleRepository {
             Ok(_) => Ok(()),
             Err(e) => Err(Error::MongoDb(e)),
         }
+    }
+
+    /// # Summary
+    ///
+    /// Search for Roles.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to search for.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let role_repository = match RoleRepository::new("roles".to_string()) {
+    ///   Ok(d) => d,
+    ///   Err(e) => panic!("Failed to initialize Role repository: {:?}", e),
+    /// };
+    ///
+    /// match role_repository.search("text", &db).await {
+    ///   Ok(_) => (),
+    ///   Err(e) => panic!("Failed to search for Roles: {:?}", e),
+    /// };
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<Role>, Error>` - The result of the operation.
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Role>, Error> {
+        if text.is_empty() {
+            return Err(Error::EmptyTextSearch);
+        }
+
+        let filter = doc! {
+            "$text": {
+                "$search": text,
+            },
+        };
+
+        let cursor = match db
+            .collection::<Role>(&self.collection)
+            .find(filter, None)
+            .await
+        {
+            Ok(d) => d,
+            Err(e) => return Err(Error::MongoDb(e)),
+        };
+
+        Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
     }
 }

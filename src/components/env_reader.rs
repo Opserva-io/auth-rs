@@ -1,5 +1,5 @@
-use crate::configuration::collection_config::CollectionConfig;
 use crate::configuration::config::Config;
+use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
 use std::env;
@@ -26,7 +26,7 @@ impl EnvReader {
     pub async fn read_configuration() -> Config {
         let addr = match env::var("SERVER_ADDR") {
             Ok(d) => d,
-            Err(_) => panic!("No address specified"),
+            Err(_) => String::from("127.0.0.1"),
         };
 
         let port = match env::var("SERVER_PORT") {
@@ -34,7 +34,7 @@ impl EnvReader {
                 let res: u16 = d.trim().parse().expect("PORT must be a number");
                 res
             }
-            Err(_) => panic!("No port specified"),
+            Err(_) => 8080,
         };
 
         let conn_string = match env::var("DB_CONNECTION_STRING") {
@@ -49,17 +49,17 @@ impl EnvReader {
 
         let permission_collection = match env::var("DB_PERMISSION_COLLECTION") {
             Ok(d) => d,
-            Err(_) => panic!("No permission collection specified"),
+            Err(_) => String::from("permissions"),
         };
 
         let role_collection = match env::var("DB_ROLE_COLLECTION") {
             Ok(d) => d,
-            Err(_) => panic!("No role collection specified"),
+            Err(_) => String::from("roles"),
         };
 
         let user_collection = match env::var("DB_USER_COLLECTION") {
             Ok(d) => d,
-            Err(_) => panic!("No user collection specified"),
+            Err(_) => String::from("users"),
         };
 
         let salt = match env::var("HASH_SALT") {
@@ -77,11 +77,8 @@ impl EnvReader {
                 let res: usize = d.trim().parse().expect("JWT_EXPIRATION must be a number");
                 res
             }
-            Err(_) => panic!("No JWT expiration specified"),
+            Err(_) => 3600,
         };
-
-        let collection_config =
-            CollectionConfig::new(permission_collection, role_collection, user_collection);
 
         let default_username = match env::var("DEFAULT_USER_USERNAME") {
             Ok(d) => d,
@@ -117,7 +114,18 @@ impl EnvReader {
                     .expect("GENERATE_DEFAULT_USER must be a boolean");
                 res
             }
-            Err(_) => panic!("No generate default user specified"),
+            Err(_) => true,
+        };
+
+        let create_indexes = match env::var("DB_CREATE_INDEXES") {
+            Ok(d) => {
+                let res: bool = d
+                    .trim()
+                    .parse()
+                    .expect("DB_CREATE_INDEXES must be a boolean");
+                res
+            }
+            Err(_) => true,
         };
 
         let default_user_config = DefaultUserConfig::new(
@@ -127,12 +135,19 @@ impl EnvReader {
             default_user_enabled,
         );
 
+        let db_config = DbConfig::new(
+            conn_string,
+            database,
+            permission_collection,
+            role_collection,
+            user_collection,
+            create_indexes,
+        );
+
         Config::new(
             addr,
             port,
-            &conn_string,
-            &database,
-            collection_config,
+            db_config,
             default_user_config,
             generate_default_user,
             salt,

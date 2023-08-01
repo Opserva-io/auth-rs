@@ -144,6 +144,35 @@ impl UserService {
 
     /// # Summary
     ///
+    /// Find a User entity by its username.
+    ///
+    /// # Arguments
+    ///
+    /// * `username` - The username of the User entity.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    /// let user = user_repository.find_by_username(&String::from("username"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<User>, Error>` - The result of the operation.
+    pub async fn find_by_username(
+        &self,
+        username: &str,
+        db: &Database,
+    ) -> Result<Option<User>, Error> {
+        info!("Finding User by username: {}", username);
+        self.user_repository.find_by_username(username, db).await
+    }
+
+    /// # Summary
+    ///
     /// Update a user entity.
     ///
     /// # Arguments
@@ -263,5 +292,33 @@ impl UserService {
         self.user_repository
             .delete_role_from_all_users(role_id, db)
             .await
+    }
+
+    /// # Summary
+    ///
+    /// Search for Users.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to search for.
+    /// * `db` - The Database to be used.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let user_repository = UserRepository::new(String::from("users"));
+    /// let user_service = UserService::new(user_repository);
+    /// let db = mongodb::Database::new();
+    ///
+    /// let users = user_service.search("text", &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Vec<User>` - The Users that match the search criteria.
+    /// * `Error` - The Error that occurred.
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<User>, Error> {
+        info!("Searching Users: {}", text);
+        self.user_repository.search(text, db).await
     }
 }

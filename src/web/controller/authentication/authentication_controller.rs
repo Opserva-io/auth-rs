@@ -92,8 +92,8 @@ pub async fn login(
     login_request: web::Json<LoginRequest>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
-    if login_request.email.is_empty() {
-        return HttpResponse::BadRequest().json("Email is required");
+    if login_request.username.is_empty() {
+        return HttpResponse::BadRequest().json("Username is required");
     }
     if login_request.password.is_empty() {
         return HttpResponse::BadRequest().json("Password is required");
@@ -102,7 +102,7 @@ pub async fn login(
     let user = match pool
         .services
         .user_service
-        .find_by_email(&login_request.email, &pool.database)
+        .find_by_username(&login_request.username, &pool.database)
         .await
     {
         Ok(u) => match u {

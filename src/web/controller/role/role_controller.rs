@@ -8,6 +8,7 @@ use crate::web::dto::permission::permission_dto::PermissionDto;
 use crate::web::dto::role::create_role::CreateRole;
 use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::role::update_role::UpdateRole;
+use crate::web::dto::search::search_request::SearchRequest;
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
 use log::error;
@@ -192,15 +193,36 @@ pub async fn create(role_dto: web::Json<CreateRole>, pool: web::Data<Config>) ->
 
 #[get("/")]
 #[has_permissions("CAN_READ_ROLE")]
-pub async fn find_all_roles(pool: web::Data<Config>) -> HttpResponse {
-    let res = match pool.services.role_service.find_all(&pool.database).await {
-        Ok(d) => d,
-        Err(e) => {
-            error!("Error finding all Roles: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new(&e.to_string()));
-        }
-    };
+pub async fn find_all_roles(
+    search: web::Query<SearchRequest>,
+    pool: web::Data<Config>,
+) -> HttpResponse {
+    let res;
+
+    if search.text.is_none() {
+        res = match pool.services.role_service.find_all(&pool.database).await {
+            Ok(d) => d,
+            Err(e) => {
+                error!("Error while finding all Roles: {}", e);
+                return HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string()));
+            }
+        };
+    } else {
+        res = match pool
+            .services
+            .role_service
+            .search(&search.text.clone().unwrap(), &pool.database)
+            .await
+        {
+            Ok(d) => d,
+            Err(e) => {
+                error!("Error while searching for Roles: {}", e);
+                return HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string()));
+            }
+        };
+    }
 
     let mut role_dto_list: Vec<RoleDto> = vec![];
     for r in &res {

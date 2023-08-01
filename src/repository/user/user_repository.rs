@@ -21,6 +21,7 @@ pub enum Error {
     EmptyCollection,
     EmptyEmail,
     EmptyPassword,
+    EmptyTextSearch,
     UserNotFound(String),
     UsernameAlreadyTaken,
     EmailAlreadyTaken,
@@ -54,6 +55,7 @@ impl Display for Error {
             Error::EmptyCollection => write!(f, "Empty collection"),
             Error::EmptyEmail => write!(f, "Empty email"),
             Error::EmptyPassword => write!(f, "Empty password"),
+            Error::EmptyTextSearch => write!(f, "Empty text search"),
             Error::UserNotFound(id) => write!(f, "User not found: {}", id),
             Error::UsernameAlreadyTaken => write!(f, "Username already taken"),
             Error::EmailAlreadyTaken => write!(f, "Email already taken"),
@@ -566,5 +568,49 @@ impl UserRepository {
             Ok(_) => Ok(()),
             Err(e) => Err(Error::MongoDb(e)),
         }
+    }
+
+    /// # Summary
+    ///
+    /// Search for users.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to search for.
+    /// * `db` - The Database.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let db = Database::new();
+    /// let user_repository = UserRepository::new(String::from("users"), email_regex);
+    ///
+    /// user_repository.search(&String::from("text"), &db);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<User>, Error>` - The result of the operation.
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<User>, Error> {
+        if text.is_empty() {
+            return Err(Error::EmptyTextSearch);
+        }
+
+        let filter = doc! {
+            "$text": {
+                "$search": text,
+            },
+        };
+
+        let cursor = match db
+            .collection::<User>(&self.collection)
+            .find(filter, None)
+            .await
+        {
+            Ok(d) => d,
+            Err(e) => return Err(Error::MongoDb(e)),
+        };
+
+        Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
     }
 }

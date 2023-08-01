@@ -17,6 +17,20 @@ pub struct Services {
 }
 
 impl Services {
+    /// # Summary
+    ///
+    /// Create a new instance of Services.
+    ///
+    /// # Arguments
+    ///
+    /// * `permission_service` - The PermissionService.
+    /// * `role_service` - The RoleService.
+    /// * `user_service` - The UserService.
+    /// * `jwt_service` - The JwtService.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of Services.
     pub fn new(
         permission_service: PermissionService,
         role_service: RoleService,

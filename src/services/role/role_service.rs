@@ -273,4 +273,32 @@ impl RoleService {
             .delete_permission_from_all_roles(permission_id, db)
             .await
     }
+
+    /// # Summary
+    ///
+    /// Search for Role entities by text.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to search for.
+    /// * `db` - The Database to be used.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let role_repository = RoleRepository::new(String::from("roles"));
+    /// let role_service = RoleService::new(role_repository);
+    /// let db = mongodb::Database::new();
+    ///
+    /// let res = role_service.search("text", &db).await;
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Vec<Role>` - The vector of Role entities.
+    /// * `Error` - The Error that occurred.
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Role>, Error> {
+        info!("Searching for Role by text: {}", text);
+        self.role_repository.search(text, db).await
+    }
 }
