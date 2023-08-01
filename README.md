@@ -9,6 +9,8 @@ The service is written in Rust and uses the [actix-web](https://crates.io/crates
 
 Users, when authenticated, will be given a JWT token which can be used to access other services.
 
+A [React](https://react.dev/)-based frontend for `auth-rs` is also available [here](https://github.com/Opserva-io/auth-js).
+
 ## Features
 
 - [X] Authentication

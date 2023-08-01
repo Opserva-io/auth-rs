@@ -15,6 +15,19 @@ mod repository;
 mod services;
 mod web;
 
+/// # Summary
+///
+/// The entry point to the application
+///
+/// # Description
+///
+/// The main function is the entry point to the application. It reads the configuration from the .env file
+/// and starts the application server based on the configuration.
+///
+/// # Returns
+///
+/// Returns a Result of type std::io::Result<()>. If the server starts successfully, it returns Ok(()).
+/// Otherwise, it returns an Err with an error message.
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();

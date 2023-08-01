@@ -11,6 +11,15 @@ impl EnvReader {
     ///
     /// Reads the configuration from the environment variables.
     ///
+    /// # Example
+    ///
+    /// ```
+    /// use crate::components::env_reader::EnvReader;
+    /// use crate::configuration::config::Config;
+    ///
+    /// let config = EnvReader::read_configuration().await;
+    /// ```
+    ///
     /// # Returns
     ///
     /// A Config instance.
