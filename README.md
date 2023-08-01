@@ -35,7 +35,7 @@ The following environment variables can be used to configure `auth-rs`:
 | DB_PERMISSION_COLLECTION | N/A     | `String`    | The collection that holds the `Permission` entities                  |
 | DB_ROLE_COLLECTION       | N/A     | `String`    | The collection that holds the `Role` entities                        |
 | DB_USER_COLLECTION       | N/A     | `String`    | The collection that holds the `User` entities                        |
-| HASH_SALT                | N/A     | `String`    | The `argon2` salt to use to hash passwords                           |
+| HASH_SALT                | N/A     | `String`    | The salt to use to hash passwords using `argon2`                     |
 | JWT_SECRET               | N/A     | `String`    | The JWT secret                                                       |
 | JWT_EXPIRATION           | N/A     | `usize`     | The JWT expiration time in seconds                                   |
 | RUST_LOG                 | N/A     | `String`    | The default log level                                                |
@@ -52,7 +52,6 @@ The following environment variables can be used to configure `auth-rs`:
 Other (micro)services can use this API to authenticate and authorize users.
 
 See the [full API documentation](#) for more information.
-
 
 ### Authentication
 
