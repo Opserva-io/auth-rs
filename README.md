@@ -54,12 +54,14 @@ The following environment variables can be used to configure `auth-rs`:
 | DEFAULT_USER_PASSWORD    | N/A           | `String`    | The default user's password                                          |
 | DEFAULT_USER_ENABLED     | N/A           | `bool`      | Sets whether the default user is enabled or not                      |
 
+For more information about the environment variables, see the [Configuration documentation](/docs/CONFIGURATION.md).
+
 ## API
 
 `auth-rs` exposes a REST API that can be used to interact with the service using Create, Read, Update and Delete (CRUD) requests.
 Other (micro)services can use this API to authenticate and authorize users (and generate and verify JWT tokens).
 
-See the [full API documentation](#) for more information.
+See the [full API documentation](/docs/API.md) for more information.
 
 ### Authentication
 
@@ -79,17 +81,17 @@ POST /authentication/login
 
 ```http
 {
-  "token": "Bearer access token here"
+  "token": "Bearer <access token here>"
 }
 ```
 
-#### Retrieve current user
+#### Verify JWT and retrieve current user
 
 ##### Request
 
 ```http
 GET /authentication/current
-Authorization: Bearer access token here
+Authorization: Bearer <access token here>
 ```
 
 ##### Response
@@ -126,7 +128,7 @@ Authorization: Bearer access token here
 
 ```http
 GET /permissions
-Authorization: Bearer access token here
+Authorization: Bearer <access token here>
 ```
 
 ##### Response
@@ -149,7 +151,7 @@ Authorization: Bearer access token here
 
 ```http
 GET /roles
-Authorization: Bearer access token here
+Authorization: Bearer <access token here>
 ```
 
 ##### Response
@@ -181,7 +183,7 @@ Authorization: Bearer access token here
 
 ```http
 GET /users
-Authorization: Bearer access token here
+Authorization: Bearer <access token here>
 ```
 
 ##### Response
@@ -227,7 +229,7 @@ You can search for `users`, `roles` and `permissions` by using the `text` query 
 
 ```http
 GET /users/?text=admin
-Authorization: Bearer token here
+Authorization: Bearer <access token here>
 ```
 
 #### Response
@@ -270,7 +272,7 @@ You can build `auth-rs` using `cargo`:
 cargo build
 ```
 
-You can build a `release` version of `auth-rs` using `cargo`:
+You can build an optimized `release` version of `auth-rs` using `cargo`:
 
 ```shell
 cargo build --release
