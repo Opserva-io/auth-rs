@@ -4,6 +4,23 @@ use actix_web::error::ErrorInternalServerError;
 use actix_web::Error;
 use log::error;
 
+/// # Summary
+///
+/// Extract the permissions from the request.
+///
+/// # Arguments
+///
+/// * `req` - The request to extract the permissions from.
+///
+/// # Example
+///
+/// ```
+/// let permissions = JwtExtractor::extract(&req).await;
+/// ```
+///
+/// # Returns
+///
+/// * `Result<Vec<String>, Error>` - The permissions from the request.
 pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
     let res = match req.app_data::<actix_web::web::Data<Config>>() {
         None => {
