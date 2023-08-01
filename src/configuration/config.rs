@@ -350,6 +350,13 @@ impl Config {
             )
             .await;
 
+        let can_update_self = self
+            .find_or_create_permission(
+                "CAN_UPDATE_SELF",
+                Some("The ability to update your own user".to_string()),
+            )
+            .await;
+
         let admin_role = self
             .find_or_create_role(
                 "ADMIN",
@@ -367,13 +374,22 @@ impl Config {
                     read_user.id.to_string(),
                     update_user.id.to_string(),
                     delete_user.id.to_string(),
+                    can_update_self.id.to_string(),
                 ]),
+            )
+            .await;
+
+        let default_role = self
+            .find_or_create_role(
+                "DEFAULT",
+                Some("The default role".to_string()),
+                Some(vec![can_update_self.id.to_string()]),
             )
             .await;
 
         self.find_or_create_user(
             default_user_config,
-            Some(vec![admin_role.id.to_string()]),
+            Some(vec![admin_role.id.to_string(), default_role.id.to_string()]),
             &self.salt,
             email_regex,
         )

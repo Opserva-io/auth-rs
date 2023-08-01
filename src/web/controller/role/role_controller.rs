@@ -9,6 +9,7 @@ use crate::web::dto::role::create_role::CreateRole;
 use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::role::update_role::UpdateRole;
 use actix_web::{delete, get, post, put, web, HttpResponse};
+use actix_web_grants::proc_macro::has_permissions;
 use log::error;
 
 /// # Summary
@@ -146,6 +147,7 @@ pub async fn validate_permissions(
 }
 
 #[post("/")]
+#[has_permissions("CAN_CREATE_ROLE")]
 pub async fn create(role_dto: web::Json<CreateRole>, pool: web::Data<Config>) -> HttpResponse {
     if role_dto.name.is_empty() {
         return HttpResponse::BadRequest().json(BadRequest::new("Empty name"));
@@ -189,6 +191,7 @@ pub async fn create(role_dto: web::Json<CreateRole>, pool: web::Data<Config>) ->
 }
 
 #[get("/")]
+#[has_permissions("CAN_READ_ROLE")]
 pub async fn find_all_roles(pool: web::Data<Config>) -> HttpResponse {
     let res = match pool.services.role_service.find_all(&pool.database).await {
         Ok(d) => d,
@@ -217,6 +220,7 @@ pub async fn find_all_roles(pool: web::Data<Config>) -> HttpResponse {
 }
 
 #[get("/{id}")]
+#[has_permissions("CAN_READ_ROLE")]
 pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     let res = match pool
         .services
@@ -245,6 +249,7 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
 }
 
 #[put("/{id}")]
+#[has_permissions("CAN_UPDATE_ROLE")]
 pub async fn update(
     path: web::Path<String>,
     update: web::Json<UpdateRole>,
@@ -312,6 +317,7 @@ pub async fn update(
 }
 
 #[delete("/{id}")]
+#[has_permissions("CAN_DELETE_ROLE")]
 pub async fn delete(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     match pool
         .services

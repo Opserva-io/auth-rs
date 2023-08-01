@@ -11,6 +11,7 @@ use crate::web::dto::user::update_password::{AdminUpdatePassword, UpdatePassword
 use crate::web::dto::user::update_user::UpdateUser;
 use crate::web::dto::user::user_dto::UserDto;
 use actix_web::{delete, get, post, put, web, HttpResponse};
+use actix_web_grants::proc_macro::has_permissions;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 use log::error;
@@ -22,6 +23,17 @@ pub enum ConvertError {
 }
 
 impl Display for ConvertError {
+    /// # Summary
+    ///
+    /// Display the error
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - The formatter
+    ///
+    /// # Returns
+    ///
+    /// * `std::fmt::Result` - The result of the display
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             ConvertError::RoleError(e) => write!(f, "{}", e),
@@ -30,6 +42,25 @@ impl Display for ConvertError {
     }
 }
 
+/// # Summary
+///
+/// Validate whether the roles exist
+///
+/// # Arguments
+///
+/// * `roles` - The roles to validate
+/// * `pool` - The actix-web shared data
+///
+/// # Example
+///
+/// ```
+/// let roles = vec!["role1".to_string(), "role2".to_string()];
+/// let res = validate_roles(&roles, &pool);
+/// ```
+///
+/// # Returns
+///
+/// * `Result<(), RoleError>` - The result containing the () or the RoleError that occurred
 async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<(), RoleError> {
     if roles.is_none() {
         return Ok(());
@@ -59,6 +90,25 @@ async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<()
     Ok(())
 }
 
+/// # Summary
+///
+/// Convert a User to a UserDto
+///
+/// # Arguments
+///
+/// * `permissions` - The permissions to validate
+/// * `pool` - The actix-web shared data
+///
+/// # Example
+///
+/// ```
+/// let user = User::new("username", "password", "email");
+/// let res = convert_user_to_dto(user, &pool);
+/// ```
+///
+/// # Returns
+///
+/// * `Result<UserDto, ConvertError>` - The result containing the UserDto or the ConvertError that occurred
 async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, ConvertError> {
     let mut user_dto = UserDto::from(user.clone());
 
@@ -103,6 +153,7 @@ async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, Conve
 }
 
 #[post("/")]
+#[has_permissions("CAN_CREATE_USER")]
 pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) -> HttpResponse {
     if user_dto.username.is_empty() {
         return HttpResponse::BadRequest().json(BadRequest::new("Empty usernames are not allowed"));
@@ -178,6 +229,7 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
 }
 
 #[get("/")]
+#[has_permissions("CAN_READ_USER")]
 pub async fn find_all(pool: web::Data<Config>) -> HttpResponse {
     let res = match pool.services.user_service.find_all(&pool.database).await {
         Ok(d) => d,
@@ -206,6 +258,7 @@ pub async fn find_all(pool: web::Data<Config>) -> HttpResponse {
 }
 
 #[get("/{id}")]
+#[has_permissions("CAN_READ_USER")]
 pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     let id = id.into_inner();
 
@@ -239,6 +292,7 @@ pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpR
 }
 
 #[put("/{id}")]
+#[has_permissions("CAN_UPDATE_USER")]
 pub async fn update(
     id: web::Path<String>,
     user_dto: web::Json<UpdateUser>,
@@ -319,6 +373,7 @@ pub async fn update(
 }
 
 #[put("/{id}/password")]
+#[has_permissions("CAN_UPDATE_SELF")]
 pub async fn update_password(
     id: web::Path<String>,
     update_password: web::Json<UpdatePassword>,
@@ -406,6 +461,7 @@ pub async fn update_password(
 }
 
 #[put("/{id}/password/admin")]
+#[has_permissions("CAN_UPDATE_USER")]
 pub async fn admin_update_password(
     id: web::Path<String>,
     admin_update_password: web::Json<AdminUpdatePassword>,
@@ -472,6 +528,7 @@ pub async fn admin_update_password(
 }
 
 #[delete("/{id}")]
+#[has_permissions("CAN_UPDATE_USER")]
 pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     match pool
         .services
