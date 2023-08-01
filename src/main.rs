@@ -31,7 +31,9 @@ async fn main() -> std::io::Result<()> {
         let logger = Logger::default();
         App::new()
             .wrap(logger)
-            .wrap(GrantsMiddleware::with_extractor(web::extractors::jwt_extractor::extract))
+            .wrap(GrantsMiddleware::with_extractor(
+                web::extractors::jwt_extractor::extract,
+            ))
             .app_data(a_web::Data::new(config.clone()))
             .wrap(Cors::permissive())
             .configure(Controller::configure_routes)

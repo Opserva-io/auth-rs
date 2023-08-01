@@ -1,8 +1,8 @@
 use crate::configuration::jwt_config::JwtConfig;
 use jsonwebtoken::{encode, DecodingKey, EncodingKey, Header};
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use log::error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -120,7 +120,7 @@ impl JwtService {
             Err(e) => {
                 error!("Error generating JWT token: {}", e.to_string());
                 None
-            },
+            }
         }
     }
 
@@ -153,7 +153,7 @@ impl JwtService {
             Err(e) => {
                 error!("Error verifying JWT token: {}", e.to_string());
                 Err(Error::InvalidToken(e.to_string()))
-            },
+            }
         }
     }
 }

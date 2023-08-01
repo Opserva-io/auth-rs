@@ -87,7 +87,7 @@ async fn convert_user_to_simple_dto(
     Ok(user_dto)
 }
 
-#[post("/")]
+#[post("/login")]
 pub async fn login(
     login_request: web::Json<LoginRequest>,
     pool: web::Data<Config>,

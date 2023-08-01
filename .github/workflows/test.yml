@@ -1,0 +1,33 @@
+name: Test
+
+permissions: read-all
+
+on:
+  pull_request:
+    branches:
+      - master
+      - development
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install latest rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          override: true
+
+      - name: Check code formatting
+        run: cargo fmt --all -- --check
+
+      - name: Test code
+        run: cargo test --verbose --all

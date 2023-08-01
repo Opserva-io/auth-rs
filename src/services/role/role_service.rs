@@ -1,8 +1,8 @@
 use crate::repository::role::role::Role;
 use crate::repository::role::role_repository::{Error, RoleRepository};
+use crate::services::user::user_service::UserService;
 use log::info;
 use mongodb::Database;
-use crate::services::user::user_service::UserService;
 
 #[derive(Clone)]
 pub struct RoleService {
@@ -227,7 +227,12 @@ impl RoleService {
     ///
     /// * `()` - The operation was successful.
     /// * `Error` - The Error that occurred.
-    pub async fn delete(&self, id: &str, db: &Database, user_service: &UserService) -> Result<(), Error> {
+    pub async fn delete(
+        &self,
+        id: &str,
+        db: &Database,
+        user_service: &UserService,
+    ) -> Result<(), Error> {
         info!("Deleting Role by ID: {}", id);
         self.role_repository.delete(id, db, user_service).await
     }
@@ -260,7 +265,10 @@ impl RoleService {
         permission_id: &str,
         db: &Database,
     ) -> Result<(), Error> {
-        info!("Deleting permission {} from all Role entities", permission_id);
+        info!(
+            "Deleting permission {} from all Role entities",
+            permission_id
+        );
         self.role_repository
             .delete_permission_from_all_roles(permission_id, db)
             .await

@@ -450,12 +450,10 @@ impl RoleRepository {
             .delete_one(filter, None)
             .await
         {
-            Ok(_) => {
-                match user_service.delete_role_from_all_users(id, db).await {
-                    Ok(_) => Ok(()),
-                    Err(e) => Err(Error::User(e)),
-                }
-            }
+            Ok(_) => match user_service.delete_role_from_all_users(id, db).await {
+                Ok(_) => Ok(()),
+                Err(e) => Err(Error::User(e)),
+            },
             Err(e) => Err(Error::MongoDb(e)),
         }
     }
