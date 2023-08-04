@@ -97,8 +97,8 @@ Authorization: Bearer <access token here>
   "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
   "username": "admin",
   "email": "test@codedead.com",
-  "first_name": "Test",
-  "last_name": "Test",
+  "firstName": "Test",
+  "lastName": "Test",
   "roles": [
     {
       "id": "16a639cc-2240-4d2f-8def-bea0a729dd9e",
@@ -149,8 +149,8 @@ Users can be created by other users with the appropriate authorizations.
   "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
   "username": "username",
   "email": "example@codedead.com",
-  "first_name": "Jane",
-  "last_name": "Doe",
+  "firstName": "Jane",
+  "lastName": "Doe",
   "roles": [
     {
       "id": "role id here",
