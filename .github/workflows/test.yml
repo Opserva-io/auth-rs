@@ -19,8 +19,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install latest rust toolchain
+      - name: Install latest Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
 
       - name: Check code formatting
         run: cargo fmt --all -- --check
