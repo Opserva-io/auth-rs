@@ -110,7 +110,9 @@ pub struct SimpleUserDto {
     pub id: String,
     pub username: String,
     pub email: String,
+    #[serde(rename = "firstName")]
     pub first_name: String,
+    #[serde(rename = "lastName")]
     pub last_name: String,
     pub roles: Option<Vec<SimpleRoleDto>>,
 }
