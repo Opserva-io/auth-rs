@@ -123,6 +123,57 @@ Users can be managed using the following CRUD endpoints:
 * `/users/`
 * `/users/{id}`
 
+### Create
+
+Users can be created by other users with the appropriate authorizations.
+
+#### Request
+
+```http
+{
+  "username": "username",
+  "email": "example@codedead.com",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "password": "password",
+  "roles": [
+    "role id here"
+  ]
+}
+```
+
+#### Response
+
+```http
+{
+  "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
+  "username": "username",
+  "email": "example@codedead.com",
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "roles": [
+    {
+      "id": "role id here",
+      "name": "DEFAULT",
+      "description": "The default role",
+      "permissions": [
+        {
+          "id": "078bb9bf-21c4-4a5f-8f30-f7367a1de1b9",
+          "name": "CAN_UPDATE_SELF",
+          "description": "The ability to update your own user"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Read
+
+### Update
+
+### Delete
+
 ## Roles
 
 Roles can be managed using the following CRUD endpoints:
