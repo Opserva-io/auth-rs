@@ -1,20 +1,29 @@
 # API
 
-
+The API is a RESTful API that uses JSON for serialization and JWT for authentication.
+CRUD operations are available for users, roles and permissions.
 
 ## Index
 
 * [Authentication](#authentication)
-  * [Register](#register)
-  * [Login](#login)
-  * [Current](#current)
+    * [Register](#register)
+    * [Login](#login)
+    * [Current](#current)
 * [Users](#users)
+    * [Create](#create)
+    * [Read](#read)
+    * [Update](#update)
+    * [Delete](#delete)
 * [Roles](#roles)
+    * [Create](#create-1)
+    * [Read](#read-1)
+    * [Update](#update-1)
+    * [Delete](#delete-1)
 * [Permissions](#permissions)
-  * [Create](#create)
-  * [Read](#read)
-  * [Update](#update)
-  * [Delete](#delete)
+    * [Create](#create-2)
+    * [Read](#read-2)
+    * [Update](#update-2)
+    * [Delete](#delete-2)
 
 ## Authentication
 
@@ -26,7 +35,8 @@ Authentication is handled using JSON Web Tokens (JWT). The following endpoints a
 
 ### Register
 
-Registering an account will create a new account and provide it with the default role.
+Registering an account will create a new account and provide it with the default role. Passwords will be hashed using
+argon2 and a custom salt.
 
 #### Request
 
@@ -112,6 +122,13 @@ Users can be managed using the following CRUD endpoints:
 
 * `/users/`
 * `/users/{id}`
+
+## Roles
+
+Roles can be managed using the following CRUD endpoints:
+
+* `/roles/`
+* `/roles/{id}`
 
 ### Create
 
@@ -212,12 +229,89 @@ Authorization: Bearer <access token here>
 ]
 ```
 
-## Roles
+#### Searching
 
-Roles can be managed using the following CRUD endpoints:
+##### Request
 
-* `/roles/`
-* `/roles/{id}`
+```http
+GET /roles/?text=DEFAULT
+Authorization: Bearer <access token here>
+```
+
+##### Response
+
+```http
+[
+  {
+    "id": "16a639cc-2240-4d2f-8def-bea0a729dd9e",
+    "name": "Default",
+    "description": "Role description",
+    "permissions": [
+      {
+        "id": "permission id here",
+        "name": "CAN_UPDATE_SELF",
+        "description": "The ability to update your own user",
+        "createdAt": "2023-08-01T00:16:26.911565688+00:00",
+        "updatedAt": "2023-08-01T00:16:26.911565688+00:00"
+      }
+    ],
+    "createdAt": "2023-08-01T00:16:27.223266792+00:00",
+    "updatedAt": "2023-08-01T00:16:27.223266792+00:00"
+  }
+]
+```
+
+### Update
+
+#### Request
+
+```http
+PUT /roles/{id}
+Authorization: Bearer <access token here>
+{
+  "name": "Role name",
+  "description": "Role description",
+  "permissions": [
+    "permission id here"
+  ]
+}
+```
+
+#### Response
+
+```http
+{
+  "id": "16a639cc-2240-4d2f-8def-bea0a729dd9e",
+  "name": "Role name",
+  "description": "Role description",
+  "permissions": [
+    {
+      "id": "permission id here",
+      "name": "CAN_UPDATE_SELF",
+      "description": "The ability to update your own user",
+      "createdAt": "2023-08-01T00:16:26.911565688+00:00",
+      "updatedAt": "2023-08-01T00:16:26.911565688+00:00"
+    }
+  ],
+  "createdAt": "2023-08-01T00:16:27.223266792+00:00",
+  "updatedAt": "2023-08-01T00:16:27.223266792+00:00"
+}
+```
+
+### Delete
+
+#### Request
+
+```http
+DELETE /roles/{id}
+AUthorization: Bearer <access token here>
+```
+
+#### Response
+
+```http
+HTTP 200 OK
+```
 
 ## Permissions
 
@@ -292,7 +386,7 @@ Authorization: Bearer <access token here>
 ]
 ```
 
-#### Search for permissions
+#### Searching
 
 ##### Request
 
