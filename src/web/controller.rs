@@ -52,7 +52,8 @@ impl Controller {
         cfg.service(
             web::scope("/authentication")
                 .service(authentication_controller::login)
-                .service(authentication_controller::current_user),
+                .service(authentication_controller::current_user)
+                .service(authentication_controller::register),
         );
     }
 }

@@ -1,9 +1,11 @@
 use crate::configuration::config::Config;
+use crate::errors::bad_request::BadRequest;
 use crate::errors::internal_server_error::InternalServerError;
 use crate::repository::user::user::User;
 use crate::web::controller::user::user_controller::ConvertError;
-use crate::web::dto::login::login_request::LoginRequest;
-use crate::web::dto::login::login_response::LoginResponse;
+use crate::web::dto::authentication::login_request::LoginRequest;
+use crate::web::dto::authentication::login_response::LoginResponse;
+use crate::web::dto::authentication::register_request::RegisterRequest;
 use crate::web::dto::permission::permission_dto::SimplePermissionDto;
 use crate::web::dto::role::role_dto::SimpleRoleDto;
 use crate::web::dto::user::user_dto::SimpleUserDto;
@@ -144,6 +146,82 @@ pub async fn login(
         Some(t) => HttpResponse::Ok().json(LoginResponse::new(t)),
         None => HttpResponse::InternalServerError()
             .json(InternalServerError::new("Failed to generate JWT token")),
+    }
+}
+
+#[post("/register")]
+pub async fn register(
+    register_request: web::Json<RegisterRequest>,
+    pool: web::Data<Config>,
+) -> HttpResponse {
+    if register_request.username.is_empty() {
+        return HttpResponse::BadRequest().json(BadRequest::new("Empty usernames are not allowed"));
+    }
+
+    if register_request.password.is_empty() {
+        return HttpResponse::BadRequest().json(BadRequest::new("Empty passwords are not allowed"));
+    }
+
+    if register_request.email.is_empty() {
+        return HttpResponse::BadRequest()
+            .json(BadRequest::new("Empty email addresses are not allowed"));
+    }
+
+    let register_request = register_request.into_inner();
+
+    let default_roles: Option<Vec<String>> = match pool
+        .services
+        .role_service
+        .find_by_name("DEFAULT", &pool.database)
+        .await
+    {
+        Ok(r) => match r {
+            Some(role) => Some(vec![role.id]),
+            None => None,
+        },
+        Err(e) => {
+            error!("Failed to find default role: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new(&e.to_string()));
+        }
+    };
+
+    let mut user = User::from(register_request);
+
+    let password = &user.password.as_bytes();
+    let salt = match SaltString::from_b64(&pool.salt) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Error generating salt: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to generate salt"));
+        }
+    };
+
+    let argon2 = Argon2::default();
+    let password_hash = match argon2.hash_password(password, &salt) {
+        Ok(e) => e.to_string(),
+        Err(e) => {
+            error!("Error hashing password: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to hash password"));
+        }
+    };
+
+    user.password = password_hash;
+    user.roles = default_roles;
+
+    match pool
+        .services
+        .user_service
+        .create(user, &pool.database)
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(e) => {
+            error!("Error creating User: {}", e);
+            HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
+        }
     }
 }
 
