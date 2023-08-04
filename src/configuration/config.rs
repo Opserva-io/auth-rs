@@ -6,7 +6,7 @@ use crate::repository::permission::permission_repository::PermissionRepository;
 use crate::repository::role::role::Role;
 use crate::repository::role::role_repository::RoleRepository;
 use crate::repository::user::user::User;
-use crate::repository::user::user_repository::UserRepository;
+use crate::repository::user::user_repository::{Error, UserRepository};
 use crate::services::jwt::jwt_service::JwtService;
 use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
@@ -233,6 +233,22 @@ impl Config {
     ) {
         if !email_regex.is_match(&default_user_config.email) {
             panic!("Invalid email address");
+        }
+
+        match self
+            .services
+            .user_service
+            .find_by_username(&default_user_config.username, &self.database)
+            .await
+        {
+            Ok(user) => {
+                if user.is_some() {
+                    return;
+                }
+            }
+            Err(e) => {
+                panic!("Failed to find user: {:?}", e);
+            }
         }
 
         match self
