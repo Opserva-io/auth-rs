@@ -54,7 +54,7 @@ POST /authentication/register
 #### Response
 
 ```http
-HTTP 200 OK
+200 OK
 ```
 
 ### Login
@@ -130,6 +130,7 @@ Users can be created by other users with the appropriate authorizations.
 #### Request
 
 ```http
+POST /users/
 {
   "username": "username",
   "email": "example@codedead.com",
@@ -170,9 +171,174 @@ Users can be created by other users with the appropriate authorizations.
 
 ### Read
 
+#### Find a single user
+
+##### Request
+
+```http
+GET /users/{id}
+Authorization: Bearer <access token here>
+```
+
+##### Response
+
+```http
+[
+  {
+    "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
+    "username": "username",
+    "email": "example@codedead.com",
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "roles": [
+      {
+        "id": "role id here",
+        "name": "DEFAULT",
+        "description": "The default role",
+        "permissions": [
+          {
+            "id": "078bb9bf-21c4-4a5f-8f30-f7367a1de1b9",
+            "name": "CAN_UPDATE_SELF",
+            "description": "The ability to update your own user"
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+#### Find all users
+
+##### Request
+
+```http
+GET /users/
+Authorization: Bearer <access token here>
+```
+
+##### Response
+
+```http
+[
+  {
+    "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
+    "username": "username",
+    "email": "example@codedead.com",
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "roles": [
+      {
+        "id": "role id here",
+        "name": "DEFAULT",
+        "description": "The default role",
+        "permissions": [
+          {
+            "id": "078bb9bf-21c4-4a5f-8f30-f7367a1de1b9",
+            "name": "CAN_UPDATE_SELF",
+            "description": "The ability to update your own user"
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+#### Searching
+
+##### Request
+
+```http
+GET /users/?text=example
+Authorization: Bearer <access token here>
+```
+
+##### Response
+
+```http
+[
+  {
+    "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
+    "username": "username",
+    "email": "example@codedead.com",
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "roles": [
+      {
+        "id": "role id here",
+        "name": "DEFAULT",
+        "description": "The default role",
+        "permissions": [
+          {
+            "id": "078bb9bf-21c4-4a5f-8f30-f7367a1de1b9",
+            "name": "CAN_UPDATE_SELF",
+            "description": "The ability to update your own user"
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
 ### Update
 
+#### Request
+
+```http
+PUT /users/{id}
+{
+  "username": "username",
+  "email": "example@codedead.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "roles": [
+    "role id here"
+  ],
+  "enabled": true
+}
+```
+
+#### Response
+
+```http
+{
+  "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
+  "username": "username",
+  "email": "example@codedead.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "roles": [
+    {
+      "id": "role id here",
+      "name": "DEFAULT",
+      "description": "The default role",
+      "permissions": [
+        {
+          "id": "078bb9bf-21c4-4a5f-8f30-f7367a1de1b9",
+          "name": "CAN_UPDATE_SELF",
+          "description": "The ability to update your own user"
+        }
+      ]
+    }
+  ]
+}
+```
+
 ### Delete
+
+#### Request
+
+```http
+DELETE /users/{id}
+```
+
+#### Response
+
+```http
+200 OK
+```
 
 ## Roles
 
@@ -361,7 +527,7 @@ AUthorization: Bearer <access token here>
 #### Response
 
 ```http
-HTTP 200 OK
+200 OK
 ```
 
 ## Permissions
@@ -494,5 +660,5 @@ Authorization: Bearer <access token here>
 #### Response
 
 ```http
-HTTP 200 OK
+200 OK
 ```
