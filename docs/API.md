@@ -24,6 +24,7 @@ CRUD operations are available for users, roles and permissions.
     * [Read](#read-2)
     * [Update](#update-2)
     * [Delete](#delete-2)
+* [Searching](#searching-3)
 
 ## Authentication
 
@@ -669,3 +670,27 @@ Authorization: Bearer <access token here>
 ```http
 200 OK
 ```
+
+### Searching
+
+Some endpoints, like the ones for retrieving all users, roles and permissions support text searching if automatic index
+creation is enabled or a text index was created manually. You can search by providing a `text` query parameter. The search will be performed on the following
+fields:
+
+** Users **
+
+* `id`
+* `username`
+* `email`
+* `firstName`
+* `lastName`
+
+** Roles **
+
+* `id`
+* `name`
+
+** Permissions **
+
+* `id`
+* `name`
