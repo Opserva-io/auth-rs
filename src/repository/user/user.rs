@@ -1,3 +1,4 @@
+use crate::web::dto::authentication::register_request::RegisterRequest;
 use crate::web::dto::user::create_user::CreateUser;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
@@ -138,6 +139,51 @@ impl From<CreateUser> for User {
             last_name: value.last_name,
             password: value.password,
             roles: value.roles,
+            created_at: now.clone(),
+            updated_at: now,
+            enabled: true,
+        }
+    }
+}
+
+impl From<RegisterRequest> for User {
+    /// # Summary
+    ///
+    /// Convert a RegisterRequest into a User.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The RegisterRequest to convert.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let register_request = RegisterRequest {
+    ///  username: String::from("username"),
+    /// email: String::from("email"),
+    /// first_name: String::from("first_name"),
+    /// last_name: String::from("last_name"),
+    /// password: String::from("password"),
+    /// };
+    ///
+    /// let user = User::from(register_request);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `User` - The new User.
+    fn from(value: RegisterRequest) -> Self {
+        let now: DateTime<Utc> = SystemTime::now().into();
+        let now: String = now.to_rfc3339();
+
+        User {
+            id: uuid::Uuid::new_v4().to_string(),
+            username: value.username,
+            email: value.email,
+            first_name: value.first_name,
+            last_name: value.last_name,
+            password: value.password,
+            roles: None,
             created_at: now.clone(),
             updated_at: now,
             enabled: true,

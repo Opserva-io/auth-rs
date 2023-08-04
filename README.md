@@ -3,6 +3,7 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/Opserva-io/auth-rs)
 ![GitHub](https://img.shields.io/github/license/Opserva-io/auth-rs)
 ![GitHub release (with filter)](https://img.shields.io/github/v/release/Opserva-io/auth-rs)
+[![Test](https://github.com/Opserva-io/auth-rs/actions/workflows/test.yml/badge.svg)](https://github.com/Opserva-io/auth-rs/actions/workflows/test.yml)
 
 `auth-rs` provides a simple authentication and authorization service for use in other services.
 The service is written in Rust and uses the [actix-web](https://crates.io/crates/actix-web) framework.
