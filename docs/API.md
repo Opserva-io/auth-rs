@@ -152,6 +152,7 @@ POST /users/
   "email": "example@codedead.com",
   "firstName": "Jane",
   "lastName": "Doe",
+  "enabled": true,
   "roles": [
     {
       "id": "role id here",
@@ -183,29 +184,28 @@ Authorization: Bearer <access token here>
 ##### Response
 
 ```http
-[
-  {
-    "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
-    "username": "username",
-    "email": "example@codedead.com",
-    "firstName": "Jane",
-    "lastName": "Doe",
-    "roles": [
-      {
-        "id": "role id here",
-        "name": "DEFAULT",
-        "description": "The default role",
-        "permissions": [
-          {
-            "id": "078bb9bf-21c4-4a5f-8f30-f7367a1de1b9",
-            "name": "CAN_UPDATE_SELF",
-            "description": "The ability to update your own user"
-          }
-        ]
-      }
-    ]
-  }
-]
+{
+  "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
+  "username": "username",
+  "email": "example@codedead.com",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "enabled": true,
+  "roles": [
+    {
+      "id": "role id here",
+      "name": "DEFAULT",
+      "description": "The default role",
+      "permissions": [
+        {
+          "id": "078bb9bf-21c4-4a5f-8f30-f7367a1de1b9",
+          "name": "CAN_UPDATE_SELF",
+          "description": "The ability to update your own user"
+        }
+      ]
+    }
+  ]
+}
 ```
 
 #### Find all users
@@ -227,6 +227,7 @@ Authorization: Bearer <access token here>
     "email": "example@codedead.com",
     "firstName": "Jane",
     "lastName": "Doe",
+    "enabled": true,
     "roles": [
       {
         "id": "role id here",
@@ -264,6 +265,7 @@ Authorization: Bearer <access token here>
     "email": "example@codedead.com",
     "firstName": "Jane",
     "lastName": "Doe",
+    "enabled": true,
     "roles": [
       {
         "id": "role id here",
@@ -309,6 +311,7 @@ PUT /users/{id}
   "email": "example@codedead.com",
   "firstName": "John",
   "lastName": "Doe",
+  "enabled": true,
   "roles": [
     {
       "id": "role id here",
