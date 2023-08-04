@@ -242,7 +242,8 @@ Authorization: Bearer <access token here>
         ]
       }
     ]
-  }
+  },
+  ...
 ]
 ```
 
@@ -280,7 +281,8 @@ Authorization: Bearer <access token here>
         ]
       }
     ]
-  }
+  },
+  ...
 ]
 ```
 
@@ -445,7 +447,8 @@ Authorization: Bearer <access token here>
     ],
     "createdAt": "2023-08-01T00:16:27.223266792+00:00",
     "updatedAt": "2023-08-01T00:16:27.223266792+00:00"
-  }
+  },
+  ...
 ]
 ```
 
@@ -477,7 +480,8 @@ Authorization: Bearer <access token here>
     ],
     "createdAt": "2023-08-01T00:16:27.223266792+00:00",
     "updatedAt": "2023-08-01T00:16:27.223266792+00:00"
-  }
+  },
+  ...
 ]
 ```
 
