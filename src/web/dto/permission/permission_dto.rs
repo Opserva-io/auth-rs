@@ -1,4 +1,4 @@
-use crate::repository::permission::permission::Permission;
+use crate::repository::permission::permission_model::Permission;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

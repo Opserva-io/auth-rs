@@ -1,4 +1,4 @@
-use crate::repository::role::role::Role;
+use crate::repository::role::role_model::Role;
 use crate::repository::user::user_repository::Error as UserError;
 use crate::services::user::user_service::UserService;
 use chrono::{DateTime, Utc};

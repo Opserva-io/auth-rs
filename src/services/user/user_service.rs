@@ -1,4 +1,4 @@
-use crate::repository::user::user::User;
+use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::{Error, UserRepository};
 use log::info;
 use mongodb::Database;

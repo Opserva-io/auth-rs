@@ -1,30 +1,32 @@
 # API
 
-The API is a RESTful API that uses JSON for serialization and JWT for authentication.
+The API is a REST-ful API that uses JSON for serialization and JWT for authentication.
 CRUD operations are available for users, roles and permissions.
 
 ## Index
 
-* [Authentication](#authentication)
-    * [Register](#register)
-    * [Login](#login)
-    * [Current](#current)
-* [Users](#users)
-    * [Create](#create)
-    * [Read](#read)
-    * [Update](#update)
-    * [Delete](#delete)
-* [Roles](#roles)
-    * [Create](#create-1)
-    * [Read](#read-1)
-    * [Update](#update-1)
-    * [Delete](#delete-1)
-* [Permissions](#permissions)
-    * [Create](#create-2)
-    * [Read](#read-2)
-    * [Update](#update-2)
-    * [Delete](#delete-2)
-* [Searching](#searching-3)
+-[Authentication](#authentication)
+
+- [Register](#register)
+- [Login](#login)
+- [Current](#current)
+
+- [Users](#users)
+    - [Create](#create)
+    - [Read](#read)
+    - [Update](#update)
+    - [Delete](#delete)
+- [Roles](#roles)
+    - [Create](#create-1)
+    - [Read](#read-1)
+    - [Update](#update-1)
+    - [Delete](#delete-1)
+- [Permissions](#permissions)
+    - [Create](#create-2)
+    - [Read](#read-2)
+    - [Update](#update-2)
+    - [Delete](#delete-2)
+- [Searching](#searching-3)
 
 ## Authentication
 
@@ -36,8 +38,9 @@ Authentication is handled using JSON Web Tokens (JWT). The following endpoints a
 
 ### Register
 
-Registering an account will create a new account and provide it with the default role. Passwords will be hashed using
-argon2 and a custom salt.
+Registering an account will create a new User entity and provide it with the `DEFAULT` role. Passwords will be hashed
+using
+[argon2](https://en.wikipedia.org/wiki/Argon2) and a custom salt.
 
 #### Request
 
@@ -60,7 +63,10 @@ POST /api/v1/authentication/register
 
 ### Login
 
-Logging in provides an access token that can be used to authenticate other requests that require certain permissions.
+Logging in provides a `Bearer` access token that can be used to authenticate other requests that require certain
+permissions.
+This access token should be added to the `Authorization` HTTP header for all endpoints that require authentication and
+authorization.
 
 #### Request
 
@@ -132,6 +138,7 @@ Users can be created by other users with the appropriate authorizations.
 
 ```http
 POST /api/v1/users/
+Authorization: Bearer <access token here>
 {
   "username": "username",
   "email": "example@codedead.com",
@@ -172,6 +179,8 @@ POST /api/v1/users/
 ```
 
 ### Read
+
+`User` entities can be retrieved by other users with the appropriate authorizations.
 
 #### Find a single user
 
@@ -334,10 +343,28 @@ PUT /api/v1/users/{id}
 
 ### Delete
 
+`User` entities can be deleted by other users with the appropriate authorizations.
+
 #### Request
 
 ```http
 DELETE /api/v1/users/{id}
+Authorization: Bearer <access token here>
+```
+
+#### Response
+
+```http
+200 OK
+```
+
+Users can also remove themselves, if they have the appropriate authorizations:
+
+#### Request
+
+```http
+DELETE /api/v1/users/delete_self
+Authorization: Bearer <access token here>
 ```
 
 #### Response
@@ -389,6 +416,8 @@ Roles can be managed using the following CRUD endpoints:
 ```
 
 ### Read
+
+`Role` entities can be read by users with the appropriate authorizations.
 
 #### Find a single role
 
@@ -488,6 +517,8 @@ Authorization: Bearer <access token here>
 
 ### Update
 
+`Role` entities can be updated by users with the appropriate authorizations.
+
 #### Request
 
 ```http
@@ -525,6 +556,8 @@ Authorization: Bearer <access token here>
 
 ### Delete
 
+`Role` entities can be deleted by users with the appropriate authorizations.
+
 #### Request
 
 ```http
@@ -546,6 +579,8 @@ Permissions can be managed using the following CRUD endpoints:
 * `/api/v1/permissions/{id}`
 
 ### Create
+
+`Permission` entities can be created by users with the appropriate authorizations.
 
 #### Request
 
@@ -569,6 +604,8 @@ Authorization: Bearer <access token here>
 ```
 
 ### Read
+
+`Permission` entities can be read by users with the appropriate authorizations.
 
 #### Find a single permission
 
@@ -635,6 +672,8 @@ Authorization: Bearer <access token here>
 
 ### Update
 
+`Permission` entities can be updated by users with the appropriate authorizations.
+
 #### Request
 
 ```http
@@ -674,7 +713,8 @@ Authorization: Bearer <access token here>
 ### Searching
 
 Some endpoints, like the ones for retrieving all users, roles and permissions support text searching if automatic index
-creation is enabled or a text index was created manually. You can search by providing a `text` query parameter. The search will be performed on the following
+creation is enabled or a text index was created manually. You can search by providing a `text` query parameter. The
+search will be performed on the following
 fields:
 
 **Users**

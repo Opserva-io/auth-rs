@@ -3,7 +3,7 @@ use crate::errors::bad_request::BadRequest;
 use crate::errors::internal_server_error::InternalServerError;
 use crate::repository::permission::permission_repository::Error as PermissionError;
 use crate::repository::role::role_repository::Error as RoleError;
-use crate::repository::user::user::User;
+use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::Error;
 use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::search::search_request::SearchRequest;
@@ -11,7 +11,7 @@ use crate::web::dto::user::create_user::CreateUser;
 use crate::web::dto::user::update_password::{AdminUpdatePassword, UpdatePassword};
 use crate::web::dto::user::update_user::UpdateUser;
 use crate::web::dto::user::user_dto::UserDto;
-use actix_web::{delete, get, post, put, web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
@@ -232,32 +232,24 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
 #[get("/")]
 #[has_permissions("CAN_READ_USER")]
 pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>) -> HttpResponse {
-    let res;
-
-    if search.text.is_none() {
-        res = match pool.services.user_service.find_all(&pool.database).await {
-            Ok(d) => d,
-            Err(e) => {
-                error!("Error while finding all Users: {}", e);
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new(&e.to_string()));
-            }
-        };
-    } else {
-        res = match pool
-            .services
-            .user_service
-            .search(&search.text.clone().unwrap(), &pool.database)
-            .await
-        {
+    let res = match search.text.clone() {
+        Some(t) => match pool.services.user_service.search(&t, &pool.database).await {
             Ok(d) => d,
             Err(e) => {
                 error!("Error while searching for Users: {}", e);
                 return HttpResponse::InternalServerError()
                     .json(InternalServerError::new(&e.to_string()));
             }
-        };
-    }
+        },
+        None => match pool.services.user_service.find_all(&pool.database).await {
+            Ok(d) => d,
+            Err(e) => {
+                error!("Error while finding all Users: {}", e);
+                return HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string()));
+            }
+        },
+    };
 
     let mut user_dto_list: Vec<UserDto> = vec![];
     for u in &res {
@@ -547,7 +539,7 @@ pub async fn admin_update_password(
 }
 
 #[delete("/{id}")]
-#[has_permissions("CAN_UPDATE_USER")]
+#[has_permissions("CAN_DELETE_USER")]
 pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     match pool
         .services
@@ -564,4 +556,58 @@ pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpRespo
             }
         },
     }
+}
+
+#[delete("/delete_self")]
+#[has_permissions("CAN_DELETE_SELF")]
+pub async fn delete_self(req: HttpRequest, pool: web::Data<Config>) -> HttpResponse {
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                let username = match pool.services.jwt_service.verify_jwt_token(token) {
+                    Ok(user) => user,
+                    Err(e) => {
+                        error!("Failed to verify JWT token: {}", e);
+                        return HttpResponse::Forbidden().finish();
+                    }
+                };
+
+                let user = match pool
+                    .services
+                    .user_service
+                    .find_by_email(&username, &pool.database)
+                    .await
+                {
+                    Ok(u) => match u {
+                        Some(user) => user,
+                        None => {
+                            return HttpResponse::Forbidden().finish();
+                        }
+                    },
+                    Err(e) => {
+                        error!("Failed to find user by email: {}", e);
+                        return HttpResponse::Forbidden().finish();
+                    }
+                };
+
+                return match pool
+                    .services
+                    .user_service
+                    .delete(&user.id, &pool.database)
+                    .await
+                {
+                    Ok(_) => HttpResponse::Ok().finish(),
+                    Err(e) => match e {
+                        Error::UserNotFound(_) => HttpResponse::Ok().finish(),
+                        _ => {
+                            error!("Error deleting User: {}", e);
+                            HttpResponse::InternalServerError()
+                                .json(InternalServerError::new(&e.to_string()))
+                        }
+                    },
+                };
+            }
+        }
+    }
+    HttpResponse::BadRequest().finish()
 }

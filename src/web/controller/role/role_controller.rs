@@ -2,7 +2,7 @@ use crate::configuration::config::Config;
 use crate::errors::bad_request::BadRequest;
 use crate::errors::internal_server_error::InternalServerError;
 use crate::repository::permission::permission_repository::Error as PermissionError;
-use crate::repository::role::role::Role;
+use crate::repository::role::role_model::Role;
 use crate::repository::role::role_repository::Error;
 use crate::web::dto::permission::permission_dto::PermissionDto;
 use crate::web::dto::role::create_role::CreateRole;
@@ -197,32 +197,24 @@ pub async fn find_all_roles(
     search: web::Query<SearchRequest>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
-    let res;
-
-    if search.text.is_none() {
-        res = match pool.services.role_service.find_all(&pool.database).await {
-            Ok(d) => d,
-            Err(e) => {
-                error!("Error while finding all Roles: {}", e);
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new(&e.to_string()));
-            }
-        };
-    } else {
-        res = match pool
-            .services
-            .role_service
-            .search(&search.text.clone().unwrap(), &pool.database)
-            .await
-        {
+    let res = match search.text.clone() {
+        Some(t) => match pool.services.role_service.search(&t, &pool.database).await {
             Ok(d) => d,
             Err(e) => {
                 error!("Error while searching for Roles: {}", e);
                 return HttpResponse::InternalServerError()
                     .json(InternalServerError::new(&e.to_string()));
             }
-        };
-    }
+        },
+        None => match pool.services.role_service.find_all(&pool.database).await {
+            Ok(d) => d,
+            Err(e) => {
+                error!("Error while finding all Roles: {}", e);
+                return HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string()));
+            }
+        },
+    };
 
     let mut role_dto_list: Vec<RoleDto> = vec![];
     for r in &res {

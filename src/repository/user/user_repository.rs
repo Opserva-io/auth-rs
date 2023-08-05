@@ -1,4 +1,4 @@
-use crate::repository::user::user::User;
+use crate::repository::user::user_model::User;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use mongodb::bson::{doc, Bson};

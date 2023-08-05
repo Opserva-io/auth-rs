@@ -1,4 +1,4 @@
-use crate::repository::role::role::Role;
+use crate::repository::role::role_model::Role;
 use crate::repository::role::role_repository::{Error, RoleRepository};
 use crate::services::user::user_service::UserService;
 use log::info;

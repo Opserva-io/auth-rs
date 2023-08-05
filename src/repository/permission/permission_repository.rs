@@ -1,4 +1,4 @@
-use crate::repository::permission::permission::Permission;
+use crate::repository::permission::permission_model::Permission;
 use crate::repository::role::role_repository::Error as RoleError;
 use crate::services::role::role_service::RoleService;
 use chrono::{DateTime, Utc};
