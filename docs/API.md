@@ -5,12 +5,10 @@ CRUD operations are available for users, roles and permissions.
 
 ## Index
 
--[Authentication](#authentication)
-
+- [Authentication](#authentication)
 - [Register](#register)
 - [Login](#login)
 - [Current](#current)
-
 - [Users](#users)
     - [Create](#create)
     - [Read](#read)
