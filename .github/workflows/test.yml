@@ -28,5 +28,8 @@ jobs:
       - name: Check code formatting
         run: cargo fmt --all -- --check
 
+      - name: Check code
+        run: cargo check --workspace --verbose
+
       - name: Test code
         run: cargo test --verbose --all

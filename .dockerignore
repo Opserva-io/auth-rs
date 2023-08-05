@@ -1,0 +1,19 @@
+# Rust artifacts
+target/
+.env.example
+.env
+README.md
+LICENSE
+
+# Editor and IDE specific files
+.vscode/
+.idea/
+.github/
+docs/
+
+# Version control
+.git/
+.gitignore
+
+# Dependency sources (these can be fetched during the Docker build)
+/vendor/

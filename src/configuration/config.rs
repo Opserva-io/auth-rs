@@ -238,6 +238,22 @@ impl Config {
         match self
             .services
             .user_service
+            .find_by_username(&default_user_config.username, &self.database)
+            .await
+        {
+            Ok(user) => {
+                if user.is_some() {
+                    return;
+                }
+            }
+            Err(e) => {
+                panic!("Failed to find user: {:?}", e);
+            }
+        }
+
+        match self
+            .services
+            .user_service
             .find_by_email(&default_user_config.email, &self.database)
             .await
         {

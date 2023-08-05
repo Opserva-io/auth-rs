@@ -30,9 +30,9 @@ CRUD operations are available for users, roles and permissions.
 
 Authentication is handled using JSON Web Tokens (JWT). The following endpoints are available:
 
-* `/authentication/register`
-* `/authentication/login`
-* `/authentication/current`
+* `/api/v1/authentication/register`
+* `/api/v1/authentication/login`
+* `/api/v1/authentication/current`
 
 ### Register
 
@@ -42,7 +42,7 @@ argon2 and a custom salt.
 #### Request
 
 ```http
-POST /authentication/register
+POST /api/v1/authentication/register
 {
   "username": "example",
   "email": "example@codedead.com",
@@ -65,7 +65,7 @@ Logging in provides an access token that can be used to authenticate other reque
 #### Request
 
 ```http
-POST /authentication/login
+POST /api/v1/authentication/login
 {
   "username": "example",
   "password": "password"
@@ -87,7 +87,7 @@ The current user can be retrieved using the access token that was obtained after
 #### Request
 
 ```http
-GET /authentication/current
+GET /api/v1/authentication/current
 Authorization: Bearer <access token here>
 ```
 
@@ -121,8 +121,8 @@ Authorization: Bearer <access token here>
 
 Users can be managed using the following CRUD endpoints:
 
-* `/users/`
-* `/users/{id}`
+* `/api/v1/users/`
+* `/api/v1/users/{id}`
 
 ### Create
 
@@ -131,7 +131,7 @@ Users can be created by other users with the appropriate authorizations.
 #### Request
 
 ```http
-POST /users/
+POST /api/v1/users/
 {
   "username": "username",
   "email": "example@codedead.com",
@@ -178,7 +178,7 @@ POST /users/
 ##### Request
 
 ```http
-GET /users/{id}
+GET /api/v1/users/{id}
 Authorization: Bearer <access token here>
 ```
 
@@ -214,7 +214,7 @@ Authorization: Bearer <access token here>
 ##### Request
 
 ```http
-GET /users/
+GET /api/v1/users/
 Authorization: Bearer <access token here>
 ```
 
@@ -253,7 +253,7 @@ Authorization: Bearer <access token here>
 ##### Request
 
 ```http
-GET /users/?text=example
+GET /api/v1/users/?text=example
 Authorization: Bearer <access token here>
 ```
 
@@ -292,7 +292,7 @@ Authorization: Bearer <access token here>
 #### Request
 
 ```http
-PUT /users/{id}
+PUT /api/v1/users/{id}
 {
   "username": "username",
   "email": "example@codedead.com",
@@ -337,7 +337,7 @@ PUT /users/{id}
 #### Request
 
 ```http
-DELETE /users/{id}
+DELETE /api/v1/users/{id}
 ```
 
 #### Response
@@ -350,8 +350,8 @@ DELETE /users/{id}
 
 Roles can be managed using the following CRUD endpoints:
 
-* `/roles/`
-* `/roles/{id}`
+* `/api/v1/roles/`
+* `/api/v1/roles/{id}`
 
 ### Create
 
@@ -395,7 +395,7 @@ Roles can be managed using the following CRUD endpoints:
 ##### Request
 
 ```http
-GET /roles/{id}
+GET /api/v1/roles/{id}
 Authorization: Bearer <access token here>
 ```
 
@@ -425,7 +425,7 @@ Authorization: Bearer <access token here>
 ##### Request
 
 ```http
-GET /roles/
+GET /api/v1/roles/
 Authorization: Bearer <access token here>
 ```
 
@@ -458,7 +458,7 @@ Authorization: Bearer <access token here>
 ##### Request
 
 ```http
-GET /roles/?text=DEFAULT
+GET /api/v1/roles/?text=DEFAULT
 Authorization: Bearer <access token here>
 ```
 
@@ -491,7 +491,7 @@ Authorization: Bearer <access token here>
 #### Request
 
 ```http
-PUT /roles/{id}
+PUT /api/v1/roles/{id}
 Authorization: Bearer <access token here>
 {
   "name": "Role name",
@@ -528,7 +528,7 @@ Authorization: Bearer <access token here>
 #### Request
 
 ```http
-DELETE /roles/{id}
+DELETE /api/v1/roles/{id}
 AUthorization: Bearer <access token here>
 ```
 
@@ -542,15 +542,15 @@ AUthorization: Bearer <access token here>
 
 Permissions can be managed using the following CRUD endpoints:
 
-* `/permissions/`
-* `/permissions/{id}`
+* `/api/v1/permissions/`
+* `/api/v1/permissions/{id}`
 
 ### Create
 
 #### Request
 
 ```http
-POST /permissions/
+POST /api/v1/permissions/
 Authorization: Bearer <access token here>
 {
   "name": "CAN_UPDATE_SELF",
@@ -575,7 +575,7 @@ Authorization: Bearer <access token here>
 ##### Request
 
 ```http
-GET /permissions/{id}
+GET /api/v1/permissions/{id}
 Authorization: Bearer <access token here>
 ```
 
@@ -594,7 +594,7 @@ Authorization: Bearer <access token here>
 ##### Request
 
 ```http
-GET /permissions/
+GET /api/v1/permissions/
 Authorization: Bearer <access token here>
 ```
 
@@ -616,7 +616,7 @@ Authorization: Bearer <access token here>
 ##### Request
 
 ```http
-GET /permissions/?text=CAN_UPDATE_SELF
+GET /api/v1/permissions/?text=CAN_UPDATE_SELF
 Authorization: Bearer <access token here>
 ```
 
@@ -638,7 +638,7 @@ Authorization: Bearer <access token here>
 #### Request
 
 ```http
-PUT /permissions/{id}
+PUT /api/v1/permissions/{id}
 Authorization: Bearer <access token here>
 {
   "name": "CAN_UPDATE_SELF",
@@ -661,7 +661,7 @@ Authorization: Bearer <access token here>
 #### Request
 
 ```http
-DELETE /permissions/{id}
+DELETE /api/v1/permissions/{id}
 Authorization: Bearer <access token here>
 ```
 
@@ -677,7 +677,7 @@ Some endpoints, like the ones for retrieving all users, roles and permissions su
 creation is enabled or a text index was created manually. You can search by providing a `text` query parameter. The search will be performed on the following
 fields:
 
-** Users **
+**Users**
 
 * `id`
 * `username`
@@ -685,12 +685,12 @@ fields:
 * `firstName`
 * `lastName`
 
-** Roles **
+**Roles**
 
 * `id`
 * `name`
 
-** Permissions **
+**Permissions**
 
 * `id`
 * `name`
