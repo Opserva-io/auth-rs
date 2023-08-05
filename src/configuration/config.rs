@@ -6,7 +6,7 @@ use crate::repository::permission::permission_repository::PermissionRepository;
 use crate::repository::role::role::Role;
 use crate::repository::role::role_repository::RoleRepository;
 use crate::repository::user::user::User;
-use crate::repository::user::user_repository::{Error, UserRepository};
+use crate::repository::user::user_repository::UserRepository;
 use crate::services::jwt::jwt_service::JwtService;
 use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
