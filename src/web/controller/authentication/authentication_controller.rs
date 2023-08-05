@@ -1,7 +1,7 @@
 use crate::configuration::config::Config;
 use crate::errors::bad_request::BadRequest;
 use crate::errors::internal_server_error::InternalServerError;
-use crate::repository::user::user::User;
+use crate::repository::user::user_model::User;
 use crate::web::controller::user::user_controller::ConvertError;
 use crate::web::dto::authentication::login_request::LoginRequest;
 use crate::web::dto::authentication::login_response::LoginResponse;

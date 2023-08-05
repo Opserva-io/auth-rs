@@ -1,4 +1,4 @@
-use crate::repository::user::user::User;
+use crate::repository::user::user_model::User;
 use crate::web::dto::role::role_dto::{RoleDto, SimpleRoleDto};
 use serde::{Deserialize, Serialize};
 

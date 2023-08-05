@@ -46,7 +46,8 @@ impl Controller {
                         .service(user_controller::update)
                         .service(user_controller::update_password)
                         .service(user_controller::admin_update_password)
-                        .service(user_controller::delete),
+                        .service(user_controller::delete)
+                        .service(user_controller::delete_self),
                 )
                 .service(
                     web::scope("/authentication")

@@ -1,18 +1,20 @@
 use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
-use crate::repository::permission::permission::Permission;
+use crate::repository::permission::permission_model::Permission;
 use crate::repository::permission::permission_repository::PermissionRepository;
-use crate::repository::role::role::Role;
+use crate::repository::role::role_model::Role;
 use crate::repository::role::role_repository::RoleRepository;
-use crate::repository::user::user::User;
+use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::UserRepository;
 use crate::services::jwt::jwt_service::JwtService;
 use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
 use crate::services::user::user_service::UserService;
 use crate::services::Services;
-use log::info;
+use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHasher};
+use log::{error, info};
 use mongodb::bson::doc;
 use mongodb::options::{ClientOptions, IndexOptions, ServerApi, ServerApiVersion};
 use mongodb::{Client, Database, IndexModel};
@@ -259,15 +261,32 @@ impl Config {
         {
             Ok(d) => {
                 if d.is_none() {
+                    let password = default_user_config.password.as_bytes();
+                    let salt = match SaltString::from_b64(salt) {
+                        Ok(s) => s,
+                        Err(e) => {
+                            error!("Error generating salt: {}", e);
+                            panic!("Failed to generate salt");
+                        }
+                    };
+
+                    let argon2 = Argon2::default();
+                    let password_hash = match argon2.hash_password(password, &salt) {
+                        Ok(e) => e.to_string(),
+                        Err(e) => {
+                            error!("Error hashing password: {}", e);
+                            panic!("Failed to hash password");
+                        }
+                    };
+
                     let user = User::new(
                         default_user_config.username,
                         default_user_config.email,
                         "".to_string(),
                         "".to_string(),
-                        default_user_config.password,
+                        password_hash,
                         roles,
                         default_user_config.enabled,
-                        salt,
                     );
                     match self
                         .services
@@ -497,6 +516,13 @@ impl Config {
             )
             .await;
 
+        let can_delete_self = self
+            .find_or_create_permission(
+                "CAN_DELETE_SELF",
+                Some("The ability to delete your own user".to_string()),
+            )
+            .await;
+
         let admin_role = self
             .find_or_create_role(
                 "ADMIN",
@@ -514,7 +540,6 @@ impl Config {
                     read_user.id.to_string(),
                     update_user.id.to_string(),
                     delete_user.id.to_string(),
-                    can_update_self.id.to_string(),
                 ]),
             )
             .await;
@@ -523,7 +548,10 @@ impl Config {
             .find_or_create_role(
                 "DEFAULT",
                 Some("The default role".to_string()),
-                Some(vec![can_update_self.id.to_string()]),
+                Some(vec![
+                    can_update_self.id.to_string(),
+                    can_delete_self.id.to_string(),
+                ]),
             )
             .await;
 

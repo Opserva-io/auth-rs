@@ -1,7 +1,7 @@
 use crate::configuration::config::Config;
 use crate::errors::bad_request::BadRequest;
 use crate::errors::internal_server_error::InternalServerError;
-use crate::repository::permission::permission::Permission;
+use crate::repository::permission::permission_model::Permission;
 use crate::repository::permission::permission_repository::Error;
 use crate::web::dto::permission::create_permission::CreatePermission;
 use crate::web::dto::permission::permission_dto::PermissionDto;
@@ -45,37 +45,38 @@ pub async fn find_all_permissions(
     search: web::Query<SearchRequest>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
-    let res;
-
-    if search.text.is_none() {
-        res = match pool
-            .services
-            .permission_service
-            .find_all(&pool.database)
-            .await
-        {
-            Ok(d) => d,
-            Err(e) => {
-                error!("Error while finding all permissions: {}", e);
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new(&e.to_string()));
+    let res = match search.text.clone() {
+        Some(t) => {
+            match pool
+                .services
+                .permission_service
+                .search(&t, &pool.database)
+                .await
+            {
+                Ok(d) => d,
+                Err(e) => {
+                    error!("Error while searching for permissions: {}", e);
+                    return HttpResponse::InternalServerError()
+                        .json(InternalServerError::new(&e.to_string()));
+                }
             }
-        };
-    } else {
-        res = match pool
-            .services
-            .permission_service
-            .search(&search.text.clone().unwrap(), &pool.database)
-            .await
-        {
-            Ok(d) => d,
-            Err(e) => {
-                error!("Error while searching for permissions: {}", e);
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new(&e.to_string()));
+        }
+        None => {
+            match pool
+                .services
+                .permission_service
+                .find_all(&pool.database)
+                .await
+            {
+                Ok(d) => d,
+                Err(e) => {
+                    error!("Error while finding all permissions: {}", e);
+                    return HttpResponse::InternalServerError()
+                        .json(InternalServerError::new(&e.to_string()));
+                }
             }
-        };
-    }
+        }
+    };
 
     let dto_list = res
         .into_iter()

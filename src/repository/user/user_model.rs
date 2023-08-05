@@ -1,9 +1,6 @@
 use crate::web::dto::authentication::register_request::RegisterRequest;
 use crate::web::dto::user::create_user::CreateUser;
-use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHasher};
 use chrono::{DateTime, Utc};
-use log::error;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
@@ -34,16 +31,14 @@ impl User {
     ///
     /// # Arguments
     ///
-    /// * `id` - The id of the User.
     /// * `username` - The username of the User.
     /// * `email` - The email of the User.
     /// * `first_name` - The first name of the User.
     /// * `last_name` - The last name of the User.
     /// * `password` - The password of the User.
     /// * `roles` - The roles of the User.
-    /// * `created_at` - The created at of the User.
-    /// * `updated_at` - The updated at of the User.
     /// * `enabled` - The enabled of the User.
+    /// * `salt` - The salt of the User.
     ///
     /// # Example
     ///
@@ -62,26 +57,7 @@ impl User {
         password: String,
         roles: Option<Vec<String>>,
         enabled: bool,
-        salt: &str,
     ) -> User {
-        let password = password.as_bytes();
-        let salt = match SaltString::from_b64(salt) {
-            Ok(s) => s,
-            Err(e) => {
-                error!("Error generating salt: {}", e);
-                panic!("Failed to generate salt");
-            }
-        };
-
-        let argon2 = Argon2::default();
-        let password_hash = match argon2.hash_password(password, &salt) {
-            Ok(e) => e.to_string(),
-            Err(e) => {
-                error!("Error hashing password: {}", e);
-                panic!("Failed to hash password");
-            }
-        };
-
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
 
@@ -91,7 +67,7 @@ impl User {
             email,
             first_name,
             last_name,
-            password: password_hash,
+            password,
             roles,
             created_at: now.clone(),
             updated_at: now,

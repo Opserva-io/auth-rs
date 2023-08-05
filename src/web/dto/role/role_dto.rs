@@ -1,4 +1,4 @@
-use crate::repository::role::role::Role;
+use crate::repository::role::role_model::Role;
 use crate::web::dto::permission::permission_dto::{PermissionDto, SimplePermissionDto};
 use serde::{Deserialize, Serialize};
 

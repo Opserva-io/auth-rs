@@ -80,32 +80,6 @@ impl EnvReader {
             Err(_) => 3600,
         };
 
-        let default_username = match env::var("DEFAULT_USER_USERNAME") {
-            Ok(d) => d,
-            Err(_) => panic!("No default username specified"),
-        };
-
-        let default_email = match env::var("DEFAULT_USER_EMAIL") {
-            Ok(d) => d,
-            Err(_) => panic!("No default email specified"),
-        };
-
-        let default_password = match env::var("DEFAULT_USER_PASSWORD") {
-            Ok(d) => d,
-            Err(_) => panic!("No default password specified"),
-        };
-
-        let default_user_enabled = match env::var("DEFAULT_USER_ENABLED") {
-            Ok(d) => {
-                let res: bool = d
-                    .trim()
-                    .parse()
-                    .expect("DEFAULT_USER_ENABLED must be a boolean");
-                res
-            }
-            Err(_) => panic!("No default user enabled specified"),
-        };
-
         let generate_default_user = match env::var("GENERATE_DEFAULT_USER") {
             Ok(d) => {
                 let res: bool = d
@@ -116,6 +90,39 @@ impl EnvReader {
             }
             Err(_) => true,
         };
+
+        let mut default_username = String::new();
+        let mut default_email = String::new();
+        let mut default_password = String::new();
+        let mut default_user_enabled = false;
+
+        if generate_default_user {
+            default_username = match env::var("DEFAULT_USER_USERNAME") {
+                Ok(d) => d,
+                Err(_) => panic!("No default username specified"),
+            };
+
+            default_email = match env::var("DEFAULT_USER_EMAIL") {
+                Ok(d) => d,
+                Err(_) => panic!("No default email specified"),
+            };
+
+            default_password = match env::var("DEFAULT_USER_PASSWORD") {
+                Ok(d) => d,
+                Err(_) => panic!("No default password specified"),
+            };
+
+            default_user_enabled = match env::var("DEFAULT_USER_ENABLED") {
+                Ok(d) => {
+                    let res: bool = d
+                        .trim()
+                        .parse()
+                        .expect("DEFAULT_USER_ENABLED must be a boolean");
+                    res
+                }
+                Err(_) => panic!("No default user enabled specified"),
+            };
+        }
 
         let create_indexes = match env::var("DB_CREATE_INDEXES") {
             Ok(d) => {

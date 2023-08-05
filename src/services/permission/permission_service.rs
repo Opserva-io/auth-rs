@@ -1,4 +1,4 @@
-use crate::repository::permission::permission::Permission;
+use crate::repository::permission::permission_model::Permission;
 use crate::repository::permission::permission_repository::{Error, PermissionRepository};
 use crate::services::role::role_service::RoleService;
 use log::info;
