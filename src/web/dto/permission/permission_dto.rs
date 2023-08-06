@@ -83,7 +83,7 @@ impl From<&Permission> for PermissionDto {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct SimplePermissionDto {
     pub id: String,
     pub name: String,

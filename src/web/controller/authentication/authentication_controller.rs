@@ -89,7 +89,18 @@ async fn convert_user_to_simple_dto(
     Ok(user_dto)
 }
 
-#[post("/login")]
+#[utoipa::path(
+    post,
+    path = "/api/v1/authentication/login/",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "OK", body = LoginResponse),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Authentication",
+)]
+#[post("/login/")]
 pub async fn login(
     login_request: web::Json<LoginRequest>,
     pool: web::Data<Config>,
@@ -149,7 +160,18 @@ pub async fn login(
     }
 }
 
-#[post("/register")]
+#[utoipa::path(
+    post,
+    path = "/api/v1/authentication/register/",
+    request_body = RegisterRequest,
+    responses(
+        (status = 200, description = "OK"),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Authentication",
+)]
+#[post("/register/")]
 pub async fn register(
     register_request: web::Json<RegisterRequest>,
     pool: web::Data<Config>,
@@ -225,7 +247,20 @@ pub async fn register(
     }
 }
 
-#[get("/current")]
+#[utoipa::path(
+    get,
+    path = "/api/v1/authentication/current/",
+    responses(
+        (status = 200, description = "OK", body = SimpleUserDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Authentication",
+    security(
+        ("Token" = [])
+    )
+)]
+#[get("/current/")]
 pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResponse {
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {

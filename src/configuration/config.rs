@@ -1,6 +1,7 @@
 use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
+use crate::configuration::server_config::ServerConfig;
 use crate::repository::permission::permission_model::Permission;
 use crate::repository::permission::permission_repository::PermissionRepository;
 use crate::repository::role::role_model::Role;
@@ -22,14 +23,14 @@ use regex::Regex;
 
 #[derive(Clone)]
 pub struct Config {
-    pub address: String,
-    pub port: u16,
+    pub server_config: ServerConfig,
     pub database: Database,
     pub services: Services,
     pub salt: String,
     pub permission_collection: String,
     pub role_collection: String,
     pub user_collection: String,
+    pub open_api: bool,
 }
 
 impl Config {
@@ -39,25 +40,25 @@ impl Config {
     ///
     /// # Arguments
     ///
-    /// * `address` - A String that holds the server address.
-    /// * `port` - A u16 that holds the server port.
+    /// * `server_config` - A ServerConfig instance.
     /// * `db_config` - A DbConfig instance.
     /// * `default_user_config` - A DefaultUserConfig instance.
     /// * `generate_default_user` - A bool that indicates whether to generate a default user or not.
     /// * `salt` - A String that holds the salt.
     /// * `jwt_config` - A JwtConfig instance.
+    /// * `open_api` - A bool that indicates whether to enable OpenAPI or not.
     ///
     /// # Returns
     ///
     /// A Config instance.
     pub async fn new(
-        address: String,
-        port: u16,
+        server_config: ServerConfig,
         db_config: DbConfig,
         default_user_config: DefaultUserConfig,
         generate_default_user: bool,
         salt: String,
         jwt_config: JwtConfig,
+        open_api: bool,
     ) -> Config {
         let mut client_options = match ClientOptions::parse(&db_config.connection_string).await {
             Ok(d) => d,
@@ -101,14 +102,14 @@ impl Config {
         let services = Services::new(permission_service, role_service, user_service, jwt_service);
 
         let cfg = Config {
-            address,
-            port,
+            server_config,
             database: db,
             services,
             salt,
             permission_collection: db_config.permission_collection,
             role_collection: db_config.role_collection,
             user_collection: db_config.user_collection,
+            open_api,
         };
 
         if generate_default_user {

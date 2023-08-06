@@ -50,14 +50,17 @@ async fn main() -> std::io::Result<()> {
 
     let config = EnvReader::read_configuration().await;
 
-    let addr = config.address.clone();
-    let port = config.port;
+    let addr = config.server_config.address.clone();
+    let port = config.server_config.port;
 
     info!("Starting server at {}:{}", addr, port);
 
     #[derive(OpenApi)]
     #[openapi(
         paths(
+            web::controller::authentication::authentication_controller::login,
+            web::controller::authentication::authentication_controller::register,
+            web::controller::authentication::authentication_controller::current_user,
             web::controller::health::health_controller::health,
             web::controller::permission::permission_controller::create_permission,
             web::controller::permission::permission_controller::find_all_permissions,
@@ -73,6 +76,12 @@ async fn main() -> std::io::Result<()> {
                 web::dto::permission::permission_dto::PermissionDto,
                 web::dto::permission::update_permission::UpdatePermission,
                 web::controller::health::health_controller::HealthResponse,
+                web::dto::authentication::login_request::LoginRequest,
+                web::dto::authentication::login_response::LoginResponse,
+                web::dto::authentication::register_request::RegisterRequest,
+                web::dto::user::user_dto::SimpleUserDto,
+                web::dto::role::role_dto::SimpleRoleDto,
+                web::dto::permission::permission_dto::SimplePermissionDto,
             )
         ),
         modifiers(&SecurityAddon)
@@ -83,17 +92,22 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let logger = Logger::default();
-        App::new()
+        let mut app = App::new()
             .wrap(logger)
             .wrap(GrantsMiddleware::with_extractor(
                 web::extractors::jwt_extractor::extract,
             ))
             .app_data(a_web::Data::new(config.clone()))
             .wrap(Cors::permissive())
-            .configure(Controller::configure_routes)
-            .service(
+            .configure(Controller::configure_routes);
+
+        if config.open_api {
+            app = app.service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
-            )
+            );
+        }
+
+        app
     })
     .bind((addr, port))?
     .run()
