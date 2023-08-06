@@ -626,7 +626,7 @@ pub async fn update_password(
                 let user = match pool
                     .services
                     .user_service
-                    .find_by_email(token, &pool.database)
+                    .find_by_username(token, &pool.database)
                     .await
                 {
                     Ok(d) => {
@@ -863,7 +863,7 @@ pub async fn delete_self(req: HttpRequest, pool: web::Data<Config>) -> HttpRespo
                 let user = match pool
                     .services
                     .user_service
-                    .find_by_email(&username, &pool.database)
+                    .find_by_username(&username, &pool.database)
                     .await
                 {
                     Ok(u) => match u {
