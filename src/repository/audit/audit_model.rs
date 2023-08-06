@@ -41,6 +41,9 @@ pub enum ResourceIdType {
     RoleIdVec,
     RoleName,
     RoleSearch,
+    UserId,
+    UserName,
+    UserSearch,
     None,
 }
 
@@ -66,6 +69,9 @@ impl Display for ResourceIdType {
             ResourceIdType::RoleIdVec => write!(f, "RoleIdVec"),
             ResourceIdType::RoleName => write!(f, "RoleName"),
             ResourceIdType::RoleSearch => write!(f, "RoleSearch"),
+            ResourceIdType::UserId => write!(f, "UserId"),
+            ResourceIdType::UserName => write!(f, "UserName"),
+            ResourceIdType::UserSearch => write!(f, "UserSearch"),
             ResourceIdType::None => write!(f, "None"),
         }
     }

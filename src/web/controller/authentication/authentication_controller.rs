@@ -46,7 +46,7 @@ pub async fn convert_user_to_simple_dto(
             .role_service
             .find_by_id_vec(
                 user.roles.clone().unwrap(),
-                &user_id,
+                user_id,
                 &pool.database,
                 &pool.services.audit_service,
             )
@@ -127,7 +127,12 @@ pub async fn login(
     let user = match pool
         .services
         .user_service
-        .find_by_username(&login_request.username, &pool.database)
+        .find_by_username(
+            &login_request.username,
+            "AUTH-RS",
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(u) => match u {
@@ -253,7 +258,12 @@ pub async fn register(
     match pool
         .services
         .user_service
-        .create(user, &pool.database)
+        .create(
+            user,
+            "AUTH-RS",
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(_) => HttpResponse::Ok().finish(),
@@ -293,7 +303,12 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                 let user = match pool
                     .services
                     .user_service
-                    .find_by_username(&username, &pool.database)
+                    .find_by_username(
+                        &username,
+                        token,
+                        &pool.database,
+                        &pool.services.audit_service,
+                    )
                     .await
                 {
                     Ok(u) => match u {
@@ -312,7 +327,7 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                     return HttpResponse::Forbidden().finish();
                 }
 
-                return match convert_user_to_simple_dto(user, &token, &pool).await {
+                return match convert_user_to_simple_dto(user, token, &pool).await {
                     Ok(u) => HttpResponse::Ok().json(u),
                     Err(e) => {
                         error!("Failed to convert User to SimpleUserDto: {}", e);

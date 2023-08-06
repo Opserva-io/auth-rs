@@ -394,7 +394,7 @@ impl PermissionService {
         let new_audit = Audit::new(
             user_id,
             Delete,
-            &id,
+            id,
             ResourceIdType::PermissionId,
             PermissionResourceType,
         );

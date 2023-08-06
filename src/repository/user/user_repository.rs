@@ -1,3 +1,4 @@
+use crate::repository::audit::audit_repository::Error as AuditError;
 use crate::repository::user::user_model::User;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
@@ -27,6 +28,7 @@ pub enum Error {
     EmailAlreadyTaken,
     InvalidEmail(String),
     MongoDb(MongoError),
+    Audit(AuditError),
 }
 
 impl Display for Error {
@@ -61,6 +63,7 @@ impl Display for Error {
             Error::EmailAlreadyTaken => write!(f, "Email already taken"),
             Error::InvalidEmail(email) => write!(f, "Invalid email address: {}", email),
             Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
+            Error::Audit(e) => write!(f, "Audit error: {}", e),
         }
     }
 }

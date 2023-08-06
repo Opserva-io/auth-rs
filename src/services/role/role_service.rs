@@ -395,7 +395,7 @@ impl RoleService {
         let new_audit = Audit::new(
             user_id,
             Delete,
-            &id,
+            id,
             ResourceIdType::RoleId,
             ResourceType::Role,
         );

@@ -269,7 +269,12 @@ impl Config {
         match self
             .services
             .user_service
-            .find_by_username(&default_user_config.username, &self.database)
+            .find_by_username(
+                &default_user_config.username,
+                "AUTH-RS",
+                &self.database,
+                &self.services.audit_service,
+            )
             .await
         {
             Ok(user) => {
@@ -320,7 +325,12 @@ impl Config {
                     match self
                         .services
                         .user_service
-                        .create(user, &self.database)
+                        .create(
+                            user,
+                            "AUTH-RS",
+                            &self.database,
+                            &self.services.audit_service,
+                        )
                         .await
                     {
                         Ok(_) => {}

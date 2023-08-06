@@ -41,7 +41,12 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                         let user = match res
                             .services
                             .user_service
-                            .find_by_username(&subject, &res.database)
+                            .find_by_username(
+                                &subject,
+                                "AUTH-RS",
+                                &res.database,
+                                &res.services.audit_service,
+                            )
                             .await
                         {
                             Ok(e) => match e {
@@ -68,7 +73,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                                 .role_service
                                 .find_by_id_vec(
                                     user.roles.unwrap(),
-                                    &token,
+                                    token,
                                     &res.database,
                                     &res.services.audit_service,
                                 )

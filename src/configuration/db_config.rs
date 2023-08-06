@@ -31,6 +31,7 @@ impl DbConfig {
     /// # Returns
     ///
     /// A DbConfig instance.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         connection_string: String,
         database_name: String,
