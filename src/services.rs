@@ -1,8 +1,10 @@
+use crate::services::audit::audit_service::AuditService;
 use crate::services::jwt::jwt_service::JwtService;
 use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
 use crate::services::user::user_service::UserService;
 
+pub mod audit;
 pub mod jwt;
 pub mod permission;
 pub mod role;
@@ -14,6 +16,7 @@ pub struct Services {
     pub role_service: RoleService,
     pub user_service: UserService,
     pub jwt_service: JwtService,
+    pub audit_service: AuditService,
 }
 
 impl Services {
@@ -27,6 +30,7 @@ impl Services {
     /// * `role_service` - The RoleService.
     /// * `user_service` - The UserService.
     /// * `jwt_service` - The JwtService.
+    /// * `audit_service` - The AuditService.
     ///
     /// # Returns
     ///
@@ -36,12 +40,14 @@ impl Services {
         role_service: RoleService,
         user_service: UserService,
         jwt_service: JwtService,
+        audit_service: AuditService,
     ) -> Services {
         Services {
             permission_service,
             role_service,
             user_service,
             jwt_service,
+            audit_service,
         }
     }
 }

@@ -21,6 +21,7 @@ The following environment variables can be used to configure `auth-rs`:
 | DB_PERMISSION_COLLECTION | `permissions` | `false`                                      | `String`    | The collection that holds the `Permission` entities                  |
 | DB_ROLE_COLLECTION       | `roles`       | `false`                                      | `String`    | The collection that holds the `Role` entities                        |
 | DB_USER_COLLECTION       | `users`       | `false`                                      | `String`    | The collection that holds the `User` entities                        |
+| DB_AUDIT_COLLECTION      | `audits`      | `false`                                      | `String`    | The collection that holds the `Audit` entities                       |
 | DB_CREATE_INDEXES        | `true`        | `false`                                      | `bool`      | Automatically create collection indexes                              |
 | HASH_SALT                | N/A           | `true`                                       | `String`    | The salt to use to hash passwords using `argon2`                     |
 | JWT_SECRET               | N/A           | `true`                                       | `String`    | The JWT secret                                                       |

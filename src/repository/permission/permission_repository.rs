@@ -1,3 +1,4 @@
+use crate::repository::audit::audit_repository::Error as AuditError;
 use crate::repository::permission::permission_model::Permission;
 use crate::repository::role::role_repository::Error as RoleError;
 use crate::services::role::role_service::RoleService;
@@ -25,6 +26,7 @@ pub enum Error {
     PermissionNotFound(String),
     MongoDb(MongoError),
     Role(RoleError),
+    Audit(AuditError),
 }
 
 impl fmt::Display for Error {
@@ -56,6 +58,7 @@ impl fmt::Display for Error {
             Error::PermissionNotFound(id) => write!(f, "Permission not found: {}", id),
             Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
             Error::Role(e) => write!(f, "Role error: {}", e),
+            Error::Audit(e) => write!(f, "Audit error: {}", e),
         }
     }
 }

@@ -2,12 +2,14 @@ use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
 use crate::configuration::server_config::ServerConfig;
+use crate::repository::audit::audit_repository::AuditRepository;
 use crate::repository::permission::permission_model::Permission;
 use crate::repository::permission::permission_repository::PermissionRepository;
 use crate::repository::role::role_model::Role;
 use crate::repository::role::role_repository::RoleRepository;
 use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::UserRepository;
+use crate::services::audit::audit_service::AuditService;
 use crate::services::jwt::jwt_service::JwtService;
 use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
@@ -82,6 +84,10 @@ impl Config {
             Ok(d) => d,
             Err(e) => panic!("Failed to initialize Role repository: {:?}", e),
         };
+        let audit_repository = match AuditRepository::new(db_config.audit_collection.clone()) {
+            Ok(d) => d,
+            Err(e) => panic!("Failed to initialize Audit repository: {:?}", e),
+        };
 
         let email_regex = Regex::new(
             r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-.][a-z0-9]+)*\.[a-z]{2,6})",
@@ -97,9 +103,16 @@ impl Config {
         let permission_service = PermissionService::new(permission_repository);
         let role_service = RoleService::new(role_repository);
         let user_service = UserService::new(user_repository);
+        let audit_service = AuditService::new(audit_repository);
         let jwt_service = JwtService::new(jwt_config);
 
-        let services = Services::new(permission_service, role_service, user_service, jwt_service);
+        let services = Services::new(
+            permission_service,
+            role_service,
+            user_service,
+            jwt_service,
+            audit_service,
+        );
 
         let cfg = Config {
             server_config,
@@ -146,7 +159,12 @@ impl Config {
         match self
             .services
             .permission_service
-            .find_by_name(name, &self.database)
+            .find_by_name(
+                name,
+                "AUTH-RS",
+                &self.database,
+                &self.services.audit_service,
+            )
             .await
         {
             Ok(d) => {
@@ -155,7 +173,7 @@ impl Config {
                     match self
                         .services
                         .permission_service
-                        .create(p, &self.database)
+                        .create(p, "AUTH-RS", &self.database, &self.services.audit_service)
                         .await
                     {
                         Ok(p) => return p,

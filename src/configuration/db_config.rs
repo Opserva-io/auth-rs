@@ -7,6 +7,7 @@ pub struct DbConfig {
     pub permission_collection: String,
     pub role_collection: String,
     pub user_collection: String,
+    pub audit_collection: String,
     pub create_indexes: bool,
 }
 
@@ -22,6 +23,7 @@ impl DbConfig {
     /// * `permission_collection` - A String that holds the permission collection name.
     /// * `role_collection` - A String that holds the role collection name.
     /// * `user_collection` - A String that holds the user collection name.
+    /// * `audit_collection` - A String that holds the audit collection name.
     /// * `create_indexes` - A bool that indicates whether to create indexes or not.
     ///
     /// # Returns
@@ -33,6 +35,7 @@ impl DbConfig {
         permission_collection: String,
         role_collection: String,
         user_collection: String,
+        audit_collection: String,
         create_indexes: bool,
     ) -> DbConfig {
         DbConfig {
@@ -41,6 +44,7 @@ impl DbConfig {
             permission_collection,
             role_collection,
             user_collection,
+            audit_collection,
             create_indexes,
         }
     }

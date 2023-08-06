@@ -63,6 +63,11 @@ impl EnvReader {
             Err(_) => String::from("users"),
         };
 
+        let audit_collection = match env::var("DB_AUDIT_COLLECTION") {
+            Ok(d) => d,
+            Err(_) => String::from("audits"),
+        };
+
         let salt = match env::var("HASH_SALT") {
             Ok(d) => d,
             Err(_) => panic!("No salt specified"),
@@ -157,6 +162,7 @@ impl EnvReader {
             permission_collection,
             role_collection,
             user_collection,
+            audit_collection,
             create_indexes,
         );
 

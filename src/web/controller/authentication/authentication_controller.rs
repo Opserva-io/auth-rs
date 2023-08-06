@@ -21,12 +21,13 @@ use log::error;
 /// # Arguments
 ///
 /// * `user` - A User
+/// * `pool` - The database connection pool
+/// * `audit_service` - The AuditService
 ///
 /// # Example
 ///
 /// ```
-/// let user = User::new("user1".to_string(), None, None, None, None, None, None, None, None, None, None, None, None, None, None, None);
-/// let user_dto = convert_user_to_simple_dto(user);
+/// let user_dto = convert_user_to_simple_dto(user, &pool, &audit_service).await;
 /// ```
 ///
 /// # Returns
@@ -34,6 +35,7 @@ use log::error;
 /// * `Result<SimpleUserDto, ConvertError>` - The result containing the SimpleUserDto or the ConvertError that occurred
 pub async fn convert_user_to_simple_dto(
     user: User,
+    user_id: &str,
     pool: &Config,
 ) -> Result<SimpleUserDto, ConvertError> {
     let mut user_dto = SimpleUserDto::from(user.clone());
@@ -61,7 +63,12 @@ pub async fn convert_user_to_simple_dto(
                     let permissions = match pool
                         .services
                         .permission_service
-                        .find_by_id_vec(r.permissions.clone().unwrap(), &pool.database)
+                        .find_by_id_vec(
+                            r.permissions.clone().unwrap(),
+                            user_id,
+                            &pool.database,
+                            &pool.services.audit_service,
+                        )
                         .await
                     {
                         Ok(d) => d,
@@ -153,7 +160,7 @@ pub async fn login(
         return HttpResponse::BadRequest().finish();
     }
 
-    match pool.services.jwt_service.generate_jwt_token(&user.email) {
+    match pool.services.jwt_service.generate_jwt_token(&user.username) {
         Some(t) => HttpResponse::Ok().json(LoginResponse::new(t)),
         None => HttpResponse::InternalServerError()
             .json(InternalServerError::new("Failed to generate JWT token")),
@@ -276,7 +283,7 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                 let user = match pool
                     .services
                     .user_service
-                    .find_by_email(&username, &pool.database)
+                    .find_by_username(&username, &pool.database)
                     .await
                 {
                     Ok(u) => match u {
@@ -295,7 +302,7 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                     return HttpResponse::Forbidden().finish();
                 }
 
-                return match convert_user_to_simple_dto(user, &pool).await {
+                return match convert_user_to_simple_dto(user, &token, &pool).await {
                     Ok(u) => HttpResponse::Ok().json(u),
                     Err(e) => {
                         error!("Failed to convert User to SimpleUserDto: {}", e);
