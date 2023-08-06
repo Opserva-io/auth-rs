@@ -12,3 +12,13 @@ pub struct UpdateUser {
     pub roles: Option<Vec<String>>,
     pub enabled: bool,
 }
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct UpdateOwnUser {
+    pub username: String,
+    pub email: String,
+    #[serde(rename = "firstName")]
+    pub first_name: String,
+    #[serde(rename = "lastName")]
+    pub last_name: String,
+}

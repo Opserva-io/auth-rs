@@ -76,6 +76,7 @@ async fn main() -> std::io::Result<()> {
             web::controller::user::user_controller::find_all,
             web::controller::user::user_controller::find_by_id,
             web::controller::user::user_controller::update,
+            web::controller::user::user_controller::update_self,
             web::controller::user::user_controller::update_password,
             web::controller::user::user_controller::admin_update_password,
             web::controller::user::user_controller::delete,
@@ -101,6 +102,7 @@ async fn main() -> std::io::Result<()> {
                 web::dto::user::create_user::CreateUser,
                 web::dto::user::user_dto::UserDto,
                 web::dto::user::update_user::UpdateUser,
+                web::dto::user::update_user::UpdateOwnUser,
                 web::dto::user::update_password::UpdatePassword,
                 web::dto::user::update_password::AdminUpdatePassword,
             )
