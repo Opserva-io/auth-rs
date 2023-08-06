@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CreateRole {
     pub name: String,
     pub description: Option<String>,

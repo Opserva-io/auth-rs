@@ -3,7 +3,7 @@ use crate::web::dto::permission::permission_dto::{PermissionDto, SimplePermissio
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct RoleDto {
     pub id: String,
     pub name: String,

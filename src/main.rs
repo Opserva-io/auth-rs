@@ -67,6 +67,11 @@ async fn main() -> std::io::Result<()> {
             web::controller::permission::permission_controller::find_by_id,
             web::controller::permission::permission_controller::update_permission,
             web::controller::permission::permission_controller::delete_permission,
+            web::controller::role::role_controller::create,
+            web::controller::role::role_controller::find_all_roles,
+            web::controller::role::role_controller::find_by_id,
+            web::controller::role::role_controller::update,
+            web::controller::role::role_controller::delete,
         ),
         components(
             schemas(
@@ -82,6 +87,9 @@ async fn main() -> std::io::Result<()> {
                 web::dto::user::user_dto::SimpleUserDto,
                 web::dto::role::role_dto::SimpleRoleDto,
                 web::dto::permission::permission_dto::SimplePermissionDto,
+                web::dto::role::role_dto::RoleDto,
+                web::dto::role::create_role::CreateRole,
+                web::dto::role::update_role::UpdateRole,
             )
         ),
         modifiers(&SecurityAddon)
