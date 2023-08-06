@@ -15,7 +15,7 @@ RUN cargo build --release
 FROM debian:stable-slim
 
 # Set the environment variables
-ENV SERVER_ADDR=127.0.0.1
+ENV SERVER_ADDR=0.0.0.0
 ENV SERVER_PORT=8080
 ENV DB_CONNECTION_STRING=mongodb+srv://admin:admin@testcluster.mongodb.net/?retryWrites=true&w=majority
 ENV DB_DATABASE=test

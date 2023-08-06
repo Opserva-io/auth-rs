@@ -1,8 +1,9 @@
 use crate::repository::role::role_model::Role;
 use crate::web::dto::permission::permission_dto::{PermissionDto, SimplePermissionDto};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct RoleDto {
     pub id: String,
     pub name: String,
@@ -86,7 +87,7 @@ impl From<&Role> for RoleDto {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct SimpleRoleDto {
     pub id: String,
     pub name: String,

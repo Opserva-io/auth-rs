@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct UpdatePassword {
     #[serde(rename = "oldPassword")]
     pub old_password: String,
@@ -8,7 +9,7 @@ pub struct UpdatePassword {
     pub new_password: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct AdminUpdatePassword {
     pub password: String,
 }

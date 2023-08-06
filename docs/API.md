@@ -5,6 +5,7 @@ CRUD operations are available for users, roles and permissions.
 
 ## Index
 
+- [OpenAPI / Swagger](#openapi--swagger)
 - [Authentication](#authentication)
 - [Register](#register)
 - [Login](#login)
@@ -27,13 +28,17 @@ CRUD operations are available for users, roles and permissions.
 - [Searching](#searching-3)
 - [Health](#health)
 
+## OpenAPI / Swagger
+
+OpenAPI and Swagger documentation is available via the `/swagger-ui` endpoint.
+
 ## Authentication
 
 Authentication is handled using JSON Web Tokens (JWT). The following endpoints are available:
 
-* `/api/v1/authentication/register`
-* `/api/v1/authentication/login`
-* `/api/v1/authentication/current`
+* `/api/v1/authentication/register/`
+* `/api/v1/authentication/login/`
+* `/api/v1/authentication/current/`
 
 ### Register
 
@@ -44,7 +49,7 @@ using
 #### Request
 
 ```http
-POST /api/v1/authentication/register
+POST /api/v1/authentication/register/
 {
   "username": "example",
   "email": "example@codedead.com",
@@ -70,7 +75,7 @@ authorization.
 #### Request
 
 ```http
-POST /api/v1/authentication/login
+POST /api/v1/authentication/login/
 {
   "username": "example",
   "password": "password"
@@ -92,7 +97,7 @@ The current user can be retrieved using the access token that was obtained after
 #### Request
 
 ```http
-GET /api/v1/authentication/current
+GET /api/v1/authentication/current/
 Authorization: Bearer <access token here>
 ```
 
@@ -301,6 +306,7 @@ Authorization: Bearer <access token here>
 
 ```http
 PUT /api/v1/users/{id}
+Authorization: Bearer <access token here>
 {
   "username": "username",
   "email": "example@codedead.com",

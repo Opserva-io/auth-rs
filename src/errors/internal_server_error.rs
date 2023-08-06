@@ -1,8 +1,9 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use std::time::SystemTime;
+use utoipa::ToSchema;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct InternalServerError {
     message: String,
     timestamp: String,

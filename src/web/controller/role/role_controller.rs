@@ -147,6 +147,20 @@ pub async fn validate_permissions(
     Ok(())
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/roles/",
+    request_body = CreateRole,
+    responses(
+        (status = 200, description = "OK", body = RoleDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Roles",
+    security(
+        ("Token" = [])
+    )
+)]
 #[post("/")]
 #[has_permissions("CAN_CREATE_ROLE")]
 pub async fn create(role_dto: web::Json<CreateRole>, pool: web::Data<Config>) -> HttpResponse {
@@ -191,6 +205,21 @@ pub async fn create(role_dto: web::Json<CreateRole>, pool: web::Data<Config>) ->
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/roles/",
+    params(
+        ("text" = Option<String>, Query, description = "The text to search for", nullable = true),
+    ),
+    responses(
+        (status = 200, description = "OK", body = Vec<RoleDto>),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Roles",
+    security(
+        ("Token" = [])
+    )
+)]
 #[get("/")]
 #[has_permissions("CAN_READ_ROLE")]
 pub async fn find_all_roles(
@@ -233,6 +262,22 @@ pub async fn find_all_roles(
     HttpResponse::Ok().json(role_dto_list)
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/roles/{id}",
+    params(
+        ("id" = String, Path, description = "The ID of the Role"),
+    ),
+    responses(
+        (status = 200, description = "OK", body = RoleDto),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Roles",
+    security(
+        ("Token" = [])
+    )
+)]
 #[get("/{id}")]
 #[has_permissions("CAN_READ_ROLE")]
 pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
@@ -262,6 +307,24 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/roles/{id}",
+    request_body = UpdateRole,
+    params(
+        ("id" = String, Path, description = "The ID of the Role"),
+    ),
+    responses(
+        (status = 200, description = "OK", body = RoleDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Roles",
+    security(
+        ("Token" = [])
+    )
+)]
 #[put("/{id}")]
 #[has_permissions("CAN_UPDATE_ROLE")]
 pub async fn update(
@@ -330,6 +393,22 @@ pub async fn update(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/roles/{id}",
+    params(
+        ("id" = String, Path, description = "The ID of the Role"),
+    ),
+    responses(
+        (status = 200, description = "OK"),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Roles",
+    security(
+        ("Token" = [])
+    )
+)]
 #[delete("/{id}")]
 #[has_permissions("CAN_DELETE_ROLE")]
 pub async fn delete(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {

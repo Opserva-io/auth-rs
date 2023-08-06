@@ -80,6 +80,8 @@ A couple of dependencies are required in order to build `auth-rs`:
 * [jsonwebtoken](https://crates.io/crates/jsonwebtoken)
 * [env_logger](https://crates.io/crates/env_logger)
 * [log](https://crates.io/crates/log)
+* [utoipa](https://crates.io/crates/utoipa)
+* [utoipa-swagger-ui](https://crates.io/crates/utoipa-swagger-ui)
 
 ## About
 

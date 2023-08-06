@@ -2,6 +2,7 @@ use crate::configuration::config::Config;
 use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
+use crate::configuration::server_config::ServerConfig;
 use std::env;
 
 pub struct EnvReader {}
@@ -26,7 +27,7 @@ impl EnvReader {
     pub async fn read_configuration() -> Config {
         let addr = match env::var("SERVER_ADDR") {
             Ok(d) => d,
-            Err(_) => String::from("127.0.0.1"),
+            Err(_) => String::from("0.0.0.0"),
         };
 
         let port = match env::var("SERVER_PORT") {
@@ -135,6 +136,14 @@ impl EnvReader {
             Err(_) => true,
         };
 
+        let enable_openapi = match env::var("ENABLE_OPENAPI") {
+            Ok(d) => {
+                let res: bool = d.trim().parse().expect("ENABLE_OPENAPI must be a boolean");
+                res
+            }
+            Err(_) => true,
+        };
+
         let default_user_config = DefaultUserConfig::new(
             default_username,
             default_email,
@@ -151,14 +160,16 @@ impl EnvReader {
             create_indexes,
         );
 
+        let server_config = ServerConfig::new(addr, port);
+
         Config::new(
-            addr,
-            port,
+            server_config,
             db_config,
             default_user_config,
             generate_default_user,
             salt,
             JwtConfig::new(jwt_secret, jwt_expiration),
+            enable_openapi,
         )
         .await
     }
