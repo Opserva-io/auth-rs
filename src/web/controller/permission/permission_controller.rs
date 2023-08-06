@@ -17,6 +17,7 @@ use log::error;
     request_body = CreatePermission,
     responses(
         (status = 200, description = "OK", body = PermissionDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
         (status = 500, description = "Internal Server Error", body = InternalServerError),
     ),
     tag = "Permissions",
@@ -162,6 +163,7 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
     ),
     responses(
         (status = 200, description = "OK", body = PermissionDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
         (status = 404, description = "Not Found"),
         (status = 500, description = "Internal Server Error", body = InternalServerError),
     ),
@@ -177,6 +179,10 @@ pub async fn update_permission(
     update: web::Json<UpdatePermission>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
+    if update.name.is_empty() {
+        return HttpResponse::BadRequest().json(BadRequest::new("Empty name"));
+    }
+
     let res = pool
         .services
         .permission_service

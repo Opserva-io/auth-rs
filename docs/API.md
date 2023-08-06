@@ -306,6 +306,7 @@ Authorization: Bearer <access token here>
 
 ```http
 PUT /api/v1/users/{id}
+Authorization: Bearer <access token here>
 {
   "username": "username",
   "email": "example@codedead.com",

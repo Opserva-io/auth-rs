@@ -153,6 +153,20 @@ async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, Conve
     Ok(user_dto)
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/users/",
+    request_body = CreateUser,
+    responses(
+        (status = 200, description = "OK", body = UserDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Users",
+    security(
+        ("Token" = [])
+    )
+)]
 #[post("/")]
 #[has_permissions("CAN_CREATE_USER")]
 pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) -> HttpResponse {
@@ -229,6 +243,21 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/users/",
+    params(
+        ("text" = Option<String>, Query, description = "The text to search for", nullable = true),
+    ),
+    responses(
+        (status = 200, description = "OK", body = Vec<UserDto>),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Users",
+    security(
+        ("Token" = [])
+    )
+)]
 #[get("/")]
 #[has_permissions("CAN_READ_USER")]
 pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>) -> HttpResponse {
@@ -268,6 +297,22 @@ pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>
     HttpResponse::Ok().json(user_dto_list)
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/users/{id}",
+    params(
+        ("id" = String, Path, description = "The ID of the User"),
+    ),
+    responses(
+        (status = 200, description = "OK", body = UserDto),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Users",
+    security(
+        ("Token" = [])
+    )
+)]
 #[get("/{id}")]
 #[has_permissions("CAN_READ_USER")]
 pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
@@ -302,6 +347,24 @@ pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpR
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/users/{id}",
+    request_body = UpdateUser,
+    params(
+        ("id" = String, Path, description = "The ID of the User"),
+    ),
+    responses(
+        (status = 200, description = "OK", body = UserDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Users",
+    security(
+        ("Token" = [])
+    )
+)]
 #[put("/{id}")]
 #[has_permissions("CAN_UPDATE_USER")]
 pub async fn update(
@@ -383,7 +446,25 @@ pub async fn update(
     }
 }
 
-#[put("/{id}/password")]
+#[utoipa::path(
+    put,
+    path = "/api/v1/users/{id}/password/",
+    request_body = UpdatePassword,
+    params(
+        ("id" = String, Path, description = "The ID of the User"),
+    ),
+    responses(
+        (status = 200, description = "OK"),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Users",
+    security(
+        ("Token" = [])
+    )
+)]
+#[put("/{id}/password/")]
 #[has_permissions("CAN_UPDATE_SELF")]
 pub async fn update_password(
     id: web::Path<String>,
@@ -471,7 +552,25 @@ pub async fn update_password(
     }
 }
 
-#[put("/{id}/password/admin")]
+#[utoipa::path(
+    put,
+    path = "/api/v1/users/{id}/password/admin/",
+    request_body = AdminUpdatePassword,
+    params(
+        ("id" = String, Path, description = "The ID of the User"),
+    ),
+    responses(
+        (status = 200, description = "OK"),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Users",
+    security(
+        ("Token" = [])
+    )
+)]
+#[put("/{id}/password/admin/")]
 #[has_permissions("CAN_UPDATE_USER")]
 pub async fn admin_update_password(
     id: web::Path<String>,
@@ -538,6 +637,22 @@ pub async fn admin_update_password(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/users/{id}",
+    params(
+        ("id" = String, Path, description = "The ID of the User"),
+    ),
+    responses(
+        (status = 200, description = "OK"),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Users",
+    security(
+        ("Token" = [])
+    )
+)]
 #[delete("/{id}")]
 #[has_permissions("CAN_DELETE_USER")]
 pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
@@ -558,7 +673,21 @@ pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpRespo
     }
 }
 
-#[delete("/delete_self")]
+#[utoipa::path(
+    delete,
+    path = "/api/v1/users/delete-self/",
+    responses(
+        (status = 200, description = "OK"),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 403, description = "Forbidden"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Users",
+    security(
+        ("Token" = [])
+    )
+)]
+#[delete("/delete-self/")]
 #[has_permissions("CAN_DELETE_SELF")]
 pub async fn delete_self(req: HttpRequest, pool: web::Data<Config>) -> HttpResponse {
     if let Some(auth_header) = req.headers().get("Authorization") {

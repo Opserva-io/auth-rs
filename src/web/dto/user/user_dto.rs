@@ -3,7 +3,7 @@ use crate::web::dto::role::role_dto::{RoleDto, SimpleRoleDto};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UserDto {
     pub id: String,
     pub username: String,

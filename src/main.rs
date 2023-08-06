@@ -72,6 +72,14 @@ async fn main() -> std::io::Result<()> {
             web::controller::role::role_controller::find_by_id,
             web::controller::role::role_controller::update,
             web::controller::role::role_controller::delete,
+            web::controller::user::user_controller::create,
+            web::controller::user::user_controller::find_all,
+            web::controller::user::user_controller::find_by_id,
+            web::controller::user::user_controller::update,
+            web::controller::user::user_controller::update_password,
+            web::controller::user::user_controller::admin_update_password,
+            web::controller::user::user_controller::delete,
+            web::controller::user::user_controller::delete_self,
         ),
         components(
             schemas(
@@ -90,6 +98,11 @@ async fn main() -> std::io::Result<()> {
                 web::dto::role::role_dto::RoleDto,
                 web::dto::role::create_role::CreateRole,
                 web::dto::role::update_role::UpdateRole,
+                web::dto::user::create_user::CreateUser,
+                web::dto::user::user_dto::UserDto,
+                web::dto::user::update_user::UpdateUser,
+                web::dto::user::update_password::UpdatePassword,
+                web::dto::user::update_password::AdminUpdatePassword,
             )
         ),
         modifiers(&SecurityAddon)

@@ -153,6 +153,7 @@ pub async fn validate_permissions(
     request_body = CreateRole,
     responses(
         (status = 200, description = "OK", body = RoleDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
         (status = 500, description = "Internal Server Error", body = InternalServerError),
     ),
     tag = "Roles",
@@ -315,6 +316,7 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
     ),
     responses(
         (status = 200, description = "OK", body = RoleDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
         (status = 404, description = "Not Found"),
         (status = 500, description = "Internal Server Error", body = InternalServerError),
     ),
