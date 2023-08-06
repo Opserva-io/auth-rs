@@ -265,7 +265,12 @@ pub async fn find_all_roles(
         };
 
     let res = match search.text.clone() {
-        Some(t) => match pool.services.role_service.search(&t, &pool.database).await {
+        Some(t) => match pool
+            .services
+            .role_service
+            .search(&t, &user_id, &pool.database, &pool.services.audit_service)
+            .await
+        {
             Ok(d) => d,
             Err(e) => {
                 error!("Error while searching for Roles: {}", e);

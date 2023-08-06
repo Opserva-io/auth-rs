@@ -1,4 +1,4 @@
-use crate::repository::audit::audit_model::Action::{Create, Delete, Read, Update};
+use crate::repository::audit::audit_model::Action::{Create, Delete, Read, Search, Update};
 use crate::repository::audit::audit_model::{Audit, ResourceIdType, ResourceType};
 use crate::repository::role::role_model::Role;
 use crate::repository::role::role_repository::{Error, RoleRepository};
@@ -454,7 +454,9 @@ impl RoleService {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
+    /// * `user_id` - The id of the User searching for the Role entities.
     /// * `db` - The Database to be used.
+    /// * `audit_service` - The AuditService to be used.
     ///
     /// # Example
     ///
@@ -462,16 +464,40 @@ impl RoleService {
     /// let role_repository = RoleRepository::new(String::from("roles"));
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
-    ///
-    /// let res = role_service.search("text", &db).await;
+    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
+    /// let text = "text";
+    /// let user_id = "user_id";
+    /// let result = role_service.search(text, user_id, &db, &audit_service);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<Role>` - The vector of Role entities.
     /// * `Error` - The Error that occurred.
-    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Role>, Error> {
+    pub async fn search(
+        &self,
+        text: &str,
+        user_id: &str,
+        db: &Database,
+        audit_service: &AuditService,
+    ) -> Result<Vec<Role>, Error> {
         info!("Searching for Role by text: {}", text);
+
+        let new_audit = Audit::new(
+            user_id,
+            Search,
+            "",
+            ResourceIdType::RoleSearch,
+            ResourceType::Role,
+        );
+        match audit_service.create(new_audit, db).await {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Failed to create Audit: {}", e);
+                return Err(Error::Audit(e));
+            }
+        }
+
         self.role_repository.search(text, db).await
     }
 }
