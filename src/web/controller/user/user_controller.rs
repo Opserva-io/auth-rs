@@ -9,7 +9,7 @@ use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::search::search_request::SearchRequest;
 use crate::web::dto::user::create_user::CreateUser;
 use crate::web::dto::user::update_password::{AdminUpdatePassword, UpdatePassword};
-use crate::web::dto::user::update_user::UpdateUser;
+use crate::web::dto::user::update_user::{UpdateOwnUser, UpdateUser};
 use crate::web::dto::user::user_dto::UserDto;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
@@ -448,7 +448,104 @@ pub async fn update(
 
 #[utoipa::path(
     put,
+    path = "/api/v1/users/{id}/self/",
+    params(
+        ("id" = String, Path, description = "The ID of the User"),
+    ),
+    request_body = UpdateOwnUser,
+    responses(
+        (status = 200, description = "OK", body = SimpleUserDto),
+        (status = 400, description = "Bad Request", body = BadRequest),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Users",
+    security(
+        ("Token" = [])
+    )
+)]
+#[put("/{id}/self/")]
+#[has_permissions("CAN_UPDATE_SELF")]
+pub async fn update_self(
+    req: HttpRequest,
+    user_dto: web::Json<UpdateOwnUser>,
+    pool: web::Data<Config>,
+) -> HttpResponse {
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                let mut user = match pool
+                    .services
+                    .user_service
+                    .find_by_email(token, &pool.database)
+                    .await
+                {
+                    Ok(d) => {
+                        if d.is_some() {
+                            d.unwrap()
+                        } else {
+                            return HttpResponse::NotFound().finish();
+                        }
+                    }
+                    Err(e) => {
+                        error!("Error finding User by email {}: {}", token, e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()));
+                    }
+                };
+
+                if user_dto.username.is_empty() {
+                    return HttpResponse::BadRequest()
+                        .json(BadRequest::new("Empty usernames are not allowed"));
+                }
+
+                if user_dto.email.is_empty() {
+                    return HttpResponse::BadRequest()
+                        .json(BadRequest::new("Empty email addresses are not allowed"));
+                }
+
+                let user_dto = user_dto.into_inner();
+
+                user.username = user_dto.username;
+                user.email = user_dto.email;
+                user.first_name = user_dto.first_name;
+                user.last_name = user_dto.last_name;
+
+                let res = match pool
+                    .services
+                    .user_service
+                    .update(user, &pool.database)
+                    .await
+                {
+                    Ok(d) => d,
+                    Err(e) => {
+                        error!("Error updating User: {}", e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()));
+                    }
+                };
+
+                return match crate::web::controller::authentication::authentication_controller::convert_user_to_simple_dto(res, &pool).await {
+                    Ok(dto) => {
+                        HttpResponse::Ok().json(dto)
+                    },
+                    Err(e) => {
+                        error!("Error converting User to UserDto: {}", e);
+                        HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
+                    }
+                };
+            }
+        }
+    }
+    HttpResponse::BadRequest().finish()
+}
+
+#[utoipa::path(
+    put,
     path = "/api/v1/users/{id}/password/",
+    params(
+        ("id" = String, Path, description = "The ID of the User"),
+    ),
     request_body = UpdatePassword,
     params(
         ("id" = String, Path, description = "The ID of the User"),
@@ -467,89 +564,96 @@ pub async fn update(
 #[put("/{id}/password/")]
 #[has_permissions("CAN_UPDATE_SELF")]
 pub async fn update_password(
-    id: web::Path<String>,
+    req: HttpRequest,
     update_password: web::Json<UpdatePassword>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
-    let id = id.into_inner();
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                let user = match pool
+                    .services
+                    .user_service
+                    .find_by_email(token, &pool.database)
+                    .await
+                {
+                    Ok(d) => {
+                        if d.is_some() {
+                            d.unwrap()
+                        } else {
+                            return HttpResponse::NotFound().finish();
+                        }
+                    }
+                    Err(e) => {
+                        error!("Error finding User by email {}: {}", token, e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()));
+                    }
+                };
 
-    let user = match pool
-        .services
-        .user_service
-        .find_by_id(&id, &pool.database)
-        .await
-    {
-        Ok(d) => {
-            if d.is_some() {
-                d.unwrap()
-            } else {
-                return HttpResponse::NotFound().finish();
+                let update_password = update_password.into_inner();
+                if update_password.old_password.is_empty() {
+                    return HttpResponse::BadRequest()
+                        .json(BadRequest::new("Empty old passwords are not allowed"));
+                }
+
+                if update_password.new_password.is_empty() {
+                    return HttpResponse::BadRequest()
+                        .json(BadRequest::new("Empty new passwords are not allowed"));
+                }
+
+                let argon2 = Argon2::default();
+                let salt = match SaltString::from_b64(&pool.salt) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        error!("Error generating salt: {}", e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new("Failed to generate salt"));
+                    }
+                };
+
+                let old_password_hash = &update_password.old_password.as_bytes();
+                let old_password_hash = match argon2.hash_password(old_password_hash, &salt) {
+                    Ok(e) => e.to_string(),
+                    Err(e) => {
+                        error!("Error hashing password: {}", e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new("Failed to hash password"));
+                    }
+                };
+
+                if old_password_hash != user.password {
+                    return HttpResponse::Forbidden().finish();
+                }
+
+                let new_password_hash = &update_password.new_password.as_bytes();
+                let new_password_hash = match argon2.hash_password(new_password_hash, &salt) {
+                    Ok(e) => e.to_string(),
+                    Err(e) => {
+                        error!("Error hashing password: {}", e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new("Failed to hash password"));
+                    }
+                };
+
+                return match pool
+                    .services
+                    .user_service
+                    .update_password(&user.id, &new_password_hash, &pool.database)
+                    .await
+                {
+                    Ok(_) => HttpResponse::Ok().finish(),
+                    Err(e) => {
+                        error!("Error updating password: {}", e);
+                        HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()))
+                    }
+                };
             }
         }
-        Err(e) => {
-            error!("Error finding User by ID {}: {}", id, e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new(&e.to_string()));
-        }
-    };
-
-    let update_password = update_password.into_inner();
-    if update_password.old_password.is_empty() {
-        return HttpResponse::BadRequest()
-            .json(BadRequest::new("Empty old passwords are not allowed"));
     }
 
-    if update_password.new_password.is_empty() {
-        return HttpResponse::BadRequest()
-            .json(BadRequest::new("Empty new passwords are not allowed"));
-    }
-
-    let argon2 = Argon2::default();
-    let salt = match SaltString::from_b64(&pool.salt) {
-        Ok(s) => s,
-        Err(e) => {
-            error!("Error generating salt: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to generate salt"));
-        }
-    };
-
-    let old_password_hash = &update_password.old_password.as_bytes();
-    let old_password_hash = match argon2.hash_password(old_password_hash, &salt) {
-        Ok(e) => e.to_string(),
-        Err(e) => {
-            error!("Error hashing password: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to hash password"));
-        }
-    };
-
-    if old_password_hash != user.password {
-        return HttpResponse::Forbidden().finish();
-    }
-
-    let new_password_hash = &update_password.new_password.as_bytes();
-    let new_password_hash = match argon2.hash_password(new_password_hash, &salt) {
-        Ok(e) => e.to_string(),
-        Err(e) => {
-            error!("Error hashing password: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to hash password"));
-        }
-    };
-
-    match pool
-        .services
-        .user_service
-        .update_password(&user.id, &new_password_hash, &pool.database)
-        .await
-    {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => {
-            error!("Error updating password: {}", e);
-            HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
-        }
-    }
+    HttpResponse::BadRequest().finish()
 }
 
 #[utoipa::path(
@@ -675,7 +779,10 @@ pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpRespo
 
 #[utoipa::path(
     delete,
-    path = "/api/v1/users/delete-self/",
+    path = "/api/v1/users/{id}/self/",
+    params(
+        ("id" = String, Path, description = "The ID of the User"),
+    ),
     responses(
         (status = 200, description = "OK"),
         (status = 400, description = "Bad Request", body = BadRequest),
@@ -687,7 +794,7 @@ pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpRespo
         ("Token" = [])
     )
 )]
-#[delete("/delete-self/")]
+#[delete("/{id}/self/")]
 #[has_permissions("CAN_DELETE_SELF")]
 pub async fn delete_self(req: HttpRequest, pool: web::Data<Config>) -> HttpResponse {
     if let Some(auth_header) = req.headers().get("Authorization") {

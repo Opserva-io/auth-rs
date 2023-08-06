@@ -32,7 +32,7 @@ use log::error;
 /// # Returns
 ///
 /// * `Result<SimpleUserDto, ConvertError>` - The result containing the SimpleUserDto or the ConvertError that occurred
-async fn convert_user_to_simple_dto(
+pub async fn convert_user_to_simple_dto(
     user: User,
     pool: &Config,
 ) -> Result<SimpleUserDto, ConvertError> {
