@@ -6,6 +6,7 @@ use mongodb::Database;
 #[derive(Clone)]
 pub struct AuditService {
     pub audit_repository: AuditRepository,
+    pub enabled: bool,
 }
 
 impl AuditService {
@@ -16,12 +17,16 @@ impl AuditService {
     /// # Arguments
     ///
     /// * `audit_repository` - The AuditRepository.
+    /// * `enabled` - Whether or not the AuditService is enabled.
     ///
     /// # Returns
     ///
     /// * `AuditService` - The AuditService.
-    pub fn new(audit_repository: AuditRepository) -> AuditService {
-        AuditService { audit_repository }
+    pub fn new(audit_repository: AuditRepository, enabled: bool) -> AuditService {
+        AuditService {
+            audit_repository,
+            enabled,
+        }
     }
 
     /// # Summary
@@ -37,6 +42,10 @@ impl AuditService {
     ///
     /// * `Result<(), Error>` - The result of the operation.
     pub async fn create(&self, audit: Audit, db: &Database) -> Result<(), Error> {
+        if !self.enabled {
+            return Ok(());
+        }
+
         info!("Creating audit: {}", audit);
         self.audit_repository.create(audit, db).await
     }

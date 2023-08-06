@@ -33,10 +33,14 @@ impl Display for ResourceType {
 
 #[derive(Serialize, Deserialize)]
 pub enum ResourceIdType {
-    Id,
-    IdVec,
-    Name,
-    Search,
+    PermissionId,
+    PermissionIdVec,
+    PermissionName,
+    PermissionSearch,
+    RoleId,
+    RoleIdVec,
+    RoleName,
+    RoleSearch,
     None,
 }
 
@@ -54,10 +58,14 @@ impl Display for ResourceIdType {
     /// A std::fmt::Result.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ResourceIdType::Id => write!(f, "Id"),
-            ResourceIdType::IdVec => write!(f, "IdVec"),
-            ResourceIdType::Name => write!(f, "Name"),
-            ResourceIdType::Search => write!(f, "Search"),
+            ResourceIdType::PermissionId => write!(f, "PermissionId"),
+            ResourceIdType::PermissionIdVec => write!(f, "PermissionIdVec"),
+            ResourceIdType::PermissionName => write!(f, "PermissionName"),
+            ResourceIdType::PermissionSearch => write!(f, "PermissionSearch"),
+            ResourceIdType::RoleId => write!(f, "RoleId"),
+            ResourceIdType::RoleIdVec => write!(f, "RoleIdVec"),
+            ResourceIdType::RoleName => write!(f, "RoleName"),
+            ResourceIdType::RoleSearch => write!(f, "RoleSearch"),
             ResourceIdType::None => write!(f, "None"),
         }
     }

@@ -63,7 +63,11 @@ impl Display for ConvertError {
 /// # Returns
 ///
 /// * `Result<(), RoleError>` - The result containing the () or the RoleError that occurred
-async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<(), RoleError> {
+async fn validate_roles(
+    roles: &Option<Vec<String>>,
+    user_id: &str,
+    pool: &Config,
+) -> Result<(), RoleError> {
     if roles.is_none() {
         return Ok(());
     }
@@ -74,7 +78,7 @@ async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<()
         let res = pool
             .services
             .role_service
-            .find_by_id(&role, &pool.database)
+            .find_by_id(&role, user_id, &pool.database, &pool.services.audit_service)
             .await;
 
         match res {
@@ -122,7 +126,12 @@ async fn convert_user_to_dto(
         let roles = match pool
             .services
             .role_service
-            .find_by_id_vec(user.roles.clone().unwrap(), &pool.database)
+            .find_by_id_vec(
+                user.roles.clone().unwrap(),
+                &user_id,
+                &pool.database,
+                &pool.services.audit_service,
+            )
             .await
         {
             Ok(d) => d,
@@ -199,7 +208,7 @@ pub async fn create(
     let user_dto = user_dto.into_inner();
 
     if user_dto.roles.is_some() {
-        match validate_roles(&user_dto.roles, &pool).await {
+        match validate_roles(&user_dto.roles, &user_id, &pool).await {
             Ok(_) => (),
             Err(e) => {
                 error!("Error validating roles: {}", e);
@@ -458,7 +467,7 @@ pub async fn update(
     let user_dto = user_dto.into_inner();
 
     if user_dto.roles.is_some() {
-        match validate_roles(&user_dto.roles, &pool).await {
+        match validate_roles(&user_dto.roles, &user_id, &pool).await {
             Ok(_) => (),
             Err(e) => {
                 error!("Error validating roles: {}", e);

@@ -44,7 +44,12 @@ pub async fn convert_user_to_simple_dto(
         let roles = match pool
             .services
             .role_service
-            .find_by_id_vec(user.roles.clone().unwrap(), &pool.database)
+            .find_by_id_vec(
+                user.roles.clone().unwrap(),
+                &user_id,
+                &pool.database,
+                &pool.services.audit_service,
+            )
             .await
         {
             Ok(d) => d,
@@ -201,7 +206,12 @@ pub async fn register(
     let default_roles: Option<Vec<String>> = match pool
         .services
         .role_service
-        .find_by_name("DEFAULT", &pool.database)
+        .find_by_name(
+            "DEFAULT",
+            "AUTH-RS",
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(r) => match r {

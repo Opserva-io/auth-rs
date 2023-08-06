@@ -76,7 +76,7 @@ impl PermissionService {
             user_id,
             Create,
             &new_permission.id,
-            ResourceIdType::Id,
+            ResourceIdType::PermissionId,
             PermissionResourceType,
         );
         match audit.create(new_audit, db).await {
@@ -181,7 +181,7 @@ impl PermissionService {
             user_id,
             Read,
             &format!("{:?}", id_vec),
-            ResourceIdType::IdVec,
+            ResourceIdType::PermissionIdVec,
             PermissionResourceType,
         );
         match audit.create(new_audit, db).await {
@@ -231,7 +231,7 @@ impl PermissionService {
             user_id,
             Read,
             id,
-            ResourceIdType::Id,
+            ResourceIdType::PermissionId,
             PermissionResourceType,
         );
         match audit.create(new_audit, db).await {
@@ -284,7 +284,7 @@ impl PermissionService {
             user_id,
             Read,
             name,
-            ResourceIdType::Name,
+            ResourceIdType::PermissionName,
             PermissionResourceType,
         );
         match audit.create(new_audit, db).await {
@@ -338,7 +338,7 @@ impl PermissionService {
             user_id,
             Update,
             &permission.id,
-            ResourceIdType::Id,
+            ResourceIdType::PermissionId,
             PermissionResourceType,
         );
         match audit.create(new_audit, db).await {
@@ -395,7 +395,7 @@ impl PermissionService {
             user_id,
             Delete,
             &id,
-            ResourceIdType::Id,
+            ResourceIdType::PermissionId,
             PermissionResourceType,
         );
         match audit.create(new_audit, db).await {
@@ -451,7 +451,7 @@ impl PermissionService {
             user_id,
             Search,
             "",
-            ResourceIdType::Search,
+            ResourceIdType::PermissionSearch,
             PermissionResourceType,
         );
         match audit.create(new_audit, db).await {

@@ -103,7 +103,7 @@ impl Config {
         let permission_service = PermissionService::new(permission_repository);
         let role_service = RoleService::new(role_repository);
         let user_service = UserService::new(user_repository);
-        let audit_service = AuditService::new(audit_repository);
+        let audit_service = AuditService::new(audit_repository, db_config.audit_enabled);
         let jwt_service = JwtService::new(jwt_config);
 
         let services = Services::new(
@@ -208,7 +208,12 @@ impl Config {
         match self
             .services
             .role_service
-            .find_by_name(name, &self.database)
+            .find_by_name(
+                name,
+                "AUTH-RS",
+                &self.database,
+                &self.services.audit_service,
+            )
             .await
         {
             Ok(d) => {
@@ -217,7 +222,12 @@ impl Config {
                     match self
                         .services
                         .role_service
-                        .create(new_role, &self.database)
+                        .create(
+                            new_role,
+                            "AUTH-RS",
+                            &self.database,
+                            &self.services.audit_service,
+                        )
                         .await
                     {
                         Ok(d) => d,
@@ -528,6 +538,13 @@ impl Config {
             )
             .await;
 
+        let read_audit = self
+            .find_or_create_permission(
+                "CAN_READ_AUDIT",
+                Some("The ability to read audits".to_string()),
+            )
+            .await;
+
         let can_update_self = self
             .find_or_create_permission(
                 "CAN_UPDATE_SELF",
@@ -559,6 +576,7 @@ impl Config {
                     read_user.id.to_string(),
                     update_user.id.to_string(),
                     delete_user.id.to_string(),
+                    read_audit.id.to_string(),
                 ]),
             )
             .await;

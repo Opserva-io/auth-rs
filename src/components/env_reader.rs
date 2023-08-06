@@ -130,6 +130,17 @@ impl EnvReader {
             };
         }
 
+        let audit_enabled = match env::var("DB_AUDIT_ENABLED") {
+            Ok(d) => {
+                let res: bool = d
+                    .trim()
+                    .parse()
+                    .expect("DB_AUDIT_ENABLED must be a boolean");
+                res
+            }
+            Err(_) => true,
+        };
+
         let create_indexes = match env::var("DB_CREATE_INDEXES") {
             Ok(d) => {
                 let res: bool = d
@@ -164,6 +175,7 @@ impl EnvReader {
             user_collection,
             audit_collection,
             create_indexes,
+            audit_enabled,
         );
 
         let server_config = ServerConfig::new(addr, port);

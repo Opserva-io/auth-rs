@@ -9,6 +9,7 @@ pub struct DbConfig {
     pub user_collection: String,
     pub audit_collection: String,
     pub create_indexes: bool,
+    pub audit_enabled: bool,
 }
 
 impl DbConfig {
@@ -25,6 +26,7 @@ impl DbConfig {
     /// * `user_collection` - A String that holds the user collection name.
     /// * `audit_collection` - A String that holds the audit collection name.
     /// * `create_indexes` - A bool that indicates whether to create indexes or not.
+    /// * `audit_enabled` - A bool that indicates whether auditing is enabled or not.
     ///
     /// # Returns
     ///
@@ -37,6 +39,7 @@ impl DbConfig {
         user_collection: String,
         audit_collection: String,
         create_indexes: bool,
+        audit_enabled: bool,
     ) -> DbConfig {
         DbConfig {
             connection_string,
@@ -46,6 +49,7 @@ impl DbConfig {
             user_collection,
             audit_collection,
             create_indexes,
+            audit_enabled,
         }
     }
 }

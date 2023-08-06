@@ -1,3 +1,4 @@
+use crate::repository::audit::audit_repository::Error as AuditError;
 use crate::repository::role::role_model::Role;
 use crate::repository::user::user_repository::Error as UserError;
 use crate::services::user::user_service::UserService;
@@ -25,6 +26,7 @@ pub enum Error {
     RoleNotFound(String),
     MongoDb(MongoError),
     User(UserError),
+    Audit(AuditError),
 }
 
 impl fmt::Display for Error {
@@ -49,6 +51,7 @@ impl fmt::Display for Error {
             Error::RoleNotFound(id) => write!(f, "Role not found: {}", id),
             Error::MongoDb(e) => write!(f, "MongoDB error: {}", e),
             Error::User(e) => write!(f, "User error: {}", e),
+            Error::Audit(e) => write!(f, "Audit error: {}", e),
         }
     }
 }

@@ -66,7 +66,12 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                             let roles = match res
                                 .services
                                 .role_service
-                                .find_by_id_vec(user.roles.unwrap(), &res.database)
+                                .find_by_id_vec(
+                                    user.roles.unwrap(),
+                                    &token,
+                                    &res.database,
+                                    &res.services.audit_service,
+                                )
                                 .await
                             {
                                 Ok(e) => e,
