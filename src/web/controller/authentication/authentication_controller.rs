@@ -256,6 +256,10 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                     }
                 };
 
+                if !user.enabled {
+                    return HttpResponse::Forbidden().finish();
+                }
+
                 return match convert_user_to_simple_dto(user, &pool).await {
                     Ok(u) => HttpResponse::Ok().json(u),
                     Err(e) => {
