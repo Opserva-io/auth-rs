@@ -3,11 +3,13 @@ use crate::web::controller::permission::permission_controller;
 use crate::web::controller::role::role_controller;
 use crate::web::controller::user::user_controller;
 use actix_web::web;
+use crate::web::controller::health::health_controller;
 
 pub mod authentication;
 pub mod permission;
 pub mod role;
 pub mod user;
+pub mod health;
 
 pub struct Controller {}
 
@@ -55,6 +57,11 @@ impl Controller {
                         .service(authentication_controller::current_user)
                         .service(authentication_controller::register),
                 ),
+        );
+
+        cfg.service(
+            web::scope("/health")
+                .service(health_controller::health),
         );
     }
 }

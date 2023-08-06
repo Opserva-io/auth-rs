@@ -25,6 +25,7 @@ CRUD operations are available for users, roles and permissions.
     - [Update](#update-2)
     - [Delete](#delete-2)
 - [Searching](#searching-3)
+- [Health](#health)
 
 ## Authentication
 
@@ -732,3 +733,23 @@ fields:
 
 * `id`
 * `name`
+
+### Health
+
+The health endpoint can be used to check if the service is up and running.
+If no response is received, the service is considered to be down.
+
+#### Request
+
+```http
+GET /health/
+```
+
+#### Response
+
+```http
+200 OK
+{
+  "status": "UP"
+}
+```
