@@ -138,7 +138,7 @@ pub async fn login(
         }
     };
 
-    if password_hash != user.password {
+    if password_hash != user.password || !user.enabled {
         return HttpResponse::BadRequest().finish();
     }
 
