@@ -542,7 +542,7 @@ pub async fn update_self(
 
 #[utoipa::path(
     put,
-    path = "/api/v1/users/{id}/password/",
+    path = "/api/v1/users/{id}/self/password/",
     params(
         ("id" = String, Path, description = "The ID of the User"),
     ),
@@ -561,7 +561,7 @@ pub async fn update_self(
         ("Token" = [])
     )
 )]
-#[put("/{id}/password/")]
+#[put("/{id}/self/password/")]
 #[has_permissions("CAN_UPDATE_SELF")]
 pub async fn update_password(
     req: HttpRequest,
@@ -658,7 +658,7 @@ pub async fn update_password(
 
 #[utoipa::path(
     put,
-    path = "/api/v1/users/{id}/password/admin/",
+    path = "/api/v1/users/{id}/password/",
     request_body = AdminUpdatePassword,
     params(
         ("id" = String, Path, description = "The ID of the User"),
@@ -674,7 +674,7 @@ pub async fn update_password(
         ("Token" = [])
     )
 )]
-#[put("/{id}/password/admin/")]
+#[put("/{id}/password/")]
 #[has_permissions("CAN_UPDATE_USER")]
 pub async fn admin_update_password(
     id: web::Path<String>,
