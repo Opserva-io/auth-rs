@@ -5,6 +5,7 @@ CRUD operations are available for users, roles and permissions.
 
 ## Index
 
+- [OpenAPI / Swagger](#openapi--swagger)
 - [Authentication](#authentication)
 - [Register](#register)
 - [Login](#login)
@@ -26,6 +27,10 @@ CRUD operations are available for users, roles and permissions.
     - [Delete](#delete-2)
 - [Searching](#searching-3)
 - [Health](#health)
+
+## OpenAPI / Swagger
+
+OpenAPI and Swagger documentation is available via the `/swagger-ui` endpoint.
 
 ## Authentication
 

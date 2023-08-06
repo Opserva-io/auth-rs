@@ -14,7 +14,7 @@ The following environment variables can be used to configure `auth-rs`:
 
 | Variable                 | Default       | Required                                     | Type        | Description                                                          |
 |--------------------------|---------------|----------------------------------------------|-------------|----------------------------------------------------------------------|
-| SERVER_ADDR              | `127.0.0.1`   | `false`                                      | `IPAddress` | The server address                                                   |
+| SERVER_ADDR              | `0.0.0.0`     | `false`                                      | `IPAddress` | The server address                                                   |
 | SERVER_PORT              | `8080`        | `false`                                      | `u16`       | The port that the server will use                                    |
 | DB_CONNECTION_STRING*    | N/A           | `true`                                       | `String`    | The MongoDB connection string                                        |
 | DB_DATABASE*             | N/A           | `true`                                       | `String`    | The MongoDB Database that will be used by `auth-rs`                  |

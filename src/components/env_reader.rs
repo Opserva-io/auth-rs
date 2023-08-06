@@ -26,7 +26,7 @@ impl EnvReader {
     pub async fn read_configuration() -> Config {
         let addr = match env::var("SERVER_ADDR") {
             Ok(d) => d,
-            Err(_) => String::from("127.0.0.1"),
+            Err(_) => String::from("0.0.0.0"),
         };
 
         let port = match env::var("SERVER_PORT") {

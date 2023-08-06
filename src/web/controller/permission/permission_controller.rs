@@ -11,6 +11,19 @@ use actix_web::{delete, get, post, put, web, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
 use log::error;
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/permissions/",
+    request_body = CreatePermission,
+    responses(
+        (status = 200, description = "OK", body = PermissionDto),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Permissions",
+    security(
+        ("Token" = [])
+    )
+)]
 #[post("/")]
 pub async fn create_permission(
     pool: web::Data<Config>,
@@ -39,6 +52,21 @@ pub async fn create_permission(
     HttpResponse::Ok().json(PermissionDto::from(res))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/permissions/",
+    params(
+        ("text" = Option<String>, Query, description = "The text to search for", nullable = true),
+    ),
+    responses(
+        (status = 200, description = "OK", body = Vec<PermissionDto>),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Permissions",
+    security(
+        ("Token" = [])
+    )
+)]
 #[get("/")]
 #[has_permissions("CAN_READ_PERMISSION")]
 pub async fn find_all_permissions(
@@ -86,6 +114,22 @@ pub async fn find_all_permissions(
     HttpResponse::Ok().json(dto_list)
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/permissions/{id}",
+    params(
+        ("id" = String, Path, description = "The ID of the Permission"),
+    ),
+    responses(
+        (status = 200, description = "OK", body = PermissionDto),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Permissions",
+    security(
+        ("Token" = [])
+    )
+)]
 #[get("/{id}")]
 #[has_permissions("CAN_READ_PERMISSION")]
 pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
@@ -109,6 +153,23 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
     HttpResponse::Ok().json(PermissionDto::from(res))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/permissions/{id}",
+    request_body = UpdatePermission,
+    params(
+        ("id" = String, Path, description = "The ID of the Permission"),
+    ),
+    responses(
+        (status = 200, description = "OK", body = PermissionDto),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Permissions",
+    security(
+        ("Token" = [])
+    )
+)]
 #[put("/{id}")]
 #[has_permissions("CAN_UPDATE_PERMISSION")]
 pub async fn update_permission(
@@ -158,6 +219,22 @@ pub async fn update_permission(
     HttpResponse::Ok().json(PermissionDto::from(res))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/permissions/{id}",
+    params(
+        ("id" = String, Path, description = "The ID of the Permission"),
+    ),
+    responses(
+        (status = 200, description = "OK"),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error", body = InternalServerError),
+    ),
+    tag = "Permissions",
+    security(
+        ("Token" = [])
+    )
+)]
 #[delete("/{id}")]
 #[has_permissions("CAN_DELETE_PERMISSION")]
 pub async fn delete_permission(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {

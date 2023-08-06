@@ -1,7 +1,8 @@
 use crate::repository::permission::permission_model::Permission;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct PermissionDto {
     pub id: String,
     pub name: String,
