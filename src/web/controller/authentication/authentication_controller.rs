@@ -41,7 +41,11 @@ pub async fn convert_user_to_simple_dto(
     let mut user_dto = SimpleUserDto::from(user.clone());
 
     if user.roles.is_some() {
-        let role_vec = user.roles.unwrap().iter().map(|r| r.to_hex()).collect();
+        let mut role_vec: Vec<String> = vec![];
+        for r in user.roles.unwrap() {
+            role_vec.push(r.to_hex());
+        }
+
         let roles = match pool
             .services
             .role_service
