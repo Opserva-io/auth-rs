@@ -2,12 +2,15 @@ use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
 use crate::configuration::server_config::ServerConfig;
+use crate::repository::audit::audit_model::Audit;
+use crate::repository::audit::audit_repository::AuditRepository;
 use crate::repository::permission::permission_model::Permission;
 use crate::repository::permission::permission_repository::PermissionRepository;
 use crate::repository::role::role_model::Role;
 use crate::repository::role::role_repository::RoleRepository;
 use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::UserRepository;
+use crate::services::audit::audit_service::AuditService;
 use crate::services::jwt::jwt_service::JwtService;
 use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
@@ -30,6 +33,7 @@ pub struct Config {
     pub permission_collection: String,
     pub role_collection: String,
     pub user_collection: String,
+    pub audit_collection: String,
     pub open_api: bool,
 }
 
@@ -82,6 +86,10 @@ impl Config {
             Ok(d) => d,
             Err(e) => panic!("Failed to initialize Role repository: {:?}", e),
         };
+        let audit_repository = match AuditRepository::new(db_config.audit_collection.clone()) {
+            Ok(d) => d,
+            Err(e) => panic!("Failed to initialize Audit repository: {:?}", e),
+        };
 
         let email_regex = Regex::new(
             r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-.][a-z0-9]+)*\.[a-z]{2,6})",
@@ -97,9 +105,16 @@ impl Config {
         let permission_service = PermissionService::new(permission_repository);
         let role_service = RoleService::new(role_repository);
         let user_service = UserService::new(user_repository);
+        let audit_service = AuditService::new(audit_repository, db_config.audit_enabled);
         let jwt_service = JwtService::new(jwt_config);
 
-        let services = Services::new(permission_service, role_service, user_service, jwt_service);
+        let services = Services::new(
+            permission_service,
+            role_service,
+            user_service,
+            jwt_service,
+            audit_service,
+        );
 
         let cfg = Config {
             server_config,
@@ -109,6 +124,7 @@ impl Config {
             permission_collection: db_config.permission_collection,
             role_collection: db_config.role_collection,
             user_collection: db_config.user_collection,
+            audit_collection: db_config.audit_collection,
             open_api,
         };
 
@@ -121,6 +137,7 @@ impl Config {
             cfg.create_permission_indexes().await;
             cfg.create_role_indexes().await;
             cfg.create_user_indexes().await;
+            cfg.create_audit_indexes().await;
         }
 
         cfg
@@ -146,7 +163,12 @@ impl Config {
         match self
             .services
             .permission_service
-            .find_by_name(name, &self.database)
+            .find_by_name(
+                name,
+                "AUTH-RS",
+                &self.database,
+                &self.services.audit_service,
+            )
             .await
         {
             Ok(d) => {
@@ -155,7 +177,7 @@ impl Config {
                     match self
                         .services
                         .permission_service
-                        .create(p, &self.database)
+                        .create(p, "AUTH-RS", &self.database, &self.services.audit_service)
                         .await
                     {
                         Ok(p) => return p,
@@ -190,7 +212,12 @@ impl Config {
         match self
             .services
             .role_service
-            .find_by_name(name, &self.database)
+            .find_by_name(
+                name,
+                "AUTH-RS",
+                &self.database,
+                &self.services.audit_service,
+            )
             .await
         {
             Ok(d) => {
@@ -199,7 +226,12 @@ impl Config {
                     match self
                         .services
                         .role_service
-                        .create(new_role, &self.database)
+                        .create(
+                            new_role,
+                            "AUTH-RS",
+                            &self.database,
+                            &self.services.audit_service,
+                        )
                         .await
                     {
                         Ok(d) => d,
@@ -241,7 +273,12 @@ impl Config {
         match self
             .services
             .user_service
-            .find_by_username(&default_user_config.username, &self.database)
+            .find_by_username(
+                &default_user_config.username,
+                "AUTH-RS",
+                &self.database,
+                &self.services.audit_service,
+            )
             .await
         {
             Ok(user) => {
@@ -292,7 +329,12 @@ impl Config {
                     match self
                         .services
                         .user_service
-                        .create(user, &self.database)
+                        .create(
+                            user,
+                            "AUTH-RS",
+                            &self.database,
+                            &self.services.audit_service,
+                        )
                         .await
                     {
                         Ok(_) => {}
@@ -388,7 +430,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Permission>(&self.user_collection)
+            .collection::<User>(&self.user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -400,7 +442,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Permission>(&self.user_collection)
+            .collection::<User>(&self.user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -412,7 +454,66 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Permission>(&self.user_collection)
+            .collection::<User>(&self.user_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+    }
+
+    /// # Summary
+    ///
+    /// Create default indexes for the Audit collection.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the indexes could not be created.
+    pub async fn create_audit_indexes(&self) {
+        info!("Creating indexes for the Audit collection");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "action": 1u32})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Audit>(&self.audit_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "resourceIdType": 1u32})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Audit>(&self.audit_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "resourceType": 1u32})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Audit>(&self.audit_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "_id": "text", "action": "text", "resourceIdType": "text", "resourceType": "text"})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Audit>(&self.audit_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -510,6 +611,13 @@ impl Config {
             )
             .await;
 
+        let read_audit = self
+            .find_or_create_permission(
+                "CAN_READ_AUDIT",
+                Some("The ability to read audits".to_string()),
+            )
+            .await;
+
         let can_update_self = self
             .find_or_create_permission(
                 "CAN_UPDATE_SELF",
@@ -541,6 +649,7 @@ impl Config {
                     read_user.id.to_string(),
                     update_user.id.to_string(),
                     delete_user.id.to_string(),
+                    read_audit.id.to_string(),
                 ]),
             )
             .await;

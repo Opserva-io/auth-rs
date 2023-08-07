@@ -41,7 +41,12 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                         let user = match res
                             .services
                             .user_service
-                            .find_by_email(&subject, &res.database)
+                            .find_by_id(
+                                &subject,
+                                "AUTH-RS",
+                                &res.database,
+                                &res.services.audit_service,
+                            )
                             .await
                         {
                             Ok(e) => match e {
@@ -52,7 +57,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                                 }
                             },
                             Err(e) => {
-                                error!("Failed to find user by email: {}", e);
+                                error!("Failed to find user by ID: {}", e);
                                 return Ok(vec![]);
                             }
                         };
@@ -66,7 +71,12 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                             let roles = match res
                                 .services
                                 .role_service
-                                .find_by_id_vec(user.roles.unwrap(), &res.database)
+                                .find_by_id_vec(
+                                    user.roles.unwrap(),
+                                    "AUTH-RS",
+                                    &res.database,
+                                    &res.services.audit_service,
+                                )
                                 .await
                             {
                                 Ok(e) => e,
@@ -85,7 +95,9 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                                             .permission_service
                                             .find_by_id_vec(
                                                 r.permissions.clone().unwrap(),
+                                                "AUTH-RS",
                                                 &res.database,
+                                                &res.services.audit_service,
                                             )
                                             .await
                                         {
@@ -118,5 +130,6 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
             }
         }
     }
+
     Ok(permission_list)
 }

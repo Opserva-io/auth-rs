@@ -21,7 +21,9 @@ The following environment variables can be used to configure `auth-rs`:
 | DB_PERMISSION_COLLECTION | `permissions` | `false`                                      | `String`    | The collection that holds the `Permission` entities                  |
 | DB_ROLE_COLLECTION       | `roles`       | `false`                                      | `String`    | The collection that holds the `Role` entities                        |
 | DB_USER_COLLECTION       | `users`       | `false`                                      | `String`    | The collection that holds the `User` entities                        |
+| DB_AUDIT_COLLECTION      | `audits`      | `false`                                      | `String`    | The collection that holds the `Audit` entities                       |
 | DB_CREATE_INDEXES        | `true`        | `false`                                      | `bool`      | Automatically create collection indexes                              |
+| DB_AUDIT_ENABLED         | `false`       | `false`                                      | `bool`      | Enable or disable audit trails                                       |
 | HASH_SALT                | N/A           | `true`                                       | `String`    | The salt to use to hash passwords using `argon2`                     |
 | JWT_SECRET               | N/A           | `true`                                       | `String`    | The JWT secret                                                       |
 | JWT_EXPIRATION           | `3600`        | `false`                                      | `usize`     | The JWT expiration time in seconds                                   |
@@ -33,6 +35,8 @@ The following environment variables can be used to configure `auth-rs`:
 | DEFAULT_USER_PASSWORD    | N/A           | `true` if `GENERATE_DEFAULT_USER` is enabled | `String`    | The default `User`'s password                                        |
 | DEFAULT_USER_ENABLED     | N/A           | `true` if `GENERATE_DEFAULT_USER` is enabled | `bool`      | Sets whether the default user is enabled or not                      |
 | ENABLE_OPENAPI           | `true`        | `false`                                      | `bool`      | Enables or disables the OpenAPI endpoint                             |
+
+*Note: The audit trail feature is disabled by default and will have a noticeable performance impact when enabled.*
 
 ## Changing the default configuration
 

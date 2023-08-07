@@ -7,7 +7,7 @@ use crate::web::dto::permission::create_permission::CreatePermission;
 use crate::web::dto::permission::permission_dto::PermissionDto;
 use crate::web::dto::permission::update_permission::UpdatePermission;
 use crate::web::dto::search::search_request::SearchRequest;
-use actix_web::{delete, get, post, put, web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
 use log::error;
 
@@ -26,9 +26,11 @@ use log::error;
     )
 )]
 #[post("/")]
+#[has_permissions("CAN_CREATE_PERMISSION")]
 pub async fn create_permission(
     pool: web::Data<Config>,
     info: web::Json<CreatePermission>,
+    req: HttpRequest,
 ) -> HttpResponse {
     if info.name.is_empty() {
         return HttpResponse::BadRequest().json(BadRequest::new("Empty name"));
@@ -36,10 +38,28 @@ pub async fn create_permission(
 
     let new_permission = Permission::from(info.into_inner());
 
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
+
     let res = match pool
         .services
         .permission_service
-        .create(new_permission, &pool.database)
+        .create(
+            new_permission,
+            &user_id,
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(d) => d,
@@ -73,13 +93,27 @@ pub async fn create_permission(
 pub async fn find_all_permissions(
     search: web::Query<SearchRequest>,
     pool: web::Data<Config>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
+
     let res = match search.text.clone() {
         Some(t) => {
             match pool
                 .services
                 .permission_service
-                .search(&t, &pool.database)
+                .search(&t, &user_id, &pool.database, &pool.services.audit_service)
                 .await
             {
                 Ok(d) => d,
@@ -94,7 +128,7 @@ pub async fn find_all_permissions(
             match pool
                 .services
                 .permission_service
-                .find_all(&pool.database)
+                .find_all(&user_id, &pool.database, &pool.services.audit_service)
                 .await
             {
                 Ok(d) => d,
@@ -133,11 +167,33 @@ pub async fn find_all_permissions(
 )]
 #[get("/{id}")]
 #[has_permissions("CAN_READ_PERMISSION")]
-pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
+pub async fn find_by_id(
+    path: web::Path<String>,
+    pool: web::Data<Config>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
+
     let res = match pool
         .services
         .permission_service
-        .find_by_id(&path, &pool.database)
+        .find_by_id(
+            &path,
+            &user_id,
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(d) => match d {
@@ -178,15 +234,34 @@ pub async fn update_permission(
     path: web::Path<String>,
     update: web::Json<UpdatePermission>,
     pool: web::Data<Config>,
+    req: HttpRequest,
 ) -> HttpResponse {
     if update.name.is_empty() {
         return HttpResponse::BadRequest().json(BadRequest::new("Empty name"));
     }
 
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
+
     let res = pool
         .services
         .permission_service
-        .find_by_id(&path, &pool.database)
+        .find_by_id(
+            &path,
+            &user_id,
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await;
     let mut permission = match res {
         Ok(p) => {
@@ -211,7 +286,12 @@ pub async fn update_permission(
     let res = pool
         .services
         .permission_service
-        .update(permission, &pool.database)
+        .update(
+            permission,
+            &user_id,
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await;
     let res = match res {
         Ok(p) => p,
@@ -243,11 +323,33 @@ pub async fn update_permission(
 )]
 #[delete("/{id}")]
 #[has_permissions("CAN_DELETE_PERMISSION")]
-pub async fn delete_permission(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
+pub async fn delete_permission(
+    path: web::Path<String>,
+    pool: web::Data<Config>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
     let res = pool
         .services
         .permission_service
-        .delete(&path, &pool.database, &pool.services.role_service)
+        .delete(
+            &path,
+            &user_id,
+            &pool.database,
+            &pool.services.role_service,
+            &pool.services.audit_service,
+        )
         .await;
     match res {
         Ok(_) => HttpResponse::Ok().finish(),

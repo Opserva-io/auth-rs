@@ -63,6 +63,11 @@ impl EnvReader {
             Err(_) => String::from("users"),
         };
 
+        let audit_collection = match env::var("DB_AUDIT_COLLECTION") {
+            Ok(d) => d,
+            Err(_) => String::from("audits"),
+        };
+
         let salt = match env::var("HASH_SALT") {
             Ok(d) => d,
             Err(_) => panic!("No salt specified"),
@@ -125,6 +130,17 @@ impl EnvReader {
             };
         }
 
+        let audit_enabled = match env::var("DB_AUDIT_ENABLED") {
+            Ok(d) => {
+                let res: bool = d
+                    .trim()
+                    .parse()
+                    .expect("DB_AUDIT_ENABLED must be a boolean");
+                res
+            }
+            Err(_) => false,
+        };
+
         let create_indexes = match env::var("DB_CREATE_INDEXES") {
             Ok(d) => {
                 let res: bool = d
@@ -157,7 +173,9 @@ impl EnvReader {
             permission_collection,
             role_collection,
             user_collection,
+            audit_collection,
             create_indexes,
+            audit_enabled,
         );
 
         let server_config = ServerConfig::new(addr, port);

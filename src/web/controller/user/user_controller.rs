@@ -5,6 +5,7 @@ use crate::repository::permission::permission_repository::Error as PermissionErr
 use crate::repository::role::role_repository::Error as RoleError;
 use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::Error;
+use crate::web::controller::role::role_controller::get_role_dto_from_role;
 use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::search::search_request::SearchRequest;
 use crate::web::dto::user::create_user::CreateUser;
@@ -62,7 +63,11 @@ impl Display for ConvertError {
 /// # Returns
 ///
 /// * `Result<(), RoleError>` - The result containing the () or the RoleError that occurred
-async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<(), RoleError> {
+async fn validate_roles(
+    roles: &Option<Vec<String>>,
+    user_id: &str,
+    pool: &Config,
+) -> Result<(), RoleError> {
     if roles.is_none() {
         return Ok(());
     }
@@ -73,7 +78,7 @@ async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<()
         let res = pool
             .services
             .role_service
-            .find_by_id(&role, &pool.database)
+            .find_by_id(&role, user_id, &pool.database, &pool.services.audit_service)
             .await;
 
         match res {
@@ -110,14 +115,23 @@ async fn validate_roles(roles: &Option<Vec<String>>, pool: &Config) -> Result<()
 /// # Returns
 ///
 /// * `Result<UserDto, ConvertError>` - The result containing the UserDto or the ConvertError that occurred
-async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, ConvertError> {
+async fn convert_user_to_dto(
+    user: User,
+    user_id: &str,
+    pool: &Config,
+) -> Result<UserDto, ConvertError> {
     let mut user_dto = UserDto::from(user.clone());
 
     if user.roles.is_some() {
         let roles = match pool
             .services
             .role_service
-            .find_by_id_vec(user.roles.clone().unwrap(), &pool.database)
+            .find_by_id_vec(
+                user.roles.clone().unwrap(),
+                user_id,
+                &pool.database,
+                &pool.services.audit_service,
+            )
             .await
         {
             Ok(d) => d,
@@ -130,18 +144,12 @@ async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, Conve
             let mut role_dto_list: Vec<RoleDto> = vec![];
 
             for r in &roles {
-                let role_dto =
-                    match crate::web::controller::role::role_controller::get_role_dto_from_role(
-                        r.clone(),
-                        pool,
-                    )
-                    .await
-                    {
-                        Ok(d) => d,
-                        Err(e) => {
-                            return Err(ConvertError::PermissionError(e));
-                        }
-                    };
+                let role_dto = match get_role_dto_from_role(r.clone(), user_id, pool).await {
+                    Ok(d) => d,
+                    Err(e) => {
+                        return Err(ConvertError::PermissionError(e));
+                    }
+                };
 
                 role_dto_list.push(role_dto);
             }
@@ -169,7 +177,11 @@ async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, Conve
 )]
 #[post("/")]
 #[has_permissions("CAN_CREATE_USER")]
-pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) -> HttpResponse {
+pub async fn create(
+    user_dto: web::Json<CreateUser>,
+    pool: web::Data<Config>,
+    req: HttpRequest,
+) -> HttpResponse {
     if user_dto.username.is_empty() {
         return HttpResponse::BadRequest().json(BadRequest::new("Empty usernames are not allowed"));
     }
@@ -183,10 +195,23 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
             .json(BadRequest::new("Empty email addresses are not allowed"));
     }
 
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
+
     let user_dto = user_dto.into_inner();
 
     if user_dto.roles.is_some() {
-        match validate_roles(&user_dto.roles, &pool).await {
+        match validate_roles(&user_dto.roles, &user_id, &pool).await {
             Ok(_) => (),
             Err(e) => {
                 error!("Error validating roles: {}", e);
@@ -223,7 +248,7 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
     let res = match pool
         .services
         .user_service
-        .create(user, &pool.database)
+        .create(user, &user_id, &pool.database, &pool.services.audit_service)
         .await
     {
         Ok(d) => d,
@@ -234,7 +259,7 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
         }
     };
 
-    match convert_user_to_dto(res, &pool).await {
+    match convert_user_to_dto(res, &user_id, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
             error!("Error converting User to UserDto: {}", e);
@@ -260,9 +285,31 @@ pub async fn create(user_dto: web::Json<CreateUser>, pool: web::Data<Config>) ->
 )]
 #[get("/")]
 #[has_permissions("CAN_READ_USER")]
-pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>) -> HttpResponse {
+pub async fn find_all(
+    search: web::Query<SearchRequest>,
+    pool: web::Data<Config>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
+
     let res = match search.text.clone() {
-        Some(t) => match pool.services.user_service.search(&t, &pool.database).await {
+        Some(t) => match pool
+            .services
+            .user_service
+            .search(&t, &user_id, &pool.database, &pool.services.audit_service)
+            .await
+        {
             Ok(d) => d,
             Err(e) => {
                 error!("Error while searching for Users: {}", e);
@@ -270,7 +317,12 @@ pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>
                     .json(InternalServerError::new(&e.to_string()));
             }
         },
-        None => match pool.services.user_service.find_all(&pool.database).await {
+        None => match pool
+            .services
+            .user_service
+            .find_all(&user_id, &pool.database, &pool.services.audit_service)
+            .await
+        {
             Ok(d) => d,
             Err(e) => {
                 error!("Error while finding all Users: {}", e);
@@ -282,7 +334,7 @@ pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>
 
     let mut user_dto_list: Vec<UserDto> = vec![];
     for u in &res {
-        let user_dto = match convert_user_to_dto(u.clone(), &pool).await {
+        let user_dto = match convert_user_to_dto(u.clone(), &user_id, &pool).await {
             Ok(d) => d,
             Err(e) => {
                 error!("Error converting User to UserDto: {}", e);
@@ -315,13 +367,30 @@ pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>
 )]
 #[get("/{id}")]
 #[has_permissions("CAN_READ_USER")]
-pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
+pub async fn find_by_id(
+    id: web::Path<String>,
+    pool: web::Data<Config>,
+    req: HttpRequest,
+) -> HttpResponse {
     let id = id.into_inner();
+
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
 
     let user = match pool
         .services
         .user_service
-        .find_by_id(&id, &pool.database)
+        .find_by_id(&id, &user_id, &pool.database, &pool.services.audit_service)
         .await
     {
         Ok(d) => {
@@ -338,7 +407,7 @@ pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpR
         }
     };
 
-    match convert_user_to_dto(user, &pool).await {
+    match convert_user_to_dto(user, &user_id, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
             error!("Error converting User to UserDto: {}", e);
@@ -371,13 +440,27 @@ pub async fn update(
     id: web::Path<String>,
     user_dto: web::Json<UpdateUser>,
     pool: web::Data<Config>,
+    req: HttpRequest,
 ) -> HttpResponse {
     let id = id.into_inner();
+
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
 
     let mut user = match pool
         .services
         .user_service
-        .find_by_id(&id, &pool.database)
+        .find_by_id(&id, &user_id, &pool.database, &pool.services.audit_service)
         .await
     {
         Ok(d) => {
@@ -406,7 +489,7 @@ pub async fn update(
     let user_dto = user_dto.into_inner();
 
     if user_dto.roles.is_some() {
-        match validate_roles(&user_dto.roles, &pool).await {
+        match validate_roles(&user_dto.roles, &user_id, &pool).await {
             Ok(_) => (),
             Err(e) => {
                 error!("Error validating roles: {}", e);
@@ -426,7 +509,7 @@ pub async fn update(
     let res = match pool
         .services
         .user_service
-        .update(user, &pool.database)
+        .update(user, &user_id, &pool.database, &pool.services.audit_service)
         .await
     {
         Ok(d) => d,
@@ -437,7 +520,7 @@ pub async fn update(
         }
     };
 
-    match convert_user_to_dto(res, &pool).await {
+    match convert_user_to_dto(res, &user_id, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
             error!("Error converting User to UserDto: {}", e);
@@ -477,7 +560,7 @@ pub async fn update_self(
                 let mut user = match pool
                     .services
                     .user_service
-                    .find_by_email(token, &pool.database)
+                    .find_by_username(token, token, &pool.database, &pool.services.audit_service)
                     .await
                 {
                     Ok(d) => {
@@ -514,7 +597,7 @@ pub async fn update_self(
                 let res = match pool
                     .services
                     .user_service
-                    .update(user, &pool.database)
+                    .update(user, token, &pool.database, &pool.services.audit_service)
                     .await
                 {
                     Ok(d) => d,
@@ -525,7 +608,7 @@ pub async fn update_self(
                     }
                 };
 
-                return match crate::web::controller::authentication::authentication_controller::convert_user_to_simple_dto(res, &pool).await {
+                return match crate::web::controller::authentication::authentication_controller::convert_user_to_simple_dto(res, token, &pool).await {
                     Ok(dto) => {
                         HttpResponse::Ok().json(dto)
                     },
@@ -574,7 +657,7 @@ pub async fn update_password(
                 let user = match pool
                     .services
                     .user_service
-                    .find_by_email(token, &pool.database)
+                    .find_by_username(token, token, &pool.database, &pool.services.audit_service)
                     .await
                 {
                     Ok(d) => {
@@ -639,7 +722,13 @@ pub async fn update_password(
                 return match pool
                     .services
                     .user_service
-                    .update_password(&user.id, &new_password_hash, &pool.database)
+                    .update_password(
+                        &user.id,
+                        &new_password_hash,
+                        token,
+                        &pool.database,
+                        &pool.services.audit_service,
+                    )
                     .await
                 {
                     Ok(_) => HttpResponse::Ok().finish(),
@@ -680,13 +769,27 @@ pub async fn admin_update_password(
     id: web::Path<String>,
     admin_update_password: web::Json<AdminUpdatePassword>,
     pool: web::Data<Config>,
+    req: HttpRequest,
 ) -> HttpResponse {
     let id = id.into_inner();
+
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
 
     let user = match pool
         .services
         .user_service
-        .find_by_id(&id, &pool.database)
+        .find_by_id(&id, &user_id, &pool.database, &pool.services.audit_service)
         .await
     {
         Ok(d) => {
@@ -730,7 +833,13 @@ pub async fn admin_update_password(
     match pool
         .services
         .user_service
-        .update_password(&user.id, &password_hash, &pool.database)
+        .update_password(
+            &user.id,
+            &password_hash,
+            &user_id,
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(_) => HttpResponse::Ok().finish(),
@@ -759,11 +868,33 @@ pub async fn admin_update_password(
 )]
 #[delete("/{id}")]
 #[has_permissions("CAN_DELETE_USER")]
-pub async fn delete(id: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
+pub async fn delete(
+    id: web::Path<String>,
+    pool: web::Data<Config>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
+
     match pool
         .services
         .user_service
-        .delete(&id.into_inner(), &pool.database)
+        .delete(
+            &id.into_inner(),
+            &user_id,
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(_) => HttpResponse::Ok().finish(),
@@ -808,28 +939,15 @@ pub async fn delete_self(req: HttpRequest, pool: web::Data<Config>) -> HttpRespo
                     }
                 };
 
-                let user = match pool
-                    .services
-                    .user_service
-                    .find_by_email(&username, &pool.database)
-                    .await
-                {
-                    Ok(u) => match u {
-                        Some(user) => user,
-                        None => {
-                            return HttpResponse::Forbidden().finish();
-                        }
-                    },
-                    Err(e) => {
-                        error!("Failed to find user by email: {}", e);
-                        return HttpResponse::Forbidden().finish();
-                    }
-                };
-
                 return match pool
                     .services
                     .user_service
-                    .delete(&user.id, &pool.database)
+                    .delete(
+                        &username,
+                        token,
+                        &pool.database,
+                        &pool.services.audit_service,
+                    )
                     .await
                 {
                     Ok(_) => HttpResponse::Ok().finish(),
