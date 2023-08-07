@@ -75,7 +75,7 @@ impl RoleService {
         let new_audit = Audit::new(
             user_id,
             Create,
-            &role.id,
+            &role.id.to_hex(),
             ResourceIdType::RoleId,
             ResourceType::Role,
         );
@@ -255,7 +255,7 @@ impl RoleService {
         let new_audit = Audit::new(
             user_id,
             Update,
-            &role.id,
+            &role.id.to_hex(),
             ResourceIdType::RoleId,
             ResourceType::Role,
         );

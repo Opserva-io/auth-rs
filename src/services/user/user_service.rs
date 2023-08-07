@@ -72,7 +72,7 @@ impl UserService {
         let new_audit = Audit::new(
             user_id,
             Create,
-            &user.id,
+            &user.id.to_hex(),
             ResourceIdType::UserId,
             ResourceType::User,
         );
@@ -240,7 +240,7 @@ impl UserService {
         let new_audit = Audit::new(
             user_id,
             Update,
-            &user.id,
+            &user.id.to_hex(),
             ResourceIdType::UserId,
             ResourceType::User,
         );

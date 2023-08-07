@@ -1,6 +1,7 @@
 use crate::web::dto::role::create_role::CreateRole;
 use crate::web::dto::role::role_dto::RoleDto;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
@@ -8,10 +9,10 @@ use std::time::SystemTime;
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Role {
     #[serde(rename = "_id")]
-    pub id: String,
+    pub id: ObjectId,
     pub name: String,
     pub description: Option<String>,
-    pub permissions: Option<Vec<String>>,
+    pub permissions: Option<Vec<ObjectId>>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]
@@ -32,7 +33,7 @@ impl Role {
     /// # Example
     ///
     /// ```
-    /// let role = Role::new(String::from("Role Name"), Some(String::from("Role Description")), Some(vec![String::from("Permission Id")]));
+    /// let role = Role::new(String::from("Role Name"), Some(String::from("Role Description")), Some(vec![ObjectId::new()]));
     /// ```
     ///
     /// # Returns
@@ -41,13 +42,13 @@ impl Role {
     pub fn new(
         name: String,
         description: Option<String>,
-        permissions: Option<Vec<String>>,
+        permissions: Option<Vec<ObjectId>>,
     ) -> Self {
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
 
         Role {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: ObjectId::new(),
             name,
             description,
             permissions,
@@ -85,8 +86,10 @@ impl From<RoleDto> for Role {
     ///
     /// * `Role` - The new Role.
     fn from(role_dto: RoleDto) -> Self {
+        let id = ObjectId::parse_str(&role_dto.id).unwrap();
+
         Role {
-            id: role_dto.id,
+            id,
             name: role_dto.name,
             description: role_dto.description,
             permissions: None,
@@ -123,11 +126,26 @@ impl From<CreateRole> for Role {
     fn from(create_role: CreateRole) -> Self {
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
+
+        let permissions = match create_role.permissions {
+            None => None,
+            Some(p) => {
+                let mut oid_vec: Vec<ObjectId> = vec![];
+                for oid in p {
+                    match ObjectId::parse_str(&oid) {
+                        Ok(d) => oid_vec.push(d),
+                        Err(_) => continue,
+                    }
+                }
+                Some(oid_vec)
+            }
+        };
+
         Role {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: ObjectId::new(),
             name: create_role.name,
             description: create_role.description,
-            permissions: create_role.permissions,
+            permissions,
             created_at: now.clone(),
             updated_at: now,
         }

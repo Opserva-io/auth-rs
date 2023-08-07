@@ -75,7 +75,7 @@ impl PermissionService {
         let new_audit = Audit::new(
             user_id,
             Create,
-            &new_permission.id,
+            &new_permission.id.to_hex(),
             ResourceIdType::PermissionId,
             PermissionResourceType,
         );
@@ -252,7 +252,7 @@ impl PermissionService {
         let new_audit = Audit::new(
             user_id,
             Update,
-            &permission.id,
+            &permission.id.to_hex(),
             ResourceIdType::PermissionId,
             PermissionResourceType,
         );

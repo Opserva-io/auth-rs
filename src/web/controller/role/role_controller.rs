@@ -12,6 +12,7 @@ use crate::web::dto::search::search_request::SearchRequest;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
 use log::error;
+use mongodb::bson::oid::ObjectId;
 
 /// # Summary
 ///
@@ -39,11 +40,15 @@ pub async fn get_role_dto_from_role(
 ) -> Result<RoleDto, PermissionError> {
     let mut role_dto = RoleDto::from(role.clone());
     if role.permissions.is_some() {
-        role_dto.permissions =
-            match find_permission_dto_from_permissions(role.permissions.unwrap(), config).await {
-                Ok(d) => d,
-                Err(e) => return Err(e),
-            };
+        let mut oid_vec: Vec<String> = vec![];
+        for oid in role.permissions.unwrap() {
+            oid_vec.push(oid.to_hex());
+        }
+
+        role_dto.permissions = match find_permission_dto_from_permissions(oid_vec, config).await {
+            Ok(d) => d,
+            Err(e) => return Err(e),
+        };
     }
 
     Ok(role_dto)
@@ -400,9 +405,27 @@ pub async fn update(
         };
     }
 
+    let new_permissions: Option<Vec<ObjectId>> = match update.permissions {
+        Some(p) => {
+            let mut oid_vec: Vec<ObjectId> = vec![];
+            for oid in p {
+                match ObjectId::parse_str(&oid) {
+                    Ok(d) => oid_vec.push(d),
+                    Err(e) => {
+                        error!("Error parsing ObjectId: {}", e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()));
+                    }
+                };
+            }
+            Some(oid_vec)
+        }
+        None => None,
+    };
+
     role.name = update.name;
     role.description = update.description;
-    role.permissions = update.permissions;
+    role.permissions = new_permissions;
 
     let res = match pool
         .services

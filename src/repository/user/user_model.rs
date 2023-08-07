@@ -1,6 +1,7 @@
 use crate::web::dto::authentication::register_request::RegisterRequest;
 use crate::web::dto::user::create_user::CreateUser;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
@@ -8,7 +9,7 @@ use std::time::SystemTime;
 #[derive(Serialize, Deserialize, Clone)]
 pub struct User {
     #[serde(rename = "_id")]
-    pub id: String,
+    pub id: ObjectId,
     pub username: String,
     pub email: String,
     #[serde(rename = "firstName")]
@@ -16,7 +17,7 @@ pub struct User {
     #[serde(rename = "lastName")]
     pub last_name: String,
     pub password: String,
-    pub roles: Option<Vec<String>>,
+    pub roles: Option<Vec<ObjectId>>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]
@@ -61,8 +62,22 @@ impl User {
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
 
+        let roles: Option<Vec<ObjectId>> = match roles {
+            None => None,
+            Some(r) => {
+                let mut oid_vec: Vec<ObjectId> = vec![];
+                for role in r {
+                    match ObjectId::parse_str(&role) {
+                        Ok(oid) => oid_vec.push(oid),
+                        Err(_) => continue,
+                    }
+                }
+                Some(oid_vec)
+            }
+        };
+
         User {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: ObjectId::new(),
             username,
             email,
             first_name,
@@ -107,14 +122,38 @@ impl From<CreateUser> for User {
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
 
+        let roles: Option<Vec<ObjectId>> = match value.roles {
+            None => None,
+            Some(r) => {
+                let mut oid_vec: Vec<ObjectId> = vec![];
+                for role in r {
+                    match ObjectId::parse_str(&role) {
+                        Ok(oid) => oid_vec.push(oid),
+                        Err(_) => continue,
+                    }
+                }
+                Some(oid_vec)
+            }
+        };
+
+        let first_name = match value.first_name {
+            None => String::from(""),
+            Some(f) => f,
+        };
+
+        let last_name = match value.last_name {
+            None => String::from(""),
+            Some(l) => l,
+        };
+
         User {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: ObjectId::new(),
             username: value.username,
             email: value.email,
-            first_name: value.first_name,
-            last_name: value.last_name,
+            first_name,
+            last_name,
             password: value.password,
-            roles: value.roles,
+            roles,
             created_at: now.clone(),
             updated_at: now,
             enabled: true,
@@ -152,12 +191,22 @@ impl From<RegisterRequest> for User {
         let now: DateTime<Utc> = SystemTime::now().into();
         let now: String = now.to_rfc3339();
 
+        let first_name = match value.first_name {
+            None => String::from(""),
+            Some(f) => f,
+        };
+
+        let last_name = match value.last_name {
+            None => String::from(""),
+            Some(l) => l,
+        };
+
         User {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: ObjectId::new(),
             username: value.username,
             email: value.email,
-            first_name: value.first_name,
-            last_name: value.last_name,
+            first_name,
+            last_name,
             password: value.password,
             roles: None,
             created_at: now.clone(),

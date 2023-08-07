@@ -15,7 +15,6 @@ keywords = ["api", "authorization", "authentication", "auth"]
 [dependencies]
 actix-web = "4"
 actix-cors = "0.6.4"
-uuid = { version = "1.4.1", features = ["serde", "v4"] }
 mongodb = "2.6.0"
 chrono = "0.4.26"
 serde = { version = "1.0", features = ["derive"] }

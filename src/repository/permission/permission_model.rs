@@ -1,5 +1,6 @@
 use crate::web::dto::permission::create_permission::CreatePermission;
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
@@ -7,7 +8,7 @@ use std::time::SystemTime;
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Permission {
     #[serde(rename = "_id")]
-    pub id: String,
+    pub id: ObjectId,
     pub name: String,
     pub description: Option<String>,
     #[serde(rename = "createdAt")]
@@ -40,7 +41,7 @@ impl Permission {
         let now: String = now.to_rfc3339();
 
         Permission {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: ObjectId::new(),
             name,
             description,
             created_at: now.clone(),
@@ -76,7 +77,7 @@ impl From<CreatePermission> for Permission {
         let now: String = now.to_rfc3339();
 
         Permission {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: ObjectId::new(),
             name: permission.name,
             description: permission.description,
             created_at: now.clone(),

@@ -2,6 +2,7 @@ use crate::repository::audit::audit_repository::Error as AuditError;
 use crate::repository::user::user_model::User;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
+use mongodb::bson::oid::ObjectId;
 use mongodb::bson::{doc, Bson};
 use mongodb::error::Error as MongoError;
 use mongodb::Database;
@@ -17,6 +18,7 @@ pub struct UserRepository {
 
 #[derive(Clone, Debug)]
 pub enum Error {
+    InvalidId(String),
     EmptyId,
     EmptyUsername,
     EmptyCollection,
@@ -52,6 +54,7 @@ impl Display for Error {
     /// * `std::fmt::Result` - The result of the operation.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match &self {
+            Error::InvalidId(id) => write!(f, "Invalid User ID: {}", id),
             Error::EmptyId => write!(f, "Empty User ID"),
             Error::EmptyUsername => write!(f, "Empty username"),
             Error::EmptyCollection => write!(f, "Empty collection"),
@@ -159,7 +162,7 @@ impl UserRepository {
             }
         };
 
-        let user_id = user.id.clone();
+        let user_id = user.id.to_hex();
 
         let collection = db.collection::<User>(&self.collection);
         let result = collection.insert_one(user, None).await;
@@ -235,8 +238,15 @@ impl UserRepository {
             return Err(Error::EmptyId);
         }
 
+        let target_object_id = match ObjectId::parse_str(id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         let filter = doc! {
-            "_id": id,
+            "_id": target_object_id,
         };
 
         match db
@@ -393,7 +403,7 @@ impl UserRepository {
             }
         };
 
-        let user_id = user.id.clone();
+        let user_id = user.id;
         let filter = doc! {
             "_id": &user_id,
         };
@@ -421,7 +431,7 @@ impl UserRepository {
                 if let Some(u) = user {
                     Ok(u)
                 } else {
-                    Err(Error::UserNotFound(user_id))
+                    Err(Error::UserNotFound(user_id.to_hex()))
                 }
             }
             Err(e) => Err(Error::MongoDb(e)),
@@ -463,8 +473,15 @@ impl UserRepository {
             return Err(Error::EmptyPassword);
         }
 
+        let target_object_id = match ObjectId::parse_str(id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         let filter = doc! {
-            "_id": id,
+            "_id": target_object_id,
         };
 
         let now: DateTime<Utc> = SystemTime::now().into();
@@ -512,8 +529,15 @@ impl UserRepository {
             return Err(Error::EmptyId);
         }
 
+        let target_object_id = match ObjectId::parse_str(id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         let filter = doc! {
-            "_id": id,
+            "_id": target_object_id,
         };
 
         let collection = db.collection::<User>(&self.collection);
@@ -555,11 +579,18 @@ impl UserRepository {
             return Err(Error::EmptyId);
         }
 
+        let target_object_id = match ObjectId::parse_str(role_id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         let filter = doc! {};
 
         let update = doc! {
             "$pull": {
-                "roles": role_id,
+                "roles": target_object_id,
             }
         };
 

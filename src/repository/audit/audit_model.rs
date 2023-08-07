@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
@@ -126,7 +127,7 @@ impl Display for Action {
 #[derive(Serialize, Deserialize)]
 pub struct Audit {
     #[serde(rename = "_id")]
-    pub id: String,
+    pub id: ObjectId,
     #[serde(rename = "userId")]
     pub user_id: String,
     pub action: Action,
@@ -138,8 +139,6 @@ pub struct Audit {
     pub resource_type: ResourceType,
     #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
-    pub updated_at: String,
 }
 
 impl Audit {
@@ -175,14 +174,13 @@ impl Audit {
         let now: String = now.to_rfc3339();
 
         Audit {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: ObjectId::new(),
             user_id: user_id.to_string(),
             action,
             resource_id: resource_id.to_string(),
             resource_id_type,
             resource_type,
-            created_at: now.clone(),
-            updated_at: now,
+            created_at: now,
         }
     }
 }
@@ -202,8 +200,8 @@ impl Display for Audit {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Audit {{ id: {}, user_id: {}, action: {}, resource_id: {}, resource_type: {}, created_at: {}, updated_at: {} }}",
-            self.id, self.user_id, self.action, self.resource_id, self.resource_type, self.created_at, self.updated_at
+            "Audit {{ id: {}, user_id: {}, action: {}, resource_id: {}, resource_type: {}, created_at: {} }}",
+            self.id, self.user_id, self.action, self.resource_id, self.resource_type, self.created_at
         )
     }
 }

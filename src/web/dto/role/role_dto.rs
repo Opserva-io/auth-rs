@@ -41,7 +41,7 @@ impl From<Role> for RoleDto {
     /// * `RoleDto` - The new RoleDto.
     fn from(value: Role) -> Self {
         RoleDto {
-            id: value.id,
+            id: value.id.to_hex(),
             name: value.name,
             description: value.description,
             permissions: None,
@@ -77,7 +77,7 @@ impl From<&Role> for RoleDto {
     /// * `RoleDto` - The new RoleDto.
     fn from(value: &Role) -> Self {
         RoleDto {
-            id: value.id.clone(),
+            id: value.id.to_hex(),
             name: value.name.clone(),
             description: value.description.clone(),
             permissions: None,
@@ -121,7 +121,7 @@ impl From<Role> for SimpleRoleDto {
     /// * `SimpleRoleDto` - The new SimpleRoleDto.
     fn from(value: Role) -> Self {
         SimpleRoleDto {
-            id: value.id,
+            id: value.id.to_hex(),
             name: value.name,
             description: value.description,
             permissions: None,
@@ -155,7 +155,7 @@ impl From<&Role> for SimpleRoleDto {
     /// * `SimpleRoleDto` - The new SimpleRoleDto.
     fn from(value: &Role) -> Self {
         SimpleRoleDto {
-            id: value.id.clone(),
+            id: value.id.to_hex(),
             name: value.name.clone(),
             description: value.description.clone(),
             permissions: None,

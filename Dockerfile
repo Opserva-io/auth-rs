@@ -19,7 +19,7 @@ FROM debian:stable-slim
 # Set the environment variables
 ENV SERVER_ADDR=0.0.0.0
 ENV SERVER_PORT=8080
-ENV DB_CONNECTION_STRING=mongodb+srv://admin:admin@testcluster.mongodb.net/?retryWrites=true&w=majority
+ENV DB_CONNECTION_STRING=mongodb+srv://<username>:<password>@cluster.mongodb.net/?retryWrites=true&w=majority
 ENV DB_DATABASE=test
 ENV DB_PERMISSION_COLLECTION=permissions
 ENV DB_ROLE_COLLECTION=roles

@@ -50,7 +50,7 @@ impl From<User> for UserDto {
     /// * `UserDto` - The new UserDto.
     fn from(value: User) -> Self {
         UserDto {
-            id: value.id,
+            id: value.id.to_hex(),
             username: value.username,
             email: value.email,
             first_name: value.first_name,
@@ -93,7 +93,7 @@ impl From<&User> for UserDto {
     /// * `UserDto` - The new UserDto.
     fn from(value: &User) -> Self {
         UserDto {
-            id: value.id.clone(),
+            id: value.id.to_hex(),
             username: value.username.clone(),
             email: value.email.clone(),
             first_name: value.first_name.clone(),
@@ -148,7 +148,7 @@ impl From<User> for SimpleUserDto {
     /// * `SimpleUserDto` - The new SimpleUserDto.
     fn from(value: User) -> Self {
         SimpleUserDto {
-            id: value.id,
+            id: value.id.to_hex(),
             username: value.username,
             email: value.email,
             first_name: value.first_name,
@@ -188,7 +188,7 @@ impl From<&User> for SimpleUserDto {
     /// * `SimpleUserDto` - The new SimpleUserDto.
     fn from(value: &User) -> Self {
         SimpleUserDto {
-            id: value.id.clone(),
+            id: value.id.to_hex(),
             username: value.username.clone(),
             email: value.email.clone(),
             first_name: value.first_name.clone(),
