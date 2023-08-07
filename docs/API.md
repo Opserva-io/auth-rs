@@ -3,7 +3,7 @@
 The API is a REST-ful API that uses JSON for serialization and JWT for authentication.
 CRUD operations are available for users, roles and permissions.
 
-## Index
+## Table of contents
 
 - [OpenAPI / Swagger](#openapi--swagger)
 - [Audit](#audit)

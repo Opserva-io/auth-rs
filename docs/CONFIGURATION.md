@@ -2,7 +2,7 @@
 
 `auth-rs` can be configured using environment variables to fit your environment and requirements.
 
-## Index
+## Table of contents
 
 - [Environment variables](#environment-variables)
 - [Changing the default configuration](#changing-the-default-configuration)
@@ -48,7 +48,7 @@ An example `.env` file can be found in the root of the repository, called `.env.
 
 ## Docker
 
-The `auth-rs` service can be run using Docker. The `Dockerfile` is located in the root of the repository.
+The `auth-rs` service can be executed using Docker. The `Dockerfile` is located in the root of the repository.
 You can add environment variables when running the container using the `-e` flag.
 
 An example of running the container using Docker:

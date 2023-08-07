@@ -13,6 +13,16 @@ Users, when authenticated, will be given a JWT token which can be used to access
 A [React](https://react.dev/)-based frontend for `auth-rs` is also
 available [here](https://github.com/Opserva-io/auth-js).
 
+## Table of Contents
+
+* [Features](#features)
+* [Usage](#usage)
+* [Configuration](#configuration)
+* [API](#api)
+* [Building](#building)
+* [Dependencies](#dependencies)
+* [About](#about)
+
 ## Features
 
 - [X] Authentication
@@ -58,6 +68,14 @@ You can build an optimized `release` version of `auth-rs` using `cargo`:
 
 ```shell
 cargo build --release
+```
+
+### Docker
+
+You can build a docker image of `auth-rs` using the provided `Dockerfile`:
+
+```shell
+docker build -t auth-rs .
 ```
 
 ## Dependencies
