@@ -36,7 +36,7 @@ The following environment variables can be used to configure `auth-rs`:
 | DEFAULT_USER_ENABLED     | N/A           | `true` if `GENERATE_DEFAULT_USER` is enabled | `bool`      | Sets whether the default user is enabled or not                      |
 | ENABLE_OPENAPI           | `true`        | `false`                                      | `bool`      | Enables or disables the OpenAPI endpoint                             |
 
-*Note: The audit trail feature is disabled by default and will have a noticeable performance impact when enabled.*
+> *Note*: The audit trail feature is disabled by default and will have a noticeable performance impact when enabled.
 
 ## Changing the default configuration
 

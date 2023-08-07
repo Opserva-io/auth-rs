@@ -1,4 +1,4 @@
-use crate::repository::audit::audit_model::Action::{Create, Delete, Read, Search, Update};
+use crate::repository::audit::audit_model::Action::{Create, Delete, Update};
 use crate::repository::audit::audit_model::{Audit, ResourceIdType, ResourceType};
 use crate::repository::role::role_model::Role;
 use crate::repository::role::role_repository::{Error, RoleRepository};
@@ -106,33 +106,16 @@ impl RoleService {
     /// let role_repository = RoleRepository::new(String::from("roles"));
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
-    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
-    /// let user_id = "user_id";
     ///
-    /// let roles = role_service.find_all(user_id, &db, &audit_service);
+    /// let roles = role_service.find_all(&db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<Role>` - The Role entities.
     /// * `Error` - The Error that occurred.
-    pub async fn find_all(
-        &self,
-        user_id: &str,
-        db: &Database,
-        audit_service: &AuditService,
-    ) -> Result<Vec<Role>, Error> {
+    pub async fn find_all(&self, db: &Database) -> Result<Vec<Role>, Error> {
         info!("Finding all roles");
-
-        let new_audit = Audit::new(user_id, Read, "", ResourceIdType::None, ResourceType::Role);
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
-            }
-        }
-
         self.role_repository.find_all(db).await
     }
 
@@ -153,41 +136,17 @@ impl RoleService {
     /// let role_repository = RoleRepository::new(String::from("roles"));
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
-    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
     /// let id = "role_id";
-    /// let user_id = "user_id";
     ///
-    /// let role = role_service.find_by_id(id, user_id, &db, &audit_service);
+    /// let role = role_service.find_by_id(id, &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Option<Role>` - The optional Role entity.
     /// * `Error` - The Error that occurred.
-    pub async fn find_by_id(
-        &self,
-        id: &str,
-        user_id: &str,
-        db: &Database,
-        audit_service: &AuditService,
-    ) -> Result<Option<Role>, Error> {
+    pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<Role>, Error> {
         info!("Finding Role by ID: {}", id);
-
-        let new_audit = Audit::new(
-            user_id,
-            Read,
-            id,
-            ResourceIdType::RoleId,
-            ResourceType::Role,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
-            }
-        }
-
         self.role_repository.find_by_id(id, db).await
     }
 
@@ -208,11 +167,9 @@ impl RoleService {
     /// let role_repository = RoleRepository::new(String::from("roles"));
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
-    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
     /// let id_vec = vec!["role_id"];
-    /// let user_id = "user_id";
     ///
-    /// let roles = role_service.find_by_id_vec(id_vec, user_id, &db, &audit_service);
+    /// let roles = role_service.find_by_id_vec(id_vec, &db);
     /// ```
     ///
     /// # Returns
@@ -222,27 +179,9 @@ impl RoleService {
     pub async fn find_by_id_vec(
         &self,
         id_vec: Vec<String>,
-        user_id: &str,
         db: &Database,
-        audit_service: &AuditService,
     ) -> Result<Vec<Role>, Error> {
         info!("Finding roles by id vec: {:?}", id_vec);
-
-        let new_audit = Audit::new(
-            user_id,
-            Read,
-            &format!("{:?}", id_vec),
-            ResourceIdType::RoleIdVec,
-            ResourceType::Role,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
-            }
-        }
-
         self.role_repository.find_by_id_vec(id_vec, db).await
     }
 
@@ -263,40 +202,16 @@ impl RoleService {
     /// let role_repository = RoleRepository::new(String::from("roles"));
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
-    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
     /// let name = "role_name";
-    /// let user_id = "user_id";
     ///
-    /// let role = role_service.find_by_name(name, user_id, &db, &audit_service);
+    /// let role = role_service.find_by_name(name, &db);
     /// ```
     ///
     /// # Returns
     ///
     /// A Result with an Option of a Role instance or an Error.
-    pub async fn find_by_name(
-        &self,
-        name: &str,
-        user_id: &str,
-        db: &Database,
-        audit_service: &AuditService,
-    ) -> Result<Option<Role>, Error> {
+    pub async fn find_by_name(&self, name: &str, db: &Database) -> Result<Option<Role>, Error> {
         info!("Finding Role by name: {}", name);
-
-        let new_audit = Audit::new(
-            user_id,
-            Read,
-            name,
-            ResourceIdType::RoleName,
-            ResourceType::Role,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
-            }
-        }
-
         self.role_repository.find_by_name(name, db).await
     }
 
@@ -464,40 +379,16 @@ impl RoleService {
     /// let role_repository = RoleRepository::new(String::from("roles"));
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
-    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
     /// let text = "text";
-    /// let user_id = "user_id";
-    /// let result = role_service.search(text, user_id, &db, &audit_service);
+    /// let result = role_service.search(text, &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<Role>` - The vector of Role entities.
     /// * `Error` - The Error that occurred.
-    pub async fn search(
-        &self,
-        text: &str,
-        user_id: &str,
-        db: &Database,
-        audit_service: &AuditService,
-    ) -> Result<Vec<Role>, Error> {
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Role>, Error> {
         info!("Searching for Role by text: {}", text);
-
-        let new_audit = Audit::new(
-            user_id,
-            Search,
-            "",
-            ResourceIdType::RoleSearch,
-            ResourceType::Role,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
-            }
-        }
-
         self.role_repository.search(text, db).await
     }
 }

@@ -35,15 +35,12 @@ use log::error;
 /// * `Result<RoleDto, PermissionError>` - The result containing the RoleDto or the PermissionError that occurred
 pub async fn get_role_dto_from_role(
     role: Role,
-    user_id: &str,
     config: &Config,
 ) -> Result<RoleDto, PermissionError> {
     let mut role_dto = RoleDto::from(role.clone());
     if role.permissions.is_some() {
         role_dto.permissions =
-            match find_permission_dto_from_permissions(role.permissions.unwrap(), user_id, config)
-                .await
-            {
+            match find_permission_dto_from_permissions(role.permissions.unwrap(), config).await {
                 Ok(d) => d,
                 Err(e) => return Err(e),
             };
@@ -77,19 +74,13 @@ pub async fn get_role_dto_from_role(
 /// * `PermissionError` - The PermissionError that occurred
 pub async fn find_permission_dto_from_permissions(
     permissions: Vec<String>,
-    user_id: &str,
     config: &Config,
 ) -> Result<Option<Vec<PermissionDto>>, PermissionError> {
     let mut permission_dto_list: Vec<PermissionDto> = vec![];
     let permissions = match config
         .services
         .permission_service
-        .find_by_id_vec(
-            permissions,
-            user_id,
-            &config.database,
-            &config.services.audit_service,
-        )
+        .find_by_id_vec(permissions, &config.database)
         .await
     {
         Ok(d) => d,
@@ -131,7 +122,6 @@ pub async fn find_permission_dto_from_permissions(
 /// * `Result<(), Error>` - Returns Ok if the permissions exist, otherwise returns an Error
 pub async fn validate_permissions(
     permissions: Option<Vec<String>>,
-    user_id: &str,
     pool: &web::Data<Config>,
 ) -> Result<(), PermissionError> {
     if permissions.is_none() {
@@ -144,7 +134,7 @@ pub async fn validate_permissions(
         match pool
             .services
             .permission_service
-            .find_by_id(&p, user_id, &pool.database, &pool.services.audit_service)
+            .find_by_id(&p, &pool.database)
             .await
         {
             Ok(d) => match d {
@@ -200,7 +190,7 @@ pub async fn create(
 
     let role_dto = role_dto.into_inner();
     if role_dto.permissions.is_some() {
-        match validate_permissions(role_dto.permissions.clone(), &user_id, &pool).await {
+        match validate_permissions(role_dto.permissions.clone(), &pool).await {
             Ok(_) => (),
             Err(e) => {
                 error!("Error validating permissions: {}", e);
@@ -226,7 +216,7 @@ pub async fn create(
         }
     };
 
-    match get_role_dto_from_role(res, &user_id, &pool).await {
+    match get_role_dto_from_role(res, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
             error!("Error converting Role to RoleDto: {}", e);
@@ -255,28 +245,9 @@ pub async fn create(
 pub async fn find_all_roles(
     search: web::Query<SearchRequest>,
     pool: web::Data<Config>,
-    req: HttpRequest,
 ) -> HttpResponse {
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
-        Some(e) => e,
-        None => {
-            error!("Failed to get User ID from token");
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to get User ID from token"));
-        }
-    };
-
     let res = match search.text.clone() {
-        Some(t) => match pool
-            .services
-            .role_service
-            .search(&t, &user_id, &pool.database, &pool.services.audit_service)
-            .await
-        {
+        Some(t) => match pool.services.role_service.search(&t, &pool.database).await {
             Ok(d) => d,
             Err(e) => {
                 error!("Error while searching for Roles: {}", e);
@@ -284,12 +255,7 @@ pub async fn find_all_roles(
                     .json(InternalServerError::new(&e.to_string()));
             }
         },
-        None => match pool
-            .services
-            .role_service
-            .find_all(&user_id, &pool.database, &pool.services.audit_service)
-            .await
-        {
+        None => match pool.services.role_service.find_all(&pool.database).await {
             Ok(d) => d,
             Err(e) => {
                 error!("Error while finding all Roles: {}", e);
@@ -301,7 +267,7 @@ pub async fn find_all_roles(
 
     let mut role_dto_list: Vec<RoleDto> = vec![];
     for r in &res {
-        let role_dto = match get_role_dto_from_role(r.clone(), &user_id, &pool).await {
+        let role_dto = match get_role_dto_from_role(r.clone(), &pool).await {
             Ok(d) => d,
             Err(e) => {
                 error!("Error converting Role to RoleDto: {}", e);
@@ -334,33 +300,11 @@ pub async fn find_all_roles(
 )]
 #[get("/{id}")]
 #[has_permissions("CAN_READ_ROLE")]
-pub async fn find_by_id(
-    path: web::Path<String>,
-    pool: web::Data<Config>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
-        Some(e) => e,
-        None => {
-            error!("Failed to get User ID from token");
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to get User ID from token"));
-        }
-    };
-
+pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     let res = match pool
         .services
         .role_service
-        .find_by_id(
-            &path,
-            &user_id,
-            &pool.database,
-            &pool.services.audit_service,
-        )
+        .find_by_id(&path, &pool.database)
         .await
     {
         Ok(d) => match d {
@@ -374,7 +318,7 @@ pub async fn find_by_id(
         }
     };
 
-    match get_role_dto_from_role(res, &user_id, &pool).await {
+    match get_role_dto_from_role(res, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
             error!("Error converting Role to RoleDto: {}", e);
@@ -431,12 +375,7 @@ pub async fn update(
     let mut role = match pool
         .services
         .role_service
-        .find_by_id(
-            &path,
-            &user_id,
-            &pool.database,
-            &pool.services.audit_service,
-        )
+        .find_by_id(&path, &pool.database)
         .await
     {
         Ok(data) => match data {
@@ -451,7 +390,7 @@ pub async fn update(
     };
 
     if update.permissions.is_some() {
-        match validate_permissions(update.permissions.clone(), &user_id, &pool).await {
+        match validate_permissions(update.permissions.clone(), &pool).await {
             Ok(_) => (),
             Err(e) => {
                 error!("Error validating permissions: {}", e);
@@ -479,7 +418,7 @@ pub async fn update(
         }
     };
 
-    match get_role_dto_from_role(res, &user_id, &pool).await {
+    match get_role_dto_from_role(res, &pool).await {
         Ok(dto) => HttpResponse::Ok().json(dto),
         Err(e) => {
             error!("Error converting Role to RoleDto: {}", e);

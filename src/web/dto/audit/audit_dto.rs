@@ -4,11 +4,12 @@ use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub enum ActionDto {
+    #[serde(rename = "create")]
     Create,
-    Read,
+    #[serde(rename = "update")]
     Update,
+    #[serde(rename = "delete")]
     Delete,
-    Search,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -162,10 +163,8 @@ impl From<Action> for ActionDto {
     fn from(value: Action) -> Self {
         match value {
             Action::Create => ActionDto::Create,
-            Action::Read => ActionDto::Read,
             Action::Update => ActionDto::Update,
             Action::Delete => ActionDto::Delete,
-            Action::Search => ActionDto::Search,
         }
     }
 }

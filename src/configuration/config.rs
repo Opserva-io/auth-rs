@@ -163,12 +163,7 @@ impl Config {
         match self
             .services
             .permission_service
-            .find_by_name(
-                name,
-                "AUTH-RS",
-                &self.database,
-                &self.services.audit_service,
-            )
+            .find_by_name(name, &self.database)
             .await
         {
             Ok(d) => {
@@ -212,12 +207,7 @@ impl Config {
         match self
             .services
             .role_service
-            .find_by_name(
-                name,
-                "AUTH-RS",
-                &self.database,
-                &self.services.audit_service,
-            )
+            .find_by_name(name, &self.database)
             .await
         {
             Ok(d) => {
@@ -273,12 +263,7 @@ impl Config {
         match self
             .services
             .user_service
-            .find_by_username(
-                &default_user_config.username,
-                "AUTH-RS",
-                &self.database,
-                &self.services.audit_service,
-            )
+            .find_by_username(&default_user_config.username, &self.database)
             .await
         {
             Ok(user) => {
