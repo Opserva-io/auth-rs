@@ -15,13 +15,15 @@ available [here](https://github.com/Opserva-io/auth-js).
 
 ## Table of Contents
 
-* [Features](#features)
-* [Usage](#usage)
-* [Configuration](#configuration)
-* [API](#api)
-* [Building](#building)
-* [Dependencies](#dependencies)
-* [About](#about)
+-[Features](#features)
+- [Usage](#usage)
+  - [Development](#development)
+  - [Docker](#docker)
+- [Configuration](#configuration)
+- [API](#api)
+- [Building](#building)
+- [Dependencies](#dependencies)
+- [About](#about)
 
 ## Features
 
@@ -36,13 +38,13 @@ available [here](https://github.com/Opserva-io/auth-js).
 
 ## Usage
 
-## Development
+### Development
 
 1. Clone the repository
 2. Copy `.env.example` to `.env` in the root of the project and fill in / adjust the values
 3. Execute `cargo run` to start the service
 
-## Docker
+### Docker
 
 You can execute `auth-rs` using Docker:
 
