@@ -81,6 +81,8 @@ async fn main() -> std::io::Result<()> {
             web::controller::user::user_controller::admin_update_password,
             web::controller::user::user_controller::delete,
             web::controller::user::user_controller::delete_self,
+            web::controller::audit::audit_controller::find_all,
+            web::controller::audit::audit_controller::find_by_id,
         ),
         components(
             schemas(
@@ -105,6 +107,10 @@ async fn main() -> std::io::Result<()> {
                 web::dto::user::update_user::UpdateOwnUser,
                 web::dto::user::update_password::UpdatePassword,
                 web::dto::user::update_password::AdminUpdatePassword,
+                crate::web::dto::audit::audit_dto::AuditDto,
+                crate::web::dto::audit::audit_dto::ActionDto,
+                crate::web::dto::audit::audit_dto::ResourceIdTypeDto,
+                crate::web::dto::audit::audit_dto::ResourceTypeDto,
             )
         ),
         modifiers(&SecurityAddon)

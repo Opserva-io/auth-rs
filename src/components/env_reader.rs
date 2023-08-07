@@ -138,7 +138,7 @@ impl EnvReader {
                     .expect("DB_AUDIT_ENABLED must be a boolean");
                 res
             }
-            Err(_) => true,
+            Err(_) => false,
         };
 
         let create_indexes = match env::var("DB_CREATE_INDEXES") {

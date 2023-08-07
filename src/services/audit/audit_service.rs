@@ -82,4 +82,33 @@ impl AuditService {
         info!("Finding all audits");
         self.audit_repository.find_all(db).await
     }
+
+    /// # Summary
+    ///
+    /// Search for Audit entities.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to search for.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let audit_repository = AuditRepository::new("audit".to_string()).unwrap();
+    /// let db = mongodb::Client::with_uri_str("mongodb://localhost:27017")
+    ///    .await
+    ///    .unwrap()
+    ///    .database("test");
+    ///
+    /// let result = audit_repository.search("", &db).await;
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<Audit>, Error>` - The result of the operation.
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Audit>, Error> {
+        info!("Searching for audits: {}", text);
+        self.audit_repository.search(text, db).await
+    }
 }

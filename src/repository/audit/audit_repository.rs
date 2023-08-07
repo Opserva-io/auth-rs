@@ -13,6 +13,7 @@ pub struct AuditRepository {
 #[derive(Debug, Clone)]
 pub enum Error {
     EmptyCollection,
+    EmptyTextSearch,
     MongoDb(MongodbError),
 }
 
@@ -31,6 +32,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::EmptyCollection => write!(f, "Empty collection"),
+            Error::EmptyTextSearch => write!(f, "Empty text search"),
             Error::MongoDb(e) => write!(f, "MongoDb Error: {}", e),
         }
     }
@@ -122,5 +124,52 @@ impl AuditRepository {
             Ok(r) => Ok(r.try_collect().await.unwrap_or_else(|_| vec![])),
             Err(e) => Err(Error::MongoDb(e)),
         }
+    }
+
+    /// # Summary
+    ///
+    /// Search for Audit entities.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text to search for.
+    /// * `db` - The database to use.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let audit_repository = AuditRepository::new("audit".to_string()).unwrap();
+    /// let db = mongodb::Client::with_uri_str("mongodb://localhost:27017")
+    ///    .await
+    ///    .unwrap()
+    ///    .database("test");
+    ///
+    /// let result = audit_repository.search("", &db).await;
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<Audit>, Error>` - The result of the operation.
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Audit>, Error> {
+        if text.is_empty() {
+            return Err(Error::EmptyTextSearch);
+        }
+
+        let filter = doc! {
+            "$text": {
+                "$search": text,
+            },
+        };
+
+        let cursor = match db
+            .collection::<Audit>(&self.collection)
+            .find(filter, None)
+            .await
+        {
+            Ok(d) => d,
+            Err(e) => return Err(Error::MongoDb(e)),
+        };
+
+        Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
     }
 }

@@ -2,6 +2,7 @@ use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
 use crate::configuration::server_config::ServerConfig;
+use crate::repository::audit::audit_model::Audit;
 use crate::repository::audit::audit_repository::AuditRepository;
 use crate::repository::permission::permission_model::Permission;
 use crate::repository::permission::permission_repository::PermissionRepository;
@@ -32,6 +33,7 @@ pub struct Config {
     pub permission_collection: String,
     pub role_collection: String,
     pub user_collection: String,
+    pub audit_collection: String,
     pub open_api: bool,
 }
 
@@ -122,6 +124,7 @@ impl Config {
             permission_collection: db_config.permission_collection,
             role_collection: db_config.role_collection,
             user_collection: db_config.user_collection,
+            audit_collection: db_config.audit_collection,
             open_api,
         };
 
@@ -134,6 +137,7 @@ impl Config {
             cfg.create_permission_indexes().await;
             cfg.create_role_indexes().await;
             cfg.create_user_indexes().await;
+            cfg.create_audit_indexes().await;
         }
 
         cfg
@@ -426,7 +430,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Permission>(&self.user_collection)
+            .collection::<User>(&self.user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -438,7 +442,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Permission>(&self.user_collection)
+            .collection::<User>(&self.user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -450,7 +454,66 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Permission>(&self.user_collection)
+            .collection::<User>(&self.user_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+    }
+
+    /// # Summary
+    ///
+    /// Create default indexes for the Audit collection.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the indexes could not be created.
+    pub async fn create_audit_indexes(&self) {
+        info!("Creating indexes for the Audit collection");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "action": 1u32})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Audit>(&self.audit_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "resourceIdType": 1u32})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Audit>(&self.audit_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "resourceType": 1u32})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Audit>(&self.audit_collection)
+            .create_index(model, None)
+            .await
+            .expect("Creating an index should succeed");
+
+        let options = IndexOptions::builder().build();
+        let model = IndexModel::builder()
+            .keys(doc! { "_id": "text", "action": "text", "resourceIdType": "text", "resourceType": "text"})
+            .options(options)
+            .build();
+
+        self.database
+            .collection::<Audit>(&self.audit_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");

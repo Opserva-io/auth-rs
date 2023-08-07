@@ -195,15 +195,18 @@ pub async fn create(
             .json(BadRequest::new("Empty email addresses are not allowed"));
     }
 
-    let user_id =
-        match crate::web::extractors::user_id_extractor::get_user_id_from_token(&req).await {
-            Some(e) => e,
-            None => {
-                error!("Failed to get User ID from token");
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new("Failed to get User ID from token"));
-            }
-        };
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
 
     let user_dto = user_dto.into_inner();
 
@@ -287,15 +290,18 @@ pub async fn find_all(
     pool: web::Data<Config>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let user_id =
-        match crate::web::extractors::user_id_extractor::get_user_id_from_token(&req).await {
-            Some(e) => e,
-            None => {
-                error!("Failed to get User ID from token");
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new("Failed to get User ID from token"));
-            }
-        };
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
 
     let res = match search.text.clone() {
         Some(t) => match pool
@@ -368,15 +374,18 @@ pub async fn find_by_id(
 ) -> HttpResponse {
     let id = id.into_inner();
 
-    let user_id =
-        match crate::web::extractors::user_id_extractor::get_user_id_from_token(&req).await {
-            Some(e) => e,
-            None => {
-                error!("Failed to get User ID from token");
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new("Failed to get User ID from token"));
-            }
-        };
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
 
     let user = match pool
         .services
@@ -435,15 +444,18 @@ pub async fn update(
 ) -> HttpResponse {
     let id = id.into_inner();
 
-    let user_id =
-        match crate::web::extractors::user_id_extractor::get_user_id_from_token(&req).await {
-            Some(e) => e,
-            None => {
-                error!("Failed to get User ID from token");
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new("Failed to get User ID from token"));
-            }
-        };
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
 
     let mut user = match pool
         .services
@@ -761,15 +773,18 @@ pub async fn admin_update_password(
 ) -> HttpResponse {
     let id = id.into_inner();
 
-    let user_id =
-        match crate::web::extractors::user_id_extractor::get_user_id_from_token(&req).await {
-            Some(e) => e,
-            None => {
-                error!("Failed to get User ID from token");
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new("Failed to get User ID from token"));
-            }
-        };
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
 
     let user = match pool
         .services
@@ -858,15 +873,18 @@ pub async fn delete(
     pool: web::Data<Config>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let user_id =
-        match crate::web::extractors::user_id_extractor::get_user_id_from_token(&req).await {
-            Some(e) => e,
-            None => {
-                error!("Failed to get User ID from token");
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new("Failed to get User ID from token"));
-            }
-        };
+    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
+        &req, &pool,
+    )
+    .await
+    {
+        Some(e) => e,
+        None => {
+            error!("Failed to get User ID from token");
+            return HttpResponse::InternalServerError()
+                .json(InternalServerError::new("Failed to get User ID from token"));
+        }
+    };
 
     match pool
         .services

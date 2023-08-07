@@ -1,3 +1,4 @@
+pub mod audit;
 pub mod authentication;
 pub mod permission;
 pub mod role;

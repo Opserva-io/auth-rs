@@ -5,6 +5,7 @@ use crate::web::controller::role::role_controller;
 use crate::web::controller::user::user_controller;
 use actix_web::web;
 
+pub mod audit;
 pub mod authentication;
 pub mod health;
 pub mod permission;
@@ -56,6 +57,11 @@ impl Controller {
                         .service(authentication_controller::login)
                         .service(authentication_controller::current_user)
                         .service(authentication_controller::register),
+                )
+                .service(
+                    web::scope("/audits")
+                        .service(audit::audit_controller::find_all)
+                        .service(audit::audit_controller::find_by_id),
                 ),
         );
 

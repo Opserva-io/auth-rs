@@ -17,7 +17,7 @@ available [here](https://github.com/Opserva-io/auth-js).
 
 - [X] Authentication
 - [X] Authorization
-- [ ] Audit trail
+- [X] Audit trail
 - [X] Password hashing
 - [X] JWT generation
 - [X] JWT verification

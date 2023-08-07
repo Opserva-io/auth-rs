@@ -57,7 +57,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                                 }
                             },
                             Err(e) => {
-                                error!("Failed to find user by email: {}", e);
+                                error!("Failed to find user by username: {}", e);
                                 return Ok(vec![]);
                             }
                         };
@@ -73,7 +73,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                                 .role_service
                                 .find_by_id_vec(
                                     user.roles.unwrap(),
-                                    token,
+                                    "AUTH-RS",
                                     &res.database,
                                     &res.services.audit_service,
                                 )
@@ -95,7 +95,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                                             .permission_service
                                             .find_by_id_vec(
                                                 r.permissions.clone().unwrap(),
-                                                &user.id,
+                                                "AUTH-RS",
                                                 &res.database,
                                                 &res.services.audit_service,
                                             )

@@ -5,8 +5,11 @@ use std::time::SystemTime;
 
 #[derive(Serialize, Deserialize)]
 pub enum ResourceType {
+    #[serde(rename = "permission")]
     Permission,
+    #[serde(rename = "role")]
     Role,
+    #[serde(rename = "user")]
     User,
 }
 
@@ -33,17 +36,29 @@ impl Display for ResourceType {
 
 #[derive(Serialize, Deserialize)]
 pub enum ResourceIdType {
+    #[serde(rename = "permissionId")]
     PermissionId,
+    #[serde(rename = "permissionIdVec")]
     PermissionIdVec,
+    #[serde(rename = "permissionName")]
     PermissionName,
+    #[serde(rename = "permissionSearch")]
     PermissionSearch,
+    #[serde(rename = "roleId")]
     RoleId,
+    #[serde(rename = "roleIdVec")]
     RoleIdVec,
+    #[serde(rename = "roleName")]
     RoleName,
+    #[serde(rename = "roleSearch")]
     RoleSearch,
+    #[serde(rename = "userId")]
     UserId,
+    #[serde(rename = "userName")]
     UserName,
+    #[serde(rename = "userSearch")]
     UserSearch,
+    #[serde(rename = "none")]
     None,
 }
 

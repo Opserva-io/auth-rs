@@ -6,6 +6,7 @@ CRUD operations are available for users, roles and permissions.
 ## Index
 
 - [OpenAPI / Swagger](#openapi--swagger)
+- [Audit](#audit)
 - [Authentication](#authentication)
 - [Register](#register)
 - [Login](#login)
@@ -31,6 +32,67 @@ CRUD operations are available for users, roles and permissions.
 ## OpenAPI / Swagger
 
 OpenAPI and Swagger documentation is available via the `/swagger-ui` endpoint.
+
+## Audit
+
+Audit logs are available via the following endpoints, if enabled:
+* `/api/v1/audits/`
+* `/api/v1/audits/{id}`
+
+### Read
+
+Audit logs can be retrieved by users with the appropriate authorizations.
+
+#### Find a single audit log
+
+##### Request
+
+```http
+GET /api/v1/audits/{id}
+Authorization: Bearer <access token here>
+```
+
+##### Response
+
+```http
+{
+  "id": "49782333-21ec-4623-b708-6646c2c8535d",
+  "userId": "AUTH-RS",
+  "action": "Read",
+  "resourceId": "CAN_CREATE_PERMISSION",
+  "resourceIdType": "permissionName",
+  "resourceType": "permission",
+  "createdAt": "2023-08-07T00:24:31.334654836+00:00",
+  "updatedAt": "2023-08-07T00:24:31.334654836+00:00"
+}
+```
+
+#### Find all audit logs
+
+##### Request
+
+```http
+GET /api/v1/audits/
+Authorization: Bearer <access token here>
+```
+
+##### Response
+
+```http
+[
+  {
+    "_id": "49782333-21ec-4623-b708-6646c2c8535d",
+    "userId": "AUTH-RS",
+    "action": "Read",
+    "resourceId": "CAN_CREATE_PERMISSION",
+    "resourceIdType": "permissionName",
+    "resourceType": "permission",
+    "createdAt": "2023-08-07T00:24:31.334654836+00:00",
+    "updatedAt": "2023-08-07T00:24:31.334654836+00:00"
+  },
+  ...
+]
+```
 
 ## Authentication
 
