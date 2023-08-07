@@ -39,7 +39,7 @@ impl From<Permission> for PermissionDto {
     /// * `PermissionDto` - The new PermissionDto.
     fn from(permission: Permission) -> Self {
         PermissionDto {
-            id: permission.id,
+            id: permission.id.to_hex(),
             name: permission.name,
             description: permission.description,
             created_at: permission.created_at,
@@ -74,7 +74,7 @@ impl From<&Permission> for PermissionDto {
     /// * `PermissionDto` - The new PermissionDto.
     fn from(value: &Permission) -> Self {
         PermissionDto {
-            id: value.id.clone(),
+            id: value.id.to_hex(),
             name: value.name.clone(),
             description: value.description.clone(),
             created_at: value.created_at.clone(),
@@ -116,7 +116,7 @@ impl From<Permission> for SimplePermissionDto {
     /// * `SimplePermissionDto` - The new SimplePermissionDto.
     fn from(permission: Permission) -> Self {
         SimplePermissionDto {
-            id: permission.id,
+            id: permission.id.to_hex(),
             name: permission.name,
             description: permission.description,
         }
@@ -149,7 +149,7 @@ impl From<&Permission> for SimplePermissionDto {
     /// * `SimplePermissionDto` - The new SimplePermissionDto.
     fn from(value: &Permission) -> Self {
         SimplePermissionDto {
-            id: value.id.clone(),
+            id: value.id.to_hex(),
             name: value.name.clone(),
             description: value.description.clone(),
         }

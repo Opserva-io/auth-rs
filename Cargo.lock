@@ -339,7 +339,6 @@ dependencies = [
  "serde_json",
  "utoipa",
  "utoipa-swagger-ui",
- "uuid",
 ]
 
 [[package]]

@@ -17,6 +17,7 @@ use actix_web_grants::proc_macro::has_permissions;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 use log::error;
+use mongodb::bson::oid::ObjectId;
 use std::fmt::{Display, Formatter};
 
 pub enum ConvertError {
@@ -115,10 +116,15 @@ async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, Conve
     let mut user_dto = UserDto::from(user.clone());
 
     if user.roles.is_some() {
+        let mut role_vec: Vec<String> = vec![];
+        for r in user.roles.clone().unwrap() {
+            role_vec.push(r.to_hex());
+        }
+
         let roles = match pool
             .services
             .role_service
-            .find_by_id_vec(user.roles.clone().unwrap(), &pool.database)
+            .find_by_id_vec(role_vec, &pool.database)
             .await
         {
             Ok(d) => d,
@@ -442,11 +448,39 @@ pub async fn update(
         };
     }
 
+    let role_oid_vec = match user_dto.roles.clone() {
+        Some(e) => {
+            let mut vec = vec![];
+            for r in e {
+                match ObjectId::parse_str(&r) {
+                    Ok(oid) => vec.push(oid),
+                    Err(e) => {
+                        error!("Error parsing role ID {}: {}", r, e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()));
+                    }
+                };
+            }
+            Some(vec)
+        }
+        None => None,
+    };
+
+    let new_first_name = match user_dto.first_name {
+        Some(e) => e,
+        None => String::from(""),
+    };
+
+    let new_last_name = match user_dto.last_name {
+        Some(e) => e,
+        None => String::from(""),
+    };
+
     user.username = user_dto.username;
     user.email = user_dto.email;
-    user.first_name = user_dto.first_name;
-    user.last_name = user_dto.last_name;
-    user.roles = user_dto.roles;
+    user.first_name = new_first_name;
+    user.last_name = new_last_name;
+    user.roles = role_oid_vec;
     user.enabled = user_dto.enabled;
 
     let res = match pool
@@ -666,7 +700,7 @@ pub async fn update_password(
                     .services
                     .user_service
                     .update_password(
-                        &user.id,
+                        &user.id.to_hex(),
                         &new_password_hash,
                         token,
                         &pool.database,
@@ -777,7 +811,7 @@ pub async fn admin_update_password(
         .services
         .user_service
         .update_password(
-            &user.id,
+            &user.id.to_hex(),
             &password_hash,
             &user_id,
             &pool.database,

@@ -63,10 +63,15 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                         }
 
                         if user.roles.is_some() {
+                            let mut role_vec: Vec<String> = vec![];
+                            for r in user.roles.unwrap() {
+                                role_vec.push(r.to_hex());
+                            }
+
                             let roles = match res
                                 .services
                                 .role_service
-                                .find_by_id_vec(user.roles.unwrap(), &res.database)
+                                .find_by_id_vec(role_vec, &res.database)
                                 .await
                             {
                                 Ok(e) => e,
@@ -80,13 +85,14 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                             if !roles.is_empty() {
                                 for r in &roles {
                                     if r.permissions.is_some() {
+                                        let mut oid_vec: Vec<String> = vec![];
+                                        for r in r.permissions.clone().unwrap() {
+                                            oid_vec.push(r.to_hex());
+                                        }
                                         let permissions = match res
                                             .services
                                             .permission_service
-                                            .find_by_id_vec(
-                                                r.permissions.clone().unwrap(),
-                                                &res.database,
-                                            )
+                                            .find_by_id_vec(oid_vec, &res.database)
                                             .await
                                         {
                                             Ok(d) => d,

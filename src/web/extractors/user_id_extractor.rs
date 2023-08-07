@@ -24,15 +24,13 @@ pub async fn get_user_id_from_token(req: &HttpRequest, config: &Config) -> Optio
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                match config.services.jwt_service.verify_jwt_token(token) {
-                    Ok(subject) => {
-                        return Some(subject);
-                    }
+                return match config.services.jwt_service.verify_jwt_token(token) {
+                    Ok(subject) => Some(subject),
                     Err(e) => {
                         error!("Failed to verify JWT token: {}", e);
-                        return None;
+                        None
                     }
-                }
+                };
             }
         }
     }

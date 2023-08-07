@@ -1,6 +1,7 @@
 use crate::repository::audit::audit_model::Audit;
 use futures::TryStreamExt;
 use mongodb::bson::doc;
+use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error as MongodbError;
 use mongodb::Database;
 use std::fmt::{Display, Formatter};
@@ -12,6 +13,7 @@ pub struct AuditRepository {
 
 #[derive(Debug, Clone)]
 pub enum Error {
+    InvalidId(String),
     EmptyCollection,
     EmptyTextSearch,
     MongoDb(MongodbError),
@@ -31,7 +33,8 @@ impl Display for Error {
     /// A std::fmt::Result.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::EmptyCollection => write!(f, "Empty collection"),
+            Error::InvalidId(id) => write!(f, "Invalid Audit ID: {}", id),
+            Error::EmptyCollection => write!(f, "Empty Audit collection"),
             Error::EmptyTextSearch => write!(f, "Empty text search"),
             Error::MongoDb(e) => write!(f, "MongoDb Error: {}", e),
         }
@@ -94,9 +97,16 @@ impl AuditRepository {
     ///
     /// * `Result<Option<Audit>, Error>` - The result of the operation.
     pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<Audit>, Error> {
+        let target_object_id = match ObjectId::parse_str(id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         match db
             .collection::<Audit>(&self.collection)
-            .find_one(doc! {"_id": id}, None)
+            .find_one(doc! {"_id": target_object_id}, None)
             .await
         {
             Ok(r) => Ok(r),

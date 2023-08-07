@@ -64,8 +64,6 @@ pub struct AuditDto {
     pub resource_type: ResourceTypeDto,
     #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
-    pub updated_at: String,
 }
 
 impl From<Audit> for AuditDto {
@@ -84,15 +82,15 @@ impl From<Audit> for AuditDto {
         let action = ActionDto::from(value.action);
         let resource_id_type = ResourceIdTypeDto::from(value.resource_id_type);
         let resource_type = ResourceTypeDto::from(value.resource_type);
+
         AuditDto {
-            id: value.id,
+            id: value.id.to_hex(),
             user_id: value.user_id,
             action,
             resource_id: value.resource_id,
             resource_id_type,
             resource_type,
             created_at: value.created_at,
-            updated_at: value.updated_at,
         }
     }
 }

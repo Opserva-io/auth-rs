@@ -20,6 +20,7 @@ use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 use log::{error, info};
 use mongodb::bson::doc;
+use mongodb::bson::oid::ObjectId;
 use mongodb::options::{ClientOptions, IndexOptions, ServerApi, ServerApiVersion};
 use mongodb::{Client, Database, IndexModel};
 use regex::Regex;
@@ -212,7 +213,25 @@ impl Config {
         {
             Ok(d) => {
                 if d.is_none() {
-                    let new_role = Role::new(name.to_string(), description, permissions.clone());
+                    let permission_oid_vec: Option<Vec<ObjectId>> = match permissions {
+                        None => None,
+                        Some(p_vec) => {
+                            let mut oid_vec: Vec<ObjectId> = vec![];
+                            for p in p_vec {
+                                match ObjectId::parse_str(p) {
+                                    Ok(oid) => {
+                                        oid_vec.push(oid);
+                                    }
+                                    Err(e) => {
+                                        error!("Invalid ObjectId: {}", e);
+                                    }
+                                }
+                            }
+                            Some(oid_vec)
+                        }
+                    };
+
+                    let new_role = Role::new(name.to_string(), description, permission_oid_vec);
                     match self
                         .services
                         .role_service
@@ -354,7 +373,7 @@ impl Config {
 
         let options = IndexOptions::builder().build();
         let model = IndexModel::builder()
-            .keys(doc! { "name": "text", "_id": "text" })
+            .keys(doc! { "name": "text" })
             .options(options)
             .build();
 
@@ -388,7 +407,7 @@ impl Config {
 
         let options = IndexOptions::builder().build();
         let model = IndexModel::builder()
-            .keys(doc! { "name": "text", "_id": "text" })
+            .keys(doc! { "name": "text" })
             .options(options)
             .build();
 
@@ -434,7 +453,7 @@ impl Config {
 
         let options = IndexOptions::builder().build();
         let model = IndexModel::builder()
-            .keys(doc! { "_id": "text", "username": "text", "email": "text", "firstName": "text", "lastName": "text"})
+            .keys(doc! { "username": "text", "email": "text", "firstName": "text", "lastName": "text"})
             .options(options)
             .build();
 
@@ -493,7 +512,7 @@ impl Config {
 
         let options = IndexOptions::builder().build();
         let model = IndexModel::builder()
-            .keys(doc! { "_id": "text", "action": "text", "resourceIdType": "text", "resourceType": "text"})
+            .keys(doc! { "action": "text", "resourceIdType": "text", "resourceType": "text"})
             .options(options)
             .build();
 
@@ -622,19 +641,19 @@ impl Config {
                 "ADMIN",
                 Some("The administrator role".to_string()),
                 Some(vec![
-                    create_permission.id.to_string(),
-                    read_permission.id.to_string(),
-                    update_permission.id.to_string(),
-                    delete_permission.id.to_string(),
-                    create_role.id.to_string(),
-                    read_role.id.to_string(),
-                    update_role.id.to_string(),
-                    delete_delete.id.to_string(),
-                    create_user.id.to_string(),
-                    read_user.id.to_string(),
-                    update_user.id.to_string(),
-                    delete_user.id.to_string(),
-                    read_audit.id.to_string(),
+                    create_permission.id.to_hex(),
+                    read_permission.id.to_hex(),
+                    update_permission.id.to_hex(),
+                    delete_permission.id.to_hex(),
+                    create_role.id.to_hex(),
+                    read_role.id.to_hex(),
+                    update_role.id.to_hex(),
+                    delete_delete.id.to_hex(),
+                    create_user.id.to_hex(),
+                    read_user.id.to_hex(),
+                    update_user.id.to_hex(),
+                    delete_user.id.to_hex(),
+                    read_audit.id.to_hex(),
                 ]),
             )
             .await;
@@ -644,15 +663,15 @@ impl Config {
                 "DEFAULT",
                 Some("The default role".to_string()),
                 Some(vec![
-                    can_update_self.id.to_string(),
-                    can_delete_self.id.to_string(),
+                    can_update_self.id.to_hex(),
+                    can_delete_self.id.to_hex(),
                 ]),
             )
             .await;
 
         self.find_or_create_user(
             default_user_config,
-            Some(vec![admin_role.id.to_string(), default_role.id.to_string()]),
+            Some(vec![admin_role.id.to_hex(), default_role.id.to_hex()]),
             &self.salt,
             email_regex,
         )

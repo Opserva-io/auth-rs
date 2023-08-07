@@ -5,6 +5,7 @@ use crate::services::role::role_service::RoleService;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use mongodb::bson::doc;
+use mongodb::bson::oid::ObjectId;
 use mongodb::bson::Bson;
 use mongodb::{error::Error as MongoError, Database};
 use std::fmt;
@@ -18,6 +19,7 @@ pub struct PermissionRepository {
 
 #[derive(Clone, Debug)]
 pub enum Error {
+    InvalidId(String),
     EmptyCollection,
     EmptyId,
     EmptyName,
@@ -50,6 +52,7 @@ impl fmt::Display for Error {
     /// * `fmt::Result` - The result of the display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self {
+            Error::InvalidId(id) => write!(f, "Invalid Permission ID: {}", id),
             Error::EmptyCollection => write!(f, "Empty collection"),
             Error::EmptyId => write!(f, "Empty Permission ID"),
             Error::EmptyName => write!(f, "Empty Permission name"),
@@ -123,7 +126,7 @@ impl PermissionRepository {
             Err(e) => return Err(e),
         };
 
-        let permission_id = permission.id.clone();
+        let permission_id = permission.id.to_hex();
 
         match db
             .collection::<Permission>(&self.collection)
@@ -202,9 +205,21 @@ impl PermissionRepository {
         id_vec: Vec<String>,
         db: &Database,
     ) -> Result<Vec<Permission>, Error> {
+        let mut oid_vec: Vec<ObjectId> = vec![];
+        for id in id_vec {
+            match ObjectId::parse_str(&id) {
+                Ok(oid) => oid_vec.push(oid),
+                Err(e) => return Err(Error::InvalidId(e.to_string())),
+            }
+        }
+
+        if oid_vec.is_empty() {
+            return Ok(vec![]);
+        }
+
         let filter = doc! {
             "_id": {
-                "$in": id_vec,
+                "$in": oid_vec,
             },
         };
 
@@ -249,8 +264,15 @@ impl PermissionRepository {
             return Err(Error::EmptyId);
         }
 
+        let target_object_id = match ObjectId::parse_str(id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         let filter = doc! {
-            "_id": id,
+            "_id": target_object_id,
         };
 
         let permission = match db
@@ -359,7 +381,7 @@ impl PermissionRepository {
             Err(e) => return Err(e),
         };
 
-        let permission_id = permission.id.clone();
+        let permission_id = permission.id;
         let filter = doc! {
             "_id": &permission_id,
         };
@@ -385,7 +407,7 @@ impl PermissionRepository {
         };
 
         if permission.is_none() {
-            return Err(Error::PermissionNotFound(permission_id));
+            return Err(Error::PermissionNotFound(permission_id.to_hex()));
         }
 
         Ok(permission.unwrap())
@@ -421,8 +443,15 @@ impl PermissionRepository {
             return Err(Error::EmptyId);
         }
 
+        let target_object_id = match ObjectId::parse_str(id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         let filter = doc! {
-            "_id": id,
+            "_id": target_object_id,
         };
 
         match db

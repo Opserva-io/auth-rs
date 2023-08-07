@@ -6,9 +6,9 @@ pub struct UpdateUser {
     pub username: String,
     pub email: String,
     #[serde(rename = "firstName")]
-    pub first_name: String,
+    pub first_name: Option<String>,
     #[serde(rename = "lastName")]
-    pub last_name: String,
+    pub last_name: Option<String>,
     pub roles: Option<Vec<String>>,
     pub enabled: bool,
 }

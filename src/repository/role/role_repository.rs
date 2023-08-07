@@ -5,6 +5,7 @@ use crate::services::user::user_service::UserService;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use mongodb::bson::doc;
+use mongodb::bson::oid::ObjectId;
 use mongodb::bson::Bson;
 use mongodb::error::Error as MongoError;
 use mongodb::Database;
@@ -18,6 +19,7 @@ pub struct RoleRepository {
 
 #[derive(Clone, Debug)]
 pub enum Error {
+    InvalidId(String),
     EmptyCollection,
     EmptyId,
     EmptyName,
@@ -43,6 +45,7 @@ impl fmt::Display for Error {
     /// A fmt::Result.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self {
+            Error::InvalidId(id) => write!(f, "Invalid Role ID: {}", id),
             Error::EmptyCollection => write!(f, "Empty collection"),
             Error::EmptyId => write!(f, "Empty Role ID"),
             Error::EmptyName => write!(f, "Empty Role name"),
@@ -131,7 +134,8 @@ impl RoleRepository {
             Err(e) => return Err(e),
         }
 
-        let role_id = role.id.clone();
+        let role_id = role.id.to_hex();
+
         match db
             .collection::<Role>(&self.collection)
             .insert_one(role, None)
@@ -223,9 +227,23 @@ impl RoleRepository {
         ids: Vec<String>,
         db: &Database,
     ) -> Result<Vec<Role>, Error> {
+        let mut oid_vec: Vec<ObjectId> = vec![];
+        for id in ids {
+            match ObjectId::parse_str(id) {
+                Ok(d) => oid_vec.push(d),
+                Err(e) => {
+                    return Err(Error::InvalidId(e.to_string()));
+                }
+            };
+        }
+
+        if oid_vec.is_empty() {
+            return Ok(vec![]);
+        }
+
         let filter = doc! {
             "_id": {
-                "$in": ids,
+                "$in": oid_vec,
             },
         };
 
@@ -272,8 +290,15 @@ impl RoleRepository {
             return Err(Error::EmptyId);
         }
 
+        let target_object_id = match ObjectId::parse_str(id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         let filter = doc! {
-            "_id": id,
+            "_id": target_object_id,
         };
 
         let role = match db
@@ -376,7 +401,7 @@ impl RoleRepository {
             Err(e) => return Err(e),
         }
 
-        let role_id = role.id.clone();
+        let role_id = role.id;
         let filter = doc! {
             "_id": &role_id,
         };
@@ -403,7 +428,7 @@ impl RoleRepository {
         };
 
         if role.is_none() {
-            return Err(Error::RoleNotFound(role_id));
+            return Err(Error::RoleNotFound(role_id.to_hex()));
         }
 
         Ok(role.unwrap())
@@ -446,8 +471,15 @@ impl RoleRepository {
             return Err(Error::EmptyId);
         }
 
+        let target_object_id = match ObjectId::parse_str(id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         let filter = doc! {
-            "_id": id,
+            "_id": target_object_id,
         };
 
         match db
@@ -498,11 +530,18 @@ impl RoleRepository {
             return Err(Error::EmptyId);
         }
 
+        let target_object_id = match ObjectId::parse_str(permission_id) {
+            Ok(res) => res,
+            Err(e) => {
+                return Err(Error::InvalidId(e.to_string()));
+            }
+        };
+
         let filter = doc! {};
 
         let update = doc! {
             "$pull": {
-                "permissions": permission_id,
+                "permissions": target_object_id,
             }
         };
 

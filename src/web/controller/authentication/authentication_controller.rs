@@ -13,6 +13,7 @@ use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 use log::error;
+use mongodb::bson::oid::ObjectId;
 
 /// # Summary
 ///
@@ -40,10 +41,11 @@ pub async fn convert_user_to_simple_dto(
     let mut user_dto = SimpleUserDto::from(user.clone());
 
     if user.roles.is_some() {
+        let role_vec = user.roles.unwrap().iter().map(|r| r.to_hex()).collect();
         let roles = match pool
             .services
             .role_service
-            .find_by_id_vec(user.roles.clone().unwrap(), &pool.database)
+            .find_by_id_vec(role_vec, &pool.database)
             .await
         {
             Ok(d) => d,
@@ -59,10 +61,16 @@ pub async fn convert_user_to_simple_dto(
                 let mut role_dto = SimpleRoleDto::from(r.clone());
                 if r.permissions.is_some() {
                     let mut permission_dto_list: Vec<SimplePermissionDto> = vec![];
+
+                    let mut p_id_vec: Vec<String> = vec![];
+                    for p in r.permissions.clone().unwrap() {
+                        p_id_vec.push(p.to_hex());
+                    }
+
                     let permissions = match pool
                         .services
                         .permission_service
-                        .find_by_id_vec(r.permissions.clone().unwrap(), &pool.database)
+                        .find_by_id_vec(p_id_vec, &pool.database)
                         .await
                     {
                         Ok(d) => d,
@@ -154,7 +162,11 @@ pub async fn login(
         return HttpResponse::BadRequest().finish();
     }
 
-    match pool.services.jwt_service.generate_jwt_token(&user.id) {
+    match pool
+        .services
+        .jwt_service
+        .generate_jwt_token(&user.id.to_hex())
+    {
         Some(t) => HttpResponse::Ok().json(LoginResponse::new(t)),
         None => HttpResponse::InternalServerError()
             .json(InternalServerError::new("Failed to generate JWT token")),
@@ -192,7 +204,7 @@ pub async fn register(
 
     let register_request = register_request.into_inner();
 
-    let default_roles: Option<Vec<String>> = match pool
+    let default_roles: Option<Vec<ObjectId>> = match pool
         .services
         .role_service
         .find_by_name("DEFAULT", &pool.database)
