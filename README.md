@@ -15,7 +15,7 @@ available [here](https://github.com/Opserva-io/auth-js).
 
 ## Table of Contents
 
--[Features](#features)
+- [Features](#features)
 - [Usage](#usage)
   - [Development](#development)
   - [Docker](#docker)
