@@ -566,10 +566,20 @@ pub async fn update_self(
 
                 let user_dto = user_dto.into_inner();
 
+                let new_first_name = match user_dto.first_name {
+                    Some(e) => e,
+                    None => String::from(""),
+                };
+
+                let new_last_name = match user_dto.last_name {
+                    Some(e) => e,
+                    None => String::from(""),
+                };
+
                 user.username = user_dto.username;
                 user.email = user_dto.email;
-                user.first_name = user_dto.first_name;
-                user.last_name = user_dto.last_name;
+                user.first_name = new_first_name;
+                user.last_name = new_last_name;
 
                 let res = match pool
                     .services
