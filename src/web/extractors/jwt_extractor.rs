@@ -41,7 +41,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                         let user = match res
                             .services
                             .user_service
-                            .find_by_username(
+                            .find_by_id(
                                 &subject,
                                 "AUTH-RS",
                                 &res.database,
@@ -57,7 +57,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                                 }
                             },
                             Err(e) => {
-                                error!("Failed to find user by username: {}", e);
+                                error!("Failed to find user by ID: {}", e);
                                 return Ok(vec![]);
                             }
                         };

@@ -939,34 +939,11 @@ pub async fn delete_self(req: HttpRequest, pool: web::Data<Config>) -> HttpRespo
                     }
                 };
 
-                let user = match pool
-                    .services
-                    .user_service
-                    .find_by_username(
-                        &username,
-                        token,
-                        &pool.database,
-                        &pool.services.audit_service,
-                    )
-                    .await
-                {
-                    Ok(u) => match u {
-                        Some(user) => user,
-                        None => {
-                            return HttpResponse::Forbidden().finish();
-                        }
-                    },
-                    Err(e) => {
-                        error!("Failed to find user by email: {}", e);
-                        return HttpResponse::Forbidden().finish();
-                    }
-                };
-
                 return match pool
                     .services
                     .user_service
                     .delete(
-                        &user.id,
+                        &username,
                         token,
                         &pool.database,
                         &pool.services.audit_service,

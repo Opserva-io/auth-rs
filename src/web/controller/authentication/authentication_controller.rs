@@ -170,7 +170,7 @@ pub async fn login(
         return HttpResponse::BadRequest().finish();
     }
 
-    match pool.services.jwt_service.generate_jwt_token(&user.username) {
+    match pool.services.jwt_service.generate_jwt_token(&user.id) {
         Some(t) => HttpResponse::Ok().json(LoginResponse::new(t)),
         None => HttpResponse::InternalServerError()
             .json(InternalServerError::new("Failed to generate JWT token")),
@@ -303,7 +303,7 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                 let user = match pool
                     .services
                     .user_service
-                    .find_by_username(
+                    .find_by_id(
                         &username,
                         token,
                         &pool.database,
@@ -318,7 +318,7 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                         }
                     },
                     Err(e) => {
-                        error!("Failed to find user by email: {}", e);
+                        error!("Failed to find user by ID: {}", e);
                         return HttpResponse::Forbidden().finish();
                     }
                 };

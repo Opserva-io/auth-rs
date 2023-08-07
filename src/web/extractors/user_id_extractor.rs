@@ -26,30 +26,7 @@ pub async fn get_user_id_from_token(req: &HttpRequest, config: &Config) -> Optio
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
                 match config.services.jwt_service.verify_jwt_token(token) {
                     Ok(subject) => {
-                        let user = match config
-                            .services
-                            .user_service
-                            .find_by_username(
-                                &subject,
-                                "AUTH-RS",
-                                &config.database,
-                                &config.services.audit_service,
-                            )
-                            .await
-                        {
-                            Ok(e) => match e {
-                                Some(e) => e,
-                                None => {
-                                    return None;
-                                }
-                            },
-                            Err(e) => {
-                                error!("Failed to find user by username: {}", e);
-                                return None;
-                            }
-                        };
-
-                        return Some(user.id);
+                        return Some(subject);
                     }
                     Err(e) => {
                         error!("Failed to verify JWT token: {}", e);
