@@ -36,9 +36,19 @@ available [here](https://github.com/Opserva-io/auth-js).
 
 ## Usage
 
+## Development
+
 1. Clone the repository
 2. Copy `.env.example` to `.env` in the root of the project and fill in / adjust the values
 3. Execute `cargo run` to start the service
+
+## Docker
+
+You can execute `auth-rs` using Docker:
+
+```bash
+docker run -d -p 8080:8080 --env-file .env opserva/auth-rs
+```
 
 ## Configuration
 

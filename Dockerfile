@@ -1,5 +1,7 @@
+# Use the latest Rust image to build the application
 FROM rust:latest AS build
 
+# Set the working directory
 WORKDIR /usr/src/auth-rs
 
 # Copy the Cargo.toml and Cargo.lock files to the working directory
@@ -8,7 +10,7 @@ COPY Cargo.toml Cargo.lock ./
 # Copy the rest of the application code to the container
 COPY src ./src
 
-# Build the actual application
+# Build the application
 RUN cargo build --release
 
 # Start a new stage for the runtime image
@@ -22,7 +24,9 @@ ENV DB_DATABASE=test
 ENV DB_PERMISSION_COLLECTION=permissions
 ENV DB_ROLE_COLLECTION=roles
 ENV DB_USER_COLLECTION=users
+ENV DB_AUDIT_COLLECTION=audits
 ENV DB_CREATE_INDEXES=true
+ENV DB_AUDIT_ENABLED=false
 ENV HASH_SALT=SGVsbG8sIHdvcmxkIQ
 ENV JWT_SECRET=topSecretSecret
 ENV JWT_EXPIRATION=3600
@@ -34,14 +38,14 @@ ENV DEFAULT_USER_EMAIL=test@opserva.io
 ENV DEFAULT_USER_PASSWORD=123456
 ENV DEFAULT_USER_ENABLED=true
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /usr/src/auth-rs
 
-# Copy the built binary from the previous stage to the current stage
+# Copy the binary from the build stage to the current stage
 COPY --from=build /usr/src/auth-rs/target/release/auth-rs .
 
 # Expose any ports your application might listen on (optional)
 EXPOSE 8080
 
-# Specify the command to run when the container starts
+# Set the binary as the entrypoint of the container
 CMD ["./auth-rs"]
