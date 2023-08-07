@@ -94,11 +94,12 @@ impl Display for ResourceIdType {
 
 #[derive(Serialize, Deserialize)]
 pub enum Action {
+    #[serde(rename = "create")]
     Create,
-    Read,
+    #[serde(rename = "update")]
     Update,
+    #[serde(rename = "delete")]
     Delete,
-    Search,
 }
 
 impl Display for Action {
@@ -116,10 +117,8 @@ impl Display for Action {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Action::Create => write!(f, "Create"),
-            Action::Read => write!(f, "Read"),
             Action::Update => write!(f, "Update"),
             Action::Delete => write!(f, "Delete"),
-            Action::Search => write!(f, "Search"),
         }
     }
 }

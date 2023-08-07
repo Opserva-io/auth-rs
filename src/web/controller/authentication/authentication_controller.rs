@@ -35,7 +35,6 @@ use log::error;
 /// * `Result<SimpleUserDto, ConvertError>` - The result containing the SimpleUserDto or the ConvertError that occurred
 pub async fn convert_user_to_simple_dto(
     user: User,
-    user_id: &str,
     pool: &Config,
 ) -> Result<SimpleUserDto, ConvertError> {
     let mut user_dto = SimpleUserDto::from(user.clone());
@@ -44,12 +43,7 @@ pub async fn convert_user_to_simple_dto(
         let roles = match pool
             .services
             .role_service
-            .find_by_id_vec(
-                user.roles.clone().unwrap(),
-                user_id,
-                &pool.database,
-                &pool.services.audit_service,
-            )
+            .find_by_id_vec(user.roles.clone().unwrap(), &pool.database)
             .await
         {
             Ok(d) => d,
@@ -68,12 +62,7 @@ pub async fn convert_user_to_simple_dto(
                     let permissions = match pool
                         .services
                         .permission_service
-                        .find_by_id_vec(
-                            r.permissions.clone().unwrap(),
-                            user_id,
-                            &pool.database,
-                            &pool.services.audit_service,
-                        )
+                        .find_by_id_vec(r.permissions.clone().unwrap(), &pool.database)
                         .await
                     {
                         Ok(d) => d,
@@ -127,12 +116,7 @@ pub async fn login(
     let user = match pool
         .services
         .user_service
-        .find_by_username(
-            &login_request.username,
-            "AUTH-RS",
-            &pool.database,
-            &pool.services.audit_service,
-        )
+        .find_by_username(&login_request.username, &pool.database)
         .await
     {
         Ok(u) => match u {
@@ -211,12 +195,7 @@ pub async fn register(
     let default_roles: Option<Vec<String>> = match pool
         .services
         .role_service
-        .find_by_name(
-            "DEFAULT",
-            "AUTH-RS",
-            &pool.database,
-            &pool.services.audit_service,
-        )
+        .find_by_name("DEFAULT", &pool.database)
         .await
     {
         Ok(r) => match r {
@@ -303,12 +282,7 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                 let user = match pool
                     .services
                     .user_service
-                    .find_by_id(
-                        &username,
-                        token,
-                        &pool.database,
-                        &pool.services.audit_service,
-                    )
+                    .find_by_id(&username, &pool.database)
                     .await
                 {
                     Ok(u) => match u {
@@ -327,7 +301,7 @@ pub async fn current_user(req: HttpRequest, pool: web::Data<Config>) -> HttpResp
                     return HttpResponse::Forbidden().finish();
                 }
 
-                return match convert_user_to_simple_dto(user, token, &pool).await {
+                return match convert_user_to_simple_dto(user, &pool).await {
                     Ok(u) => HttpResponse::Ok().json(u),
                     Err(e) => {
                         error!("Failed to convert User to SimpleUserDto: {}", e);

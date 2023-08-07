@@ -1,4 +1,4 @@
-use crate::repository::audit::audit_model::Action::{Create, Delete, Read, Search, Update};
+use crate::repository::audit::audit_model::Action::{Create, Delete, Update};
 use crate::repository::audit::audit_model::{Audit, ResourceIdType, ResourceType};
 use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::{Error, UserRepository};
@@ -51,8 +51,9 @@ impl UserService {
     /// let user_repository = UserRepository::new(String::from("users"));
     /// let user_service = UserService::new(user_repository);
     /// let db = mongodb::Database::new();
-    ///
-    /// let user = user_service.find_by_username("username", &db);
+    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
+    /// let user = User::new("username", "password");
+    /// let user = user_service.create(user, "user_id", &db, &audit_service);
     /// ```
     ///
     /// # Returns
@@ -102,31 +103,15 @@ impl UserService {
     /// let user_repository = UserRepository::new(String::from("users"));
     /// let user_service = UserService::new(user_repository);
     /// let db = mongodb::Database::new();
-    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
-    /// let user = user_service.find_by_username("username", &db);
+    /// let users = user_service.find_all(&db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<User>` - The found User entities.
     /// * `Error` - The Error that occurred.
-    pub async fn find_all(
-        &self,
-        user_id: &str,
-        db: &Database,
-        audit_service: &AuditService,
-    ) -> Result<Vec<User>, Error> {
+    pub async fn find_all(&self, db: &Database) -> Result<Vec<User>, Error> {
         info!("Finding all users");
-
-        let new_audit = Audit::new(user_id, Read, "", ResourceIdType::None, ResourceType::User);
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
-            }
-        }
-
         self.user_repository.find_all(db).await
     }
 
@@ -137,9 +122,7 @@ impl UserService {
     /// # Arguments
     ///
     /// * `id` - The ID of the User entity.
-    /// * `user_id` - The ID of the User entity that is finding the User.
     /// * `db` - The Database to be used.
-    /// * `audit_service` - The AuditService to be used.
     ///
     /// # Example
     ///
@@ -155,30 +138,8 @@ impl UserService {
     ///
     /// * `Option<User>` - The created User entity.
     /// * `Error` - The Error that occurred.
-    pub async fn find_by_id(
-        &self,
-        id: &str,
-        user_id: &str,
-        db: &Database,
-        audit_service: &AuditService,
-    ) -> Result<Option<User>, Error> {
+    pub async fn find_by_id(&self, id: &str, db: &Database) -> Result<Option<User>, Error> {
         info!("Finding User by ID: {}", id);
-
-        let new_audit = Audit::new(
-            user_id,
-            Read,
-            id,
-            ResourceIdType::UserId,
-            ResourceType::User,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
-            }
-        }
-
         self.user_repository.find_by_id(id, db).await
     }
 
@@ -227,7 +188,6 @@ impl UserService {
     /// let user_repository = UserRepository::new(String::from("users"));
     /// let user_service = UserService::new(user_repository);
     /// let db = mongodb::Database::new();
-    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
     /// let user = user_service.find_by_username("username", &db);
     /// ```
     ///
@@ -237,27 +197,9 @@ impl UserService {
     pub async fn find_by_username(
         &self,
         username: &str,
-        user_id: &str,
         db: &Database,
-        audit_service: &AuditService,
     ) -> Result<Option<User>, Error> {
         info!("Finding User by username: {}", username);
-
-        let new_audit = Audit::new(
-            user_id,
-            Read,
-            username,
-            ResourceIdType::UserName,
-            ResourceType::User,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
-            }
-        }
-
         self.user_repository.find_by_username(username, db).await
     }
 
@@ -460,9 +402,7 @@ impl UserService {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
-    /// * `user_id` - The ID of the User entity that is searching for Users.
     /// * `db` - The Database to be used.
-    /// * `audit_service` - The AuditService to be used.
     ///
     /// # Example
     ///
@@ -470,38 +410,15 @@ impl UserService {
     /// let user_repository = UserRepository::new(String::from("users"));
     /// let user_service = UserService::new(user_repository);
     /// let db = mongodb::Database::new();
-    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
-    /// let users = user_service.search("text", "user_id", &db);
+    /// let users = user_service.search("text", &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<User>` - The Users that match the search criteria.
     /// * `Error` - The Error that occurred.
-    pub async fn search(
-        &self,
-        text: &str,
-        user_id: &str,
-        db: &Database,
-        audit_service: &AuditService,
-    ) -> Result<Vec<User>, Error> {
+    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<User>, Error> {
         info!("Searching Users: {}", text);
-
-        let new_audit = Audit::new(
-            user_id,
-            Search,
-            "",
-            ResourceIdType::UserSearch,
-            ResourceType::User,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
-            }
-        }
-
         self.user_repository.search(text, db).await
     }
 }

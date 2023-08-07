@@ -93,27 +93,13 @@ pub async fn create_permission(
 pub async fn find_all_permissions(
     search: web::Query<SearchRequest>,
     pool: web::Data<Config>,
-    req: HttpRequest,
 ) -> HttpResponse {
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
-        Some(e) => e,
-        None => {
-            error!("Failed to get User ID from token");
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to get User ID from token"));
-        }
-    };
-
     let res = match search.text.clone() {
         Some(t) => {
             match pool
                 .services
                 .permission_service
-                .search(&t, &user_id, &pool.database, &pool.services.audit_service)
+                .search(&t, &pool.database)
                 .await
             {
                 Ok(d) => d,
@@ -128,7 +114,7 @@ pub async fn find_all_permissions(
             match pool
                 .services
                 .permission_service
-                .find_all(&user_id, &pool.database, &pool.services.audit_service)
+                .find_all(&pool.database)
                 .await
             {
                 Ok(d) => d,
@@ -167,33 +153,11 @@ pub async fn find_all_permissions(
 )]
 #[get("/{id}")]
 #[has_permissions("CAN_READ_PERMISSION")]
-pub async fn find_by_id(
-    path: web::Path<String>,
-    pool: web::Data<Config>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
-        Some(e) => e,
-        None => {
-            error!("Failed to get User ID from token");
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to get User ID from token"));
-        }
-    };
-
+pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     let res = match pool
         .services
         .permission_service
-        .find_by_id(
-            &path,
-            &user_id,
-            &pool.database,
-            &pool.services.audit_service,
-        )
+        .find_by_id(&path, &pool.database)
         .await
     {
         Ok(d) => match d {
@@ -256,12 +220,7 @@ pub async fn update_permission(
     let res = pool
         .services
         .permission_service
-        .find_by_id(
-            &path,
-            &user_id,
-            &pool.database,
-            &pool.services.audit_service,
-        )
+        .find_by_id(&path, &pool.database)
         .await;
     let mut permission = match res {
         Ok(p) => {
