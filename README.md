@@ -54,7 +54,9 @@ docker run -d -p 8080:8080 --env-file .env opserva/auth-rs
 
 ## Configuration
 
-`auth-rs` can be configured using environment variables to fit your environment and requirements.  For more information about the environment variables, see the [Configuration documentation](/docs/CONFIGURATION.md).
+`auth-rs` can be configured using environment variables to fit your environment and requirements. 
+
+For more information about the environment variables, see the [Configuration documentation](/docs/CONFIGURATION.md).
 
 ## API
 
