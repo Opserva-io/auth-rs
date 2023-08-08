@@ -1,4 +1,5 @@
 use crate::components::env_reader::EnvReader;
+use crate::components::open_api::ApiDoc;
 use crate::web::controller::Controller;
 use actix_cors::Cors;
 use actix_web::middleware::Logger;
@@ -7,8 +8,7 @@ use actix_web_grants::GrantsMiddleware;
 use dotenvy::dotenv;
 use env_logger::Env;
 use log::info;
-use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
-use utoipa::{openapi, Modify, OpenApi};
+use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 mod components;
@@ -17,18 +17,6 @@ mod errors;
 mod repository;
 mod services;
 mod web;
-
-struct SecurityAddon;
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut openapi::OpenApi) {
-        // NOTE: we can unwrap safely since there already is components registered.
-        let components = openapi.components.as_mut().unwrap();
-        components.add_security_scheme(
-            "Token",
-            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
-        );
-    }
-}
 
 /// # Summary
 ///
@@ -54,68 +42,6 @@ async fn main() -> std::io::Result<()> {
     let port = config.server_config.port;
 
     info!("Starting server at {}:{}", addr, port);
-
-    #[derive(OpenApi)]
-    #[openapi(
-        paths(
-            web::controller::authentication::authentication_controller::login,
-            web::controller::authentication::authentication_controller::register,
-            web::controller::authentication::authentication_controller::current_user,
-            web::controller::health::health_controller::health,
-            web::controller::permission::permission_controller::create_permission,
-            web::controller::permission::permission_controller::find_all_permissions,
-            web::controller::permission::permission_controller::find_by_id,
-            web::controller::permission::permission_controller::update_permission,
-            web::controller::permission::permission_controller::delete_permission,
-            web::controller::role::role_controller::create,
-            web::controller::role::role_controller::find_all_roles,
-            web::controller::role::role_controller::find_by_id,
-            web::controller::role::role_controller::update,
-            web::controller::role::role_controller::delete,
-            web::controller::user::user_controller::create,
-            web::controller::user::user_controller::find_all,
-            web::controller::user::user_controller::find_by_id,
-            web::controller::user::user_controller::update,
-            web::controller::user::user_controller::update_self,
-            web::controller::user::user_controller::update_password,
-            web::controller::user::user_controller::admin_update_password,
-            web::controller::user::user_controller::delete,
-            web::controller::user::user_controller::delete_self,
-            web::controller::audit::audit_controller::find_all,
-            web::controller::audit::audit_controller::find_by_id,
-        ),
-        components(
-            schemas(
-                errors::internal_server_error::InternalServerError,
-                errors::bad_request::BadRequest,
-                web::dto::permission::create_permission::CreatePermission,
-                web::dto::permission::permission_dto::PermissionDto,
-                web::dto::permission::update_permission::UpdatePermission,
-                web::controller::health::health_controller::HealthResponse,
-                web::dto::authentication::login_request::LoginRequest,
-                web::dto::authentication::login_response::LoginResponse,
-                web::dto::authentication::register_request::RegisterRequest,
-                web::dto::user::user_dto::SimpleUserDto,
-                web::dto::role::role_dto::SimpleRoleDto,
-                web::dto::permission::permission_dto::SimplePermissionDto,
-                web::dto::role::role_dto::RoleDto,
-                web::dto::role::create_role::CreateRole,
-                web::dto::role::update_role::UpdateRole,
-                web::dto::user::create_user::CreateUser,
-                web::dto::user::user_dto::UserDto,
-                web::dto::user::update_user::UpdateUser,
-                web::dto::user::update_user::UpdateOwnUser,
-                web::dto::user::update_password::UpdatePassword,
-                web::dto::user::update_password::AdminUpdatePassword,
-                crate::web::dto::audit::audit_dto::AuditDto,
-                crate::web::dto::audit::audit_dto::ActionDto,
-                crate::web::dto::audit::audit_dto::ResourceIdTypeDto,
-                crate::web::dto::audit::audit_dto::ResourceTypeDto,
-            )
-        ),
-        modifiers(&SecurityAddon)
-    )]
-    struct ApiDoc;
 
     let openapi = ApiDoc::openapi();
 

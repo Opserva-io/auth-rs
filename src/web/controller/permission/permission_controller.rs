@@ -7,6 +7,7 @@ use crate::web::dto::permission::create_permission::CreatePermission;
 use crate::web::dto::permission::permission_dto::PermissionDto;
 use crate::web::dto::permission::update_permission::UpdatePermission;
 use crate::web::dto::search::search_request::SearchRequest;
+use crate::web::extractors::user_id_extractor;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
 use log::error;
@@ -38,11 +39,7 @@ pub async fn create_permission(
 
     let new_permission = Permission::from(info.into_inner());
 
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");
@@ -94,7 +91,9 @@ pub async fn find_all_permissions(
     search: web::Query<SearchRequest>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
-    let res = match search.text.clone() {
+    let search = search.into_inner();
+
+    let res = match search.text {
         Some(t) => {
             match pool
                 .services
@@ -127,10 +126,7 @@ pub async fn find_all_permissions(
         }
     };
 
-    let dto_list = res
-        .into_iter()
-        .map(|p| p.into())
-        .collect::<Vec<PermissionDto>>();
+    let dto_list = res.iter().map(|p| p.into()).collect::<Vec<PermissionDto>>();
 
     HttpResponse::Ok().json(dto_list)
 }
@@ -204,11 +200,7 @@ pub async fn update_permission(
         return HttpResponse::BadRequest().json(BadRequest::new("Empty name"));
     }
 
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");
@@ -287,11 +279,7 @@ pub async fn delete_permission(
     pool: web::Data<Config>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");

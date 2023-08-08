@@ -62,7 +62,7 @@ pub async fn convert_user_to_simple_dto(
             let mut role_dto_list: Vec<SimpleRoleDto> = vec![];
 
             for r in &roles {
-                let mut role_dto = SimpleRoleDto::from(r.clone());
+                let mut role_dto = SimpleRoleDto::from(r);
                 if r.permissions.is_some() {
                     let mut permission_dto_list: Vec<SimplePermissionDto> = vec![];
 

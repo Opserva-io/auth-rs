@@ -83,10 +83,10 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                             };
 
                             if !roles.is_empty() {
-                                for r in &roles {
+                                for r in roles {
                                     if r.permissions.is_some() {
                                         let mut oid_vec: Vec<String> = vec![];
-                                        for r in r.permissions.clone().unwrap() {
+                                        for r in r.permissions.unwrap() {
                                             oid_vec.push(r.to_hex());
                                         }
                                         let permissions = match res

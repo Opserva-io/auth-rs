@@ -12,6 +12,7 @@ use crate::web::dto::user::create_user::CreateUser;
 use crate::web::dto::user::update_password::{AdminUpdatePassword, UpdatePassword};
 use crate::web::dto::user::update_user::{UpdateOwnUser, UpdateUser};
 use crate::web::dto::user::user_dto::UserDto;
+use crate::web::extractors::user_id_extractor;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
 use argon2::password_hash::SaltString;
@@ -117,7 +118,7 @@ async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, Conve
 
     if user.roles.is_some() {
         let mut role_vec: Vec<String> = vec![];
-        for r in user.roles.clone().unwrap() {
+        for r in user.roles.unwrap() {
             role_vec.push(r.to_hex());
         }
 
@@ -136,8 +137,8 @@ async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, Conve
         if !roles.is_empty() {
             let mut role_dto_list: Vec<RoleDto> = vec![];
 
-            for r in &roles {
-                let role_dto = match get_role_dto_from_role(r.clone(), pool).await {
+            for r in roles {
+                let role_dto = match get_role_dto_from_role(r, pool).await {
                     Ok(d) => d,
                     Err(e) => {
                         return Err(ConvertError::PermissionError(e));
@@ -188,11 +189,7 @@ pub async fn create(
             .json(BadRequest::new("Empty email addresses are not allowed"));
     }
 
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");
@@ -207,9 +204,15 @@ pub async fn create(
         match validate_roles(&user_dto.roles, &pool).await {
             Ok(_) => (),
             Err(e) => {
-                error!("Error validating roles: {}", e);
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new(&e.to_string()));
+                return match e {
+                    RoleError::RoleNotFound(r) => HttpResponse::BadRequest()
+                        .json(BadRequest::new(&format!("Role {} not found", r))),
+                    _ => {
+                        error!("Error validating roles: {}", e);
+                        HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()))
+                    }
+                };
             }
         };
     }
@@ -279,7 +282,9 @@ pub async fn create(
 #[get("/")]
 #[has_permissions("CAN_READ_USER")]
 pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>) -> HttpResponse {
-    let res = match search.text.clone() {
+    let search = search.into_inner();
+
+    let res = match search.text {
         Some(t) => match pool.services.user_service.search(&t, &pool.database).await {
             Ok(d) => d,
             Err(e) => {
@@ -299,8 +304,8 @@ pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>
     };
 
     let mut user_dto_list: Vec<UserDto> = vec![];
-    for u in &res {
-        let user_dto = match convert_user_to_dto(u.clone(), &pool).await {
+    for u in res {
+        let user_dto = match convert_user_to_dto(u, &pool).await {
             Ok(d) => d,
             Err(e) => {
                 error!("Error converting User to UserDto: {}", e);
@@ -393,11 +398,7 @@ pub async fn update(
 ) -> HttpResponse {
     let id = id.into_inner();
 
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");
@@ -441,14 +442,20 @@ pub async fn update(
         match validate_roles(&user_dto.roles, &pool).await {
             Ok(_) => (),
             Err(e) => {
-                error!("Error validating roles: {}", e);
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new(&e.to_string()));
+                return match e {
+                    RoleError::RoleNotFound(r) => HttpResponse::BadRequest()
+                        .json(BadRequest::new(&format!("Role {} not found", r))),
+                    _ => {
+                        error!("Error validating roles: {}", e);
+                        HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()))
+                    }
+                };
             }
         };
     }
 
-    let role_oid_vec = match user_dto.roles.clone() {
+    let role_oid_vec = match user_dto.roles {
         Some(e) => {
             let mut vec = vec![];
             for r in e {
@@ -760,11 +767,7 @@ pub async fn admin_update_password(
 ) -> HttpResponse {
     let id = id.into_inner();
 
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");
@@ -860,11 +863,7 @@ pub async fn delete(
     pool: web::Data<Config>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");
