@@ -24,7 +24,9 @@ use log::error;
 #[get("/")]
 #[has_permissions("CAN_READ_AUDIT")]
 pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>) -> HttpResponse {
-    let res = match search.text.clone() {
+    let search = search.into_inner();
+
+    let res = match search.text {
         Some(t) => match pool.services.audit_service.search(&t, &pool.database).await {
             Ok(d) => d,
             Err(e) => {

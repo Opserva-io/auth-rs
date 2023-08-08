@@ -9,6 +9,7 @@ use crate::web::dto::role::create_role::CreateRole;
 use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::role::update_role::UpdateRole;
 use crate::web::dto::search::search_request::SearchRequest;
+use crate::web::extractors::user_id_extractor;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
 use log::error;
@@ -180,11 +181,7 @@ pub async fn create(
         return HttpResponse::BadRequest().json(BadRequest::new("Empty name"));
     }
 
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");
@@ -198,9 +195,15 @@ pub async fn create(
         match validate_permissions(role_dto.permissions.clone(), &pool).await {
             Ok(_) => (),
             Err(e) => {
-                error!("Error validating permissions: {}", e);
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new(&e.to_string()));
+                return match e {
+                    PermissionError::PermissionNotFound(r) => HttpResponse::BadRequest()
+                        .json(BadRequest::new(&format!("Permission {} not found", r))),
+                    _ => {
+                        error!("Error validating permissions: {}", e);
+                        HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()))
+                    }
+                };
             }
         };
     }
@@ -251,7 +254,9 @@ pub async fn find_all_roles(
     search: web::Query<SearchRequest>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
-    let res = match search.text.clone() {
+    let search = search.into_inner();
+
+    let res = match search.text {
         Some(t) => match pool.services.role_service.search(&t, &pool.database).await {
             Ok(d) => d,
             Err(e) => {
@@ -271,8 +276,8 @@ pub async fn find_all_roles(
     };
 
     let mut role_dto_list: Vec<RoleDto> = vec![];
-    for r in &res {
-        let role_dto = match get_role_dto_from_role(r.clone(), &pool).await {
+    for r in res {
+        let role_dto = match get_role_dto_from_role(r, &pool).await {
             Ok(d) => d,
             Err(e) => {
                 error!("Error converting Role to RoleDto: {}", e);
@@ -364,11 +369,7 @@ pub async fn update(
         return HttpResponse::BadRequest().json(BadRequest::new("Empty name"));
     }
 
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");
@@ -398,9 +399,15 @@ pub async fn update(
         match validate_permissions(update.permissions.clone(), &pool).await {
             Ok(_) => (),
             Err(e) => {
-                error!("Error validating permissions: {}", e);
-                return HttpResponse::InternalServerError()
-                    .json(InternalServerError::new(&e.to_string()));
+                return match e {
+                    PermissionError::PermissionNotFound(r) => HttpResponse::BadRequest()
+                        .json(BadRequest::new(&format!("Permission {} not found", r))),
+                    _ => {
+                        error!("Error validating permissions: {}", e);
+                        HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()))
+                    }
+                };
             }
         };
     }
@@ -473,11 +480,7 @@ pub async fn delete(
     pool: web::Data<Config>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let user_id = match crate::web::extractors::user_id_extractor::get_user_id_from_token(
-        &req, &pool,
-    )
-    .await
-    {
+    let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
             error!("Failed to get User ID from token");

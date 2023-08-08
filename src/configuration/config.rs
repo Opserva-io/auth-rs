@@ -31,10 +31,6 @@ pub struct Config {
     pub database: Database,
     pub services: Services,
     pub salt: String,
-    pub permission_collection: String,
-    pub role_collection: String,
-    pub user_collection: String,
-    pub audit_collection: String,
     pub open_api: bool,
 }
 
@@ -122,10 +118,6 @@ impl Config {
             database: db,
             services,
             salt,
-            permission_collection: db_config.permission_collection,
-            role_collection: db_config.role_collection,
-            user_collection: db_config.user_collection,
-            audit_collection: db_config.audit_collection,
             open_api,
         };
 
@@ -135,10 +127,11 @@ impl Config {
         }
 
         if db_config.create_indexes {
-            cfg.create_permission_indexes().await;
-            cfg.create_role_indexes().await;
-            cfg.create_user_indexes().await;
-            cfg.create_audit_indexes().await;
+            cfg.create_permission_indexes(&db_config.permission_collection)
+                .await;
+            cfg.create_role_indexes(&db_config.role_collection).await;
+            cfg.create_user_indexes(&db_config.user_collection).await;
+            cfg.create_audit_indexes(&db_config.audit_collection).await;
         }
 
         cfg
@@ -354,10 +347,14 @@ impl Config {
     ///
     /// Create default indexes for the Permission collection.
     ///
+    /// # Arguments
+    ///
+    /// * `permission_collection` - A string slice that holds the name of the Permission collection.
+    ///
     /// # Panics
     ///
     /// This method will panic if the indexes could not be created.
-    pub async fn create_permission_indexes(&self) {
+    pub async fn create_permission_indexes(&self, permission_collection: &str) {
         info!("Creating indexes for the Permission collection");
         let options = IndexOptions::builder().build();
         let model = IndexModel::builder()
@@ -366,7 +363,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Permission>(&self.permission_collection)
+            .collection::<Permission>(permission_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -378,7 +375,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Permission>(&self.permission_collection)
+            .collection::<Permission>(permission_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -388,10 +385,14 @@ impl Config {
     ///
     /// Create default indexes for the Role collection.
     ///
+    /// # Arguments
+    ///
+    /// * `role_collection` - A string slice that holds the name of the Role collection.
+    ///
     /// # Panics
     ///
     /// This method will panic if the indexes could not be created.
-    pub async fn create_role_indexes(&self) {
+    pub async fn create_role_indexes(&self, role_collection: &str) {
         info!("Creating indexes for the Role collection");
         let options = IndexOptions::builder().build();
         let model = IndexModel::builder()
@@ -400,7 +401,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Role>(&self.role_collection)
+            .collection::<Role>(role_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -412,7 +413,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Role>(&self.role_collection)
+            .collection::<Role>(role_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -422,10 +423,14 @@ impl Config {
     ///
     /// Create default indexes for the User collection.
     ///
+    /// # Arguments
+    ///
+    /// * `user_collection` - A string slice that holds the name of the User collection.
+    ///
     /// # Panics
     ///
     /// This method will panic if the indexes could not be created.
-    pub async fn create_user_indexes(&self) {
+    pub async fn create_user_indexes(&self, user_collection: &str) {
         info!("Creating indexes for the User collection");
         let options = IndexOptions::builder().build();
         let model = IndexModel::builder()
@@ -434,7 +439,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<User>(&self.user_collection)
+            .collection::<User>(user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -446,7 +451,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<User>(&self.user_collection)
+            .collection::<User>(user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -458,7 +463,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<User>(&self.user_collection)
+            .collection::<User>(user_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -468,10 +473,14 @@ impl Config {
     ///
     /// Create default indexes for the Audit collection.
     ///
+    /// # Arguments
+    ///
+    /// * `audit_collection` - A string slice that holds the name of the Audit collection.
+    ///
     /// # Panics
     ///
     /// This method will panic if the indexes could not be created.
-    pub async fn create_audit_indexes(&self) {
+    pub async fn create_audit_indexes(&self, audit_collection: &str) {
         info!("Creating indexes for the Audit collection");
 
         let options = IndexOptions::builder().build();
@@ -481,7 +490,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Audit>(&self.audit_collection)
+            .collection::<Audit>(audit_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -493,7 +502,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Audit>(&self.audit_collection)
+            .collection::<Audit>(audit_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -505,7 +514,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Audit>(&self.audit_collection)
+            .collection::<Audit>(audit_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
@@ -517,7 +526,7 @@ impl Config {
             .build();
 
         self.database
-            .collection::<Audit>(&self.audit_collection)
+            .collection::<Audit>(audit_collection)
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
