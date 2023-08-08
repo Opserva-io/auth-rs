@@ -54,11 +54,11 @@ You can add environment variables when running the container using the `-e` flag
 An example of running the container using Docker:
 
 ```bash
-docker run -d -p 8080:8080 -e DB_CONNECTION_STRING=mongodb://localhost:27017 -e DB_DATABASE=auth-rs -e HASH_SALT=mysalt -e JWT_SECRET=mysecret -e DEFAULT_USER_USERNAME=admin -e DEFAULT_USER_EMAIL=example@codedead.com -e DEFAULT_USER_PASSWORD=secret -e DEFAULT_USER_ENABLED=true
+docker run -d -p 8080:8080 -e DB_CONNECTION_STRING=mongodb://localhost:27017 -e DB_DATABASE=auth-rs -e HASH_SALT=mysalt -e JWT_SECRET=mysecret -e DEFAULT_USER_USERNAME=admin -e DEFAULT_USER_EMAIL=example@codedead.com -e DEFAULT_USER_PASSWORD=secret -e DEFAULT_USER_ENABLED=true opserva/auth-rs
 ```
 
 Alternatively, you can provide an `.env` file to the container using the `--env-file` flag:
 
 ```bash
-docker run -d -p 8080:8080 --env-file .env ...
+docker run -d -p 8080:8080 --env-file .env opserva/auth-rs
 ```
