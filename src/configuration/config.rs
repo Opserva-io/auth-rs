@@ -12,12 +12,12 @@ use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::UserRepository;
 use crate::services::audit::audit_service::AuditService;
 use crate::services::jwt::jwt_service::JwtService;
+use crate::services::password::password_service::PasswordService;
 use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
 use crate::services::user::user_service::UserService;
 use crate::services::Services;
 use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHasher};
 use log::{error, info};
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
@@ -30,7 +30,6 @@ pub struct Config {
     pub server_config: ServerConfig,
     pub database: Database,
     pub services: Services,
-    pub salt: String,
     pub open_api: bool,
 }
 
@@ -105,19 +104,27 @@ impl Config {
         let audit_service = AuditService::new(audit_repository, db_config.audit_enabled);
         let jwt_service = JwtService::new(jwt_config);
 
+        let salt = match SaltString::from_b64(&salt) {
+            Ok(s) => s,
+            Err(e) => {
+                panic!("Failed to generate salt: {}", e);
+            }
+        };
+        let password_service = PasswordService::new(salt);
+
         let services = Services::new(
             permission_service,
             role_service,
             user_service,
             jwt_service,
             audit_service,
+            password_service,
         );
 
         let cfg = Config {
             server_config,
             database: db,
             services,
-            salt,
             open_api,
         };
 
@@ -255,7 +262,6 @@ impl Config {
     ///
     /// * `default_user_config` - A DefaultUserConfig instance.
     /// * `roles` - An optional vector of string slices that holds the roles.
-    /// * `salt` - A string slice that holds the salt to hash the password.
     /// * `email_regex` - A Regex instance that holds the email regex.
     ///
     /// # Panics
@@ -265,10 +271,11 @@ impl Config {
         &self,
         default_user_config: DefaultUserConfig,
         roles: Option<Vec<String>>,
-        salt: &str,
         email_regex: Regex,
     ) {
-        if !email_regex.is_match(&default_user_config.email) {
+        if default_user_config.email.is_some()
+            && !email_regex.is_match(&default_user_config.email.clone().unwrap())
+        {
             panic!("Invalid email address");
         }
 
@@ -291,26 +298,19 @@ impl Config {
         match self
             .services
             .user_service
-            .find_by_email(&default_user_config.email, &self.database)
+            .find_by_username(&default_user_config.username, &self.database)
             .await
         {
             Ok(d) => {
                 if d.is_none() {
-                    let password = default_user_config.password.as_bytes();
-                    let salt = match SaltString::from_b64(salt) {
-                        Ok(s) => s,
+                    let password_hash = match self
+                        .services
+                        .password_service
+                        .hash_password(default_user_config.password)
+                    {
+                        Ok(e) => e,
                         Err(e) => {
-                            error!("Error generating salt: {}", e);
-                            panic!("Failed to generate salt");
-                        }
-                    };
-
-                    let argon2 = Argon2::default();
-                    let password_hash = match argon2.hash_password(password, &salt) {
-                        Ok(e) => e.to_string(),
-                        Err(e) => {
-                            error!("Error hashing password: {}", e);
-                            panic!("Failed to hash password");
+                            panic!("Failed to hash password: {}", e);
                         }
                     };
 
@@ -681,7 +681,6 @@ impl Config {
         self.find_or_create_user(
             default_user_config,
             Some(vec![admin_role.id.to_hex(), default_role.id.to_hex()]),
-            &self.salt,
             email_regex,
         )
         .await;

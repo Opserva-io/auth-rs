@@ -15,8 +15,6 @@ use crate::web::dto::user::user_dto::UserDto;
 use crate::web::extractors::user_id_extractor;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
-use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHasher};
 use log::error;
 use mongodb::bson::oid::ObjectId;
 use std::fmt::{Display, Formatter};
@@ -184,11 +182,6 @@ pub async fn create(
         return HttpResponse::BadRequest().json(BadRequest::new("Empty passwords are not allowed"));
     }
 
-    if user_dto.email.is_empty() {
-        return HttpResponse::BadRequest()
-            .json(BadRequest::new("Empty email addresses are not allowed"));
-    }
-
     let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
         None => {
@@ -219,21 +212,10 @@ pub async fn create(
 
     let mut user = User::from(user_dto);
 
-    let password = &user.password.as_bytes();
-    let salt = match SaltString::from_b64(&pool.salt) {
-        Ok(s) => s,
-        Err(e) => {
-            error!("Error generating salt: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to generate salt"));
-        }
-    };
-
-    let argon2 = Argon2::default();
-    let password_hash = match argon2.hash_password(password, &salt) {
+    let password_hash = match pool.services.password_service.hash_password(user.password) {
         Ok(e) => e.to_string(),
         Err(e) => {
-            error!("Error hashing password: {}", e);
+            error!("Failed to hash password: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to hash password"));
         }
@@ -431,11 +413,6 @@ pub async fn update(
         return HttpResponse::BadRequest().json(BadRequest::new("Empty usernames are not allowed"));
     }
 
-    if user_dto.email.is_empty() {
-        return HttpResponse::BadRequest()
-            .json(BadRequest::new("Empty email addresses are not allowed"));
-    }
-
     let user_dto = user_dto.into_inner();
 
     if user_dto.roles.is_some() {
@@ -566,11 +543,6 @@ pub async fn update_self(
                         .json(BadRequest::new("Empty usernames are not allowed"));
                 }
 
-                if user_dto.email.is_empty() {
-                    return HttpResponse::BadRequest()
-                        .json(BadRequest::new("Empty email addresses are not allowed"));
-                }
-
                 let user_dto = user_dto.into_inner();
 
                 let new_first_name = match user_dto.first_name {
@@ -669,6 +641,7 @@ pub async fn update_password(
                 };
 
                 let update_password = update_password.into_inner();
+
                 if update_password.old_password.is_empty() {
                     return HttpResponse::BadRequest()
                         .json(BadRequest::new("Empty old passwords are not allowed"));
@@ -679,19 +652,12 @@ pub async fn update_password(
                         .json(BadRequest::new("Empty new passwords are not allowed"));
                 }
 
-                let argon2 = Argon2::default();
-                let salt = match SaltString::from_b64(&pool.salt) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        error!("Error generating salt: {}", e);
-                        return HttpResponse::InternalServerError()
-                            .json(InternalServerError::new("Failed to generate salt"));
-                    }
-                };
-
-                let old_password_hash = &update_password.old_password.as_bytes();
-                let old_password_hash = match argon2.hash_password(old_password_hash, &salt) {
-                    Ok(e) => e.to_string(),
+                let old_password_hash = match pool
+                    .services
+                    .password_service
+                    .hash_password(update_password.old_password)
+                {
+                    Ok(e) => e,
                     Err(e) => {
                         error!("Error hashing password: {}", e);
                         return HttpResponse::InternalServerError()
@@ -703,8 +669,11 @@ pub async fn update_password(
                     return HttpResponse::Forbidden().finish();
                 }
 
-                let new_password_hash = &update_password.new_password.as_bytes();
-                let new_password_hash = match argon2.hash_password(new_password_hash, &salt) {
+                let new_password_hash = match pool
+                    .services
+                    .password_service
+                    .hash_password(update_password.new_password)
+                {
                     Ok(e) => e.to_string(),
                     Err(e) => {
                         error!("Error hashing password: {}", e);
@@ -766,6 +735,7 @@ pub async fn admin_update_password(
     req: HttpRequest,
 ) -> HttpResponse {
     let id = id.into_inner();
+    let admin_update_password = admin_update_password.into_inner();
 
     let user_id = match user_id_extractor::get_user_id_from_token(&req, &pool).await {
         Some(e) => e,
@@ -800,18 +770,11 @@ pub async fn admin_update_password(
         return HttpResponse::BadRequest().json(BadRequest::new("Empty passwords are not allowed"));
     }
 
-    let argon2 = Argon2::default();
-    let salt = match SaltString::from_b64(&pool.salt) {
-        Ok(s) => s,
-        Err(e) => {
-            error!("Error generating salt: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to generate salt"));
-        }
-    };
-
-    let password_hash = &admin_update_password.password.as_bytes();
-    let password_hash = match argon2.hash_password(password_hash, &salt) {
+    let password_hash = match pool
+        .services
+        .password_service
+        .hash_password(admin_update_password.password)
+    {
         Ok(e) => e.to_string(),
         Err(e) => {
             error!("Error hashing password: {}", e);

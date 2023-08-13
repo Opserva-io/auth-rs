@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 pub struct UserDto {
     pub id: String,
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
     #[serde(rename = "firstName")]
     pub first_name: String,
     #[serde(rename = "lastName")]
@@ -110,7 +110,7 @@ impl From<&User> for UserDto {
 pub struct SimpleUserDto {
     pub id: String,
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
     #[serde(rename = "firstName")]
     pub first_name: String,
     #[serde(rename = "lastName")]

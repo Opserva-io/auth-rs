@@ -3,6 +3,7 @@ use crate::configuration::db_config::DbConfig;
 use crate::configuration::default_user_config::DefaultUserConfig;
 use crate::configuration::jwt_config::JwtConfig;
 use crate::configuration::server_config::ServerConfig;
+use log::info;
 use std::env;
 
 pub struct EnvReader {}
@@ -25,6 +26,8 @@ impl EnvReader {
     ///
     /// A Config instance.
     pub async fn read_configuration() -> Config {
+        info!("Reading configuration from environment variables");
+
         let addr = match env::var("SERVER_ADDR") {
             Ok(d) => d,
             Err(_) => String::from("0.0.0.0"),
@@ -98,7 +101,7 @@ impl EnvReader {
         };
 
         let mut default_username = String::new();
-        let mut default_email = String::new();
+        let mut default_email = Some(String::new());
         let mut default_password = String::new();
         let mut default_user_enabled = false;
 
@@ -109,8 +112,8 @@ impl EnvReader {
             };
 
             default_email = match env::var("DEFAULT_USER_EMAIL") {
-                Ok(d) => d,
-                Err(_) => panic!("No default email specified"),
+                Ok(d) => Some(d),
+                Err(_) => None,
             };
 
             default_password = match env::var("DEFAULT_USER_PASSWORD") {

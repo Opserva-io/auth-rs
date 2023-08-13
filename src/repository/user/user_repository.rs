@@ -136,25 +136,28 @@ impl UserRepository {
     ///
     /// * `Result<User, Error>` - The result of the operation.
     pub async fn create(&self, user: User, db: &Database) -> Result<User, Error> {
-        if !&self.email_regex.is_match(&user.email) {
-            return Err(Error::InvalidEmail(user.email));
+        if user.email.is_some() && !self.email_regex.is_match(&user.email.clone().unwrap()) {
+            return Err(Error::InvalidEmail(user.email.unwrap()));
+        } else if user.email.is_some() {
+            match self
+                .find_by_email(&user.email.clone().unwrap().to_lowercase(), db)
+                .await
+            {
+                Ok(user) => {
+                    if user.is_some() {
+                        return Err(Error::EmailAlreadyTaken);
+                    }
+                }
+                Err(e) => {
+                    return Err(e);
+                }
+            };
         }
 
         match self.find_by_username(&user.username, db).await {
             Ok(user) => {
                 if user.is_some() {
                     return Err(Error::UsernameAlreadyTaken);
-                }
-            }
-            Err(e) => {
-                return Err(e);
-            }
-        };
-
-        match self.find_by_email(&user.email.to_lowercase(), db).await {
-            Ok(user) => {
-                if user.is_some() {
-                    return Err(Error::EmailAlreadyTaken);
                 }
             }
             Err(e) => {
@@ -370,8 +373,22 @@ impl UserRepository {
     /// let user = user_repository.update(user, &db);
     /// ```
     pub async fn update(&self, user: User, db: &Database) -> Result<User, Error> {
-        if !self.email_regex.is_match(&user.email) {
-            return Err(Error::InvalidEmail(user.email));
+        if user.email.is_some() && !self.email_regex.is_match(&user.email.clone().unwrap()) {
+            return Err(Error::InvalidEmail(user.email.unwrap()));
+        } else if user.email.is_some() {
+            match self
+                .find_by_email(&user.email.clone().unwrap().to_lowercase(), db)
+                .await
+            {
+                Ok(user) => {
+                    if user.is_some() {
+                        return Err(Error::EmailAlreadyTaken);
+                    }
+                }
+                Err(e) => {
+                    return Err(e);
+                }
+            };
         }
 
         match self
@@ -390,19 +407,6 @@ impl UserRepository {
             }
         };
 
-        match self.find_by_email(&user.email.to_lowercase(), db).await {
-            Ok(u) => {
-                if let Some(p) = u {
-                    if p.id != user.id {
-                        return Err(Error::EmailAlreadyTaken);
-                    }
-                }
-            }
-            Err(e) => {
-                return Err(e);
-            }
-        };
-
         let user_id = user.id;
         let filter = doc! {
             "_id": &user_id,
@@ -413,11 +417,11 @@ impl UserRepository {
 
         let update = doc! {
             "$set": {
-                "username": &user.username,
-                "email": &user.email,
-                "firstName": &user.first_name,
-                "lastName": &user.last_name,
-                "roles": &user.roles,
+                "username": user.username,
+                "email": user.email,
+                "firstName": user.first_name,
+                "lastName": user.last_name,
+                "roles": user.roles,
                 "updated_at": now,
                 "enabled": user.enabled,
             },

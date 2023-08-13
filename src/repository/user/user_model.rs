@@ -11,7 +11,7 @@ pub struct User {
     #[serde(rename = "_id")]
     pub id: ObjectId,
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
     #[serde(rename = "firstName")]
     pub first_name: String,
     #[serde(rename = "lastName")]
@@ -44,7 +44,7 @@ impl User {
     /// # Example
     ///
     /// ```
-    /// let user = User::new(String::from("User Id"), String::from("User Username"), String::from("User Email"), String::from("User First Name"), String::from("User Last Name"), String::from("User Password"), Some(vec![String::from("Role Id")]), String::from("User Created At"), String::from("User Updated At"), true);
+    /// let user = User::new(String::from("User Id"), String::from("User Username"), Some(String::from("User Email")), String::from("User First Name"), String::from("User Last Name"), String::from("User Password"), Some(vec![String::from("Role Id")]), String::from("User Created At"), String::from("User Updated At"), true);
     /// ```
     ///
     /// # Returns
@@ -52,7 +52,7 @@ impl User {
     /// * `User` - The new User.
     pub fn new(
         username: String,
-        email: String,
+        email: Option<String>,
         first_name: String,
         last_name: String,
         password: String,
@@ -105,7 +105,7 @@ impl From<CreateUser> for User {
     /// ```
     /// let create_user = CreateUser {
     ///   username: String::from("username"),
-    ///   email: String::from("email"),
+    ///   email: Some(String::from("email")),
     ///   first_name: String::from("first_name"),
     ///   last_name: String::from("last_name"),
     ///   password: String::from("password"),
@@ -175,10 +175,10 @@ impl From<RegisterRequest> for User {
     /// ```
     /// let register_request = RegisterRequest {
     ///  username: String::from("username"),
-    /// email: String::from("email"),
-    /// first_name: String::from("first_name"),
-    /// last_name: String::from("last_name"),
-    /// password: String::from("password"),
+    ///  email: Some(String::from("email")),
+    ///  first_name: String::from("first_name"),
+    ///  last_name: String::from("last_name"),
+    ///  password: String::from("password"),
     /// };
     ///
     /// let user = User::from(register_request);
@@ -231,7 +231,7 @@ impl Display for User {
     /// let user = User {
     ///   id: String::from("id"),
     ///   username: String::from("username"),
-    ///   email: String::from("email"),
+    ///   email: Some(String::from("email")),
     ///   first_name: String::from("first_name"),
     ///   last_name: String::from("last_name"),
     ///   password: String::from("password"),
@@ -248,6 +248,25 @@ impl Display for User {
     ///
     /// * `std::fmt::Result` - The result of the operation.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "User: {{ id: {}, username: {}, email: {}, first_name: {}, last_name: {}, roles: {:?}, created_at: {}, updated_at: {} }}", self.id, self.username, self.email, self.first_name, self.last_name, self.roles.as_ref().unwrap_or(&vec![]), self.created_at, self.updated_at)
+        write!(
+            f,
+            "User: [id: {}, username: {}, email: {}, first_name: {}, last_name: {}, password: {}, roles: {:?}, created_at: {}, updated_at: {}, enabled: {}]",
+            self.id,
+            self.username,
+            match &self.email {
+                None => String::from("None"),
+                Some(e) => e.to_string(),
+            },
+            self.first_name,
+            self.last_name,
+            self.password,
+            match &self.roles {
+                None => String::from("None"),
+                Some(r) => format!("{:?}", r)
+            },
+            self.created_at,
+            self.updated_at,
+            self.enabled,
+        )
     }
 }

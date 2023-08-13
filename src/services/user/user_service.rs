@@ -145,34 +145,6 @@ impl UserService {
 
     /// # Summary
     ///
-    /// Find a User entity by email.
-    ///
-    /// # Arguments
-    ///
-    /// * `email` - The email of the User entity.
-    /// * `db` - The Database to be used.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// let user_repository = UserRepository::new(String::from("users"));
-    /// let user_service = UserService::new(user_repository);
-    /// let db = mongodb::Database::new();
-    ///
-    /// let user = user_service.find_by_email("email", &db);
-    /// ```
-    ///
-    /// # Returns
-    ///
-    /// * `Option<User>` - The found User entity.
-    /// * `Error` - The Error that occurred.
-    pub async fn find_by_email(&self, email: &str, db: &Database) -> Result<Option<User>, Error> {
-        info!("Finding User by email: {}", email);
-        self.user_repository.find_by_email(email, db).await
-    }
-
-    /// # Summary
-    ///
     /// Find a User entity by its username.
     ///
     /// # Arguments

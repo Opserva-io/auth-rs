@@ -10,8 +10,6 @@ use crate::web::dto::permission::permission_dto::SimplePermissionDto;
 use crate::web::dto::role::role_dto::SimpleRoleDto;
 use crate::web::dto::user::user_dto::SimpleUserDto;
 use actix_web::{get, post, web, HttpRequest, HttpResponse};
-use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHasher};
 use log::error;
 use mongodb::bson::oid::ObjectId;
 
@@ -118,6 +116,8 @@ pub async fn login(
     login_request: web::Json<LoginRequest>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
+    let login_request = login_request.into_inner();
+
     if login_request.username.is_empty() {
         return HttpResponse::BadRequest().json("Username is required");
     }
@@ -143,17 +143,11 @@ pub async fn login(
         }
     };
 
-    let salt = match SaltString::from_b64(&pool.salt) {
-        Ok(s) => s,
-        Err(e) => {
-            error!("Failed to generate salt: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to generate salt"));
-        }
-    };
-
-    let argon2 = Argon2::default();
-    let password_hash = match argon2.hash_password(login_request.password.as_bytes(), &salt) {
+    let password_hash = match &pool
+        .services
+        .password_service
+        .hash_password(login_request.password)
+    {
         Ok(e) => e.to_string(),
         Err(e) => {
             error!("Failed to hash password: {}", e);
@@ -193,6 +187,8 @@ pub async fn register(
     register_request: web::Json<RegisterRequest>,
     pool: web::Data<Config>,
 ) -> HttpResponse {
+    let register_request = register_request.into_inner();
+
     if register_request.username.is_empty() {
         return HttpResponse::BadRequest().json(BadRequest::new("Empty usernames are not allowed"));
     }
@@ -200,13 +196,6 @@ pub async fn register(
     if register_request.password.is_empty() {
         return HttpResponse::BadRequest().json(BadRequest::new("Empty passwords are not allowed"));
     }
-
-    if register_request.email.is_empty() {
-        return HttpResponse::BadRequest()
-            .json(BadRequest::new("Empty email addresses are not allowed"));
-    }
-
-    let register_request = register_request.into_inner();
 
     let default_roles: Option<Vec<ObjectId>> = match pool
         .services
@@ -227,21 +216,10 @@ pub async fn register(
 
     let mut user = User::from(register_request);
 
-    let password = &user.password.as_bytes();
-    let salt = match SaltString::from_b64(&pool.salt) {
-        Ok(s) => s,
-        Err(e) => {
-            error!("Error generating salt: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to generate salt"));
-        }
-    };
-
-    let argon2 = Argon2::default();
-    let password_hash = match argon2.hash_password(password, &salt) {
+    let password_hash = match pool.services.password_service.hash_password(user.password) {
         Ok(e) => e.to_string(),
         Err(e) => {
-            error!("Error hashing password: {}", e);
+            error!("Failed to hash password: {}", e);
             return HttpResponse::InternalServerError()
                 .json(InternalServerError::new("Failed to hash password"));
         }

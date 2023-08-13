@@ -31,7 +31,7 @@ The following environment variables can be used to configure `auth-rs`:
 | RUST_BACKTRACE           | N/A           | `false`                                      | `String`    | Controls whether or not backtraces are displayed when a panic occurs |
 | GENERATE_DEFAULT_USER    | `true`        | `false`                                      | `bool`      | Sets whether a default administrator `User` should be generated      |
 | DEFAULT_USER_USERNAME    | N/A           | `true` if `GENERATE_DEFAULT_USER` is enabled | `String`    | The default `User`'s username                                        |
-| DEFAULT_USER_EMAIL       | N/A           | `true` if `GENERATE_DEFAULT_USER` is enabled | `String`    | The default `User`'s email address                                   |
+| DEFAULT_USER_EMAIL       | N/A           | `false`                                      | `String`    | The default `User`'s email address                                   |
 | DEFAULT_USER_PASSWORD    | N/A           | `true` if `GENERATE_DEFAULT_USER` is enabled | `String`    | The default `User`'s password                                        |
 | DEFAULT_USER_ENABLED     | N/A           | `true` if `GENERATE_DEFAULT_USER` is enabled | `bool`      | Sets whether the default user is enabled or not                      |
 | ENABLE_OPENAPI           | `true`        | `false`                                      | `bool`      | Enables or disables the OpenAPI endpoint                             |
@@ -54,7 +54,7 @@ You can add environment variables when running the container using the `-e` flag
 An example of running the container using Docker:
 
 ```bash
-docker run -d -p 8080:8080 -e DB_CONNECTION_STRING=mongodb://localhost:27017 -e DB_DATABASE=auth-rs -e HASH_SALT=mysalt -e JWT_SECRET=mysecret -e DEFAULT_USER_USERNAME=admin -e DEFAULT_USER_EMAIL=example@codedead.com -e DEFAULT_USER_PASSWORD=secret -e DEFAULT_USER_ENABLED=true opserva/auth-rs
+docker run -d -p 8080:8080 -e DB_CONNECTION_STRING=mongodb://localhost:27017 -e DB_DATABASE=auth-rs -e HASH_SALT=mysalt -e JWT_SECRET=mysecret -e DEFAULT_USER_USERNAME=admin -e DEFAULT_USER_PASSWORD=secret -e DEFAULT_USER_ENABLED=true opserva/auth-rs
 ```
 
 Alternatively, you can provide an `.env` file to the container using the `--env-file` flag:
