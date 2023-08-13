@@ -4,7 +4,7 @@ use utoipa::ToSchema;
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct CreateUser {
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
     #[serde(rename = "firstName")]
     pub first_name: Option<String>,
     #[serde(rename = "lastName")]
