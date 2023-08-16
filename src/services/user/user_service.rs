@@ -55,7 +55,8 @@ impl UserService {
     /// let db = mongodb::Database::new();
     /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
     /// let user = User::new("username", "password");
-    /// let user = user_service.create(user, "user_id", &db, &audit_service);
+    ///
+    /// let user = user_service.create(user, ObjectId::parse_str("user_id").unwrap(), &db, &audit_service);
     /// ```
     ///
     /// # Returns
@@ -65,24 +66,26 @@ impl UserService {
     pub async fn create(
         &self,
         user: User,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         audit_service: &AuditService,
     ) -> Result<User, Error> {
         info!("Creating User: {}", user);
 
-        let new_audit = Audit::new(
-            user_id,
-            Create,
-            user.id,
-            ResourceIdType::UserId,
-            ResourceType::User,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+        if user_id.is_some() {
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Create,
+                user.id,
+                ResourceIdType::UserId,
+                ResourceType::User,
+            );
+            match audit_service.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 
@@ -200,7 +203,8 @@ impl UserService {
     /// let user_service = UserService::new(user_repository);
     /// let db = mongodb::Database::new();
     /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
-    /// let user = user_service.update(User::new(), "id", &db);
+    ///
+    /// let user = user_service.update(User::new(), ObjectId::parse_str("id").unwrap(), &db);
     /// ```
     ///
     /// # Returns
@@ -210,24 +214,26 @@ impl UserService {
     pub async fn update(
         &self,
         user: User,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         audit_service: &AuditService,
     ) -> Result<User, Error> {
         info!("Updating User: {}", user);
 
-        let new_audit = Audit::new(
-            user_id,
-            Update,
-            user.id,
-            ResourceIdType::UserId,
-            ResourceType::User,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+        if user_id.is_some() {
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Update,
+                user.id,
+                ResourceIdType::UserId,
+                ResourceType::User,
+            );
+            match audit_service.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 
@@ -253,7 +259,8 @@ impl UserService {
     /// let user_service = UserService::new(user_repository);
     /// let db = mongodb::Database::new();
     /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
-    /// let user = user_service.update_password("id", "password", "user_id", &db);
+    ///
+    /// let user = user_service.update_password("id", "password", ObjectId::parse_str("user_id").unwrap(), &db);
     /// ```
     ///
     /// # Returns
@@ -264,31 +271,33 @@ impl UserService {
         &self,
         id: &str,
         password: &str,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         audit_service: &AuditService,
     ) -> Result<(), Error> {
         info!("Updating User password: {}", id);
 
-        let oid = match ObjectId::parse_str(id) {
-            Ok(oid) => oid,
-            Err(e) => {
-                return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
-            }
-        };
+        if user_id.is_some() {
+            let oid = match ObjectId::parse_str(id) {
+                Ok(oid) => oid,
+                Err(e) => {
+                    return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
+                }
+            };
 
-        let new_audit = Audit::new(
-            user_id,
-            Update,
-            oid,
-            ResourceIdType::UserId,
-            ResourceType::User,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Update,
+                oid,
+                ResourceIdType::UserId,
+                ResourceType::User,
+            );
+            match audit_service.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 
@@ -313,7 +322,8 @@ impl UserService {
     /// let user_service = UserService::new(user_repository);
     /// let db = mongodb::Database::new();
     /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
-    /// user_service.delete("id", "user_id", &db);
+    ///
+    /// user_service.delete("id", ObjectId::parse_str("user_id").unwrap(), &db);
     /// ```
     ///
     /// # Returns
@@ -323,31 +333,33 @@ impl UserService {
     pub async fn delete(
         &self,
         id: &str,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         audit_service: &AuditService,
     ) -> Result<(), Error> {
         info!("Deleting User: {}", id);
 
-        let oid = match ObjectId::parse_str(id) {
-            Ok(oid) => oid,
-            Err(e) => {
-                return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
-            }
-        };
+        if user_id.is_some() {
+            let oid = match ObjectId::parse_str(id) {
+                Ok(oid) => oid,
+                Err(e) => {
+                    return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
+                }
+            };
 
-        let new_audit = Audit::new(
-            user_id,
-            Delete,
-            oid,
-            ResourceIdType::UserId,
-            ResourceType::User,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Delete,
+                oid,
+                ResourceIdType::UserId,
+                ResourceType::User,
+            );
+            match audit_service.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 

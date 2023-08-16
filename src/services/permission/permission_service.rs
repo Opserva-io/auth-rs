@@ -57,8 +57,11 @@ impl PermissionService {
     /// let permission_repository = PermissionRepository::new(String::from("permissions"));
     /// let permission_service = PermissionService::new(permission_repository);
     /// let db = mongodb::Database::new();
+    /// let audit_service = AuditService::new(audit_repository);
+    /// let user_id = ObjectId::parse_str("user_id").unwrap();
+    /// let permission = Permission::new(String::from("name"), String::from("description"));
     ///
-    /// let permission = permission_service.find_by_name(String::from("name"), &db, &audit_service);
+    /// let new_permission = permission_service.create(permission, user_id, &db, &audit_service);
     /// ```
     ///
     /// # Returns
@@ -68,24 +71,26 @@ impl PermissionService {
     pub async fn create(
         &self,
         new_permission: Permission,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         audit: &AuditService,
     ) -> Result<Permission, Error> {
         info!("Creating Permission: {}", new_permission);
 
-        let new_audit = Audit::new(
-            user_id,
-            Create,
-            new_permission.id,
-            ResourceIdType::PermissionId,
-            PermissionResourceType,
-        );
-        match audit.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+        if user_id.is_some() {
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Create,
+                new_permission.id,
+                ResourceIdType::PermissionId,
+                PermissionResourceType,
+            );
+            match audit.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 
@@ -239,7 +244,7 @@ impl PermissionService {
     /// let permission_service = PermissionService::new(permission_repository);
     /// let db = mongodb::Database::new();
     /// let audit_service = AuditService::new(audit_repository);
-    /// let user_id = String::from("user_id");
+    /// let user_id = ObjectId::parse_str("user_id").unwrap();
     /// let permission = Permission::new(String::from("name"), String::from("description"));
     /// let updated_permission = permission_service.update(permission, user_id, &db, &audit_service);
     /// ```
@@ -251,24 +256,26 @@ impl PermissionService {
     pub async fn update(
         &self,
         permission: Permission,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         audit: &AuditService,
     ) -> Result<Permission, Error> {
         info!("Updating Permission: {}", permission);
 
-        let new_audit = Audit::new(
-            user_id,
-            Update,
-            permission.id,
-            ResourceIdType::PermissionId,
-            PermissionResourceType,
-        );
-        match audit.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+        if user_id.is_some() {
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Update,
+                permission.id,
+                ResourceIdType::PermissionId,
+                PermissionResourceType,
+            );
+            match audit.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 
@@ -295,8 +302,9 @@ impl PermissionService {
     /// let db = mongodb::Database::new();
     /// let audit_service = AuditService::new(audit_repository);
     /// let role_service = RoleService::new(role_repository);
-    /// let user_id = String::from("user_id");
+    /// let user_id = ObjectId::parse_str("user_id").unwrap();
     /// let id = String::from("id");
+    ///
     /// permission_service.delete(id, user_id, &db, &role_service, &audit_service);
     /// ```
     ///
@@ -307,32 +315,34 @@ impl PermissionService {
     pub async fn delete(
         &self,
         id: &str,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         role_service: &RoleService,
         audit: &AuditService,
     ) -> Result<(), Error> {
         info!("Deleting Permission by ID: {}", id);
 
-        let oid = match ObjectId::parse_str(id) {
-            Ok(oid) => oid,
-            Err(e) => {
-                return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
-            }
-        };
+        if user_id.is_some() {
+            let oid = match ObjectId::parse_str(id) {
+                Ok(oid) => oid,
+                Err(e) => {
+                    return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
+                }
+            };
 
-        let new_audit = Audit::new(
-            user_id,
-            Delete,
-            oid,
-            ResourceIdType::PermissionId,
-            PermissionResourceType,
-        );
-        match audit.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Delete,
+                oid,
+                ResourceIdType::PermissionId,
+                PermissionResourceType,
+            );
+            match audit.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 

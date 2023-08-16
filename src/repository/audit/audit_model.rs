@@ -129,7 +129,7 @@ pub struct Audit {
     #[serde(rename = "_id")]
     pub id: ObjectId,
     #[serde(rename = "userId")]
-    pub user_id: String,
+    pub user_id: ObjectId,
     pub action: Action,
     #[serde(rename = "resourceId")]
     pub resource_id: ObjectId,
@@ -164,7 +164,7 @@ impl Audit {
     ///
     /// * `Audit` - The new Audit.
     pub fn new(
-        user_id: &str,
+        user_id: ObjectId,
         action: Action,
         resource_id: ObjectId,
         resource_id_type: ResourceIdType,
@@ -175,7 +175,7 @@ impl Audit {
 
         Audit {
             id: ObjectId::new(),
-            user_id: user_id.to_string(),
+            user_id,
             action,
             resource_id,
             resource_id_type,
@@ -201,7 +201,7 @@ impl Display for Audit {
         write!(
             f,
             "Audit {{ id: {}, user_id: {}, action: {}, resource_id: {}, resource_type: {}, created_at: {} }}",
-            self.id, self.user_id, self.action, self.resource_id.to_hex(), self.resource_type, self.created_at
+            self.id, self.user_id.to_hex(), self.action, self.resource_id.to_hex(), self.resource_type, self.created_at
         )
     }
 }

@@ -173,7 +173,7 @@ impl Config {
                     match self
                         .services
                         .permission_service
-                        .create(p, "AUTH-RS", &self.database, &self.services.audit_service)
+                        .create(p, None, &self.database, &self.services.audit_service)
                         .await
                     {
                         Ok(p) => return p,
@@ -235,12 +235,7 @@ impl Config {
                     match self
                         .services
                         .role_service
-                        .create(
-                            new_role,
-                            "AUTH-RS",
-                            &self.database,
-                            &self.services.audit_service,
-                        )
+                        .create(new_role, None, &self.database, &self.services.audit_service)
                         .await
                     {
                         Ok(d) => d,
@@ -326,12 +321,7 @@ impl Config {
                     match self
                         .services
                         .user_service
-                        .create(
-                            user,
-                            "AUTH-RS",
-                            &self.database,
-                            &self.services.audit_service,
-                        )
+                        .create(user, None, &self.database, &self.services.audit_service)
                         .await
                     {
                         Ok(_) => {}

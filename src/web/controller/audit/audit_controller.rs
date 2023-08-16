@@ -4,7 +4,7 @@ use crate::web::dto::audit::audit_dto::AuditDto;
 use crate::web::dto::search::search_request::SearchRequest;
 use actix_web::{get, web, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
-use log::{error, info};
+use log::error;
 
 #[utoipa::path(
     get,

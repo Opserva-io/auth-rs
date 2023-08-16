@@ -87,7 +87,7 @@ impl AuditService {
         db: &Database,
     ) -> Result<Vec<Audit>, Error> {
         info!("Finding all audits");
-        self.audit_repository.find_all(limit, page, &db).await
+        self.audit_repository.find_all(limit, page, db).await
     }
 
     /// # Summary

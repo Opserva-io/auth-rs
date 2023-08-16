@@ -232,12 +232,7 @@ pub async fn register(
     match pool
         .services
         .user_service
-        .create(
-            user,
-            "AUTH-RS",
-            &pool.database,
-            &pool.services.audit_service,
-        )
+        .create(user, None, &pool.database, &pool.services.audit_service)
         .await
     {
         Ok(_) => HttpResponse::Ok().finish(),

@@ -213,7 +213,12 @@ pub async fn create(
     let res = match pool
         .services
         .role_service
-        .create(role, &user_id, &pool.database, &pool.services.audit_service)
+        .create(
+            role,
+            Some(user_id),
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(d) => d,
@@ -469,7 +474,12 @@ pub async fn update(
     let res = match pool
         .services
         .role_service
-        .update(role, &user_id, &pool.database, &pool.services.audit_service)
+        .update(
+            role,
+            Some(user_id),
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(d) => d,
@@ -531,7 +541,7 @@ pub async fn delete(
         .role_service
         .delete(
             &path,
-            &user_id,
+            Some(user_id),
             &pool.database,
             &pool.services.user_service,
             &pool.services.audit_service,
