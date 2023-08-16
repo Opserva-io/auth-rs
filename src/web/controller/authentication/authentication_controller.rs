@@ -3,6 +3,7 @@ use crate::errors::bad_request::BadRequest;
 use crate::errors::internal_server_error::InternalServerError;
 use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::Error;
+use crate::services::password::password_service::PasswordService;
 use crate::web::controller::user::user_controller::ConvertError;
 use crate::web::dto::authentication::login_request::LoginRequest;
 use crate::web::dto::authentication::login_response::LoginResponse;
@@ -11,6 +12,7 @@ use crate::web::dto::permission::permission_dto::SimplePermissionDto;
 use crate::web::dto::role::role_dto::SimpleRoleDto;
 use crate::web::dto::user::user_dto::SimpleUserDto;
 use actix_web::{get, post, web, HttpRequest, HttpResponse};
+use argon2::PasswordHash;
 use log::error;
 use mongodb::bson::oid::ObjectId;
 
@@ -144,20 +146,16 @@ pub async fn login(
         }
     };
 
-    let password_hash = match &pool
-        .services
-        .password_service
-        .hash_password(login_request.password)
-    {
-        Ok(e) => e.to_string(),
+    let parsed_hash = match PasswordHash::new(&user.password) {
+        Ok(h) => h,
         Err(e) => {
-            error!("Failed to hash password: {}", e);
+            error!("Failed to parse password hash: {}", e);
             return HttpResponse::InternalServerError()
-                .json(InternalServerError::new("Failed to hash password"));
+                .json(InternalServerError::new("Failed to parse password hash"));
         }
     };
 
-    if password_hash != user.password || !user.enabled {
+    if !PasswordService::verify_password(&login_request.password, &parsed_hash) {
         return HttpResponse::BadRequest().finish();
     }
 
@@ -217,7 +215,7 @@ pub async fn register(
 
     let mut user = User::from(register_request);
 
-    let password_hash = match pool.services.password_service.hash_password(user.password) {
+    let password_hash = match PasswordService::hash_password(user.password) {
         Ok(e) => e.to_string(),
         Err(e) => {
             error!("Failed to hash password: {}", e);

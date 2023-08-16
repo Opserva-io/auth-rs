@@ -25,7 +25,6 @@ The following environment variables can be used to configure `auth-rs`:
 | DB_AUDIT_COLLECTION      | `audits`      | `false`                                      | `String`    | The collection that holds the `Audit` entities                         |
 | DB_CREATE_INDEXES        | `true`        | `false`                                      | `bool`      | Automatically create collection indexes                                |
 | DB_AUDIT_ENABLED         | `false`       | `false`                                      | `bool`      | Enable or disable audit trails                                         |
-| HASH_SALT                | N/A           | `true`                                       | `String`    | The salt to use to hash passwords using `argon2`                       |
 | JWT_SECRET               | N/A           | `true`                                       | `String`    | The JWT secret                                                         |
 | JWT_EXPIRATION           | `3600`        | `false`                                      | `usize`     | The JWT expiration time in seconds                                     |
 | RUST_LOG                 | N/A           | `false`                                      | `String`    | The default log level                                                  |

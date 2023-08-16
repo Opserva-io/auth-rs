@@ -5,6 +5,7 @@ use crate::repository::permission::permission_repository::Error as PermissionErr
 use crate::repository::role::role_repository::Error as RoleError;
 use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::Error;
+use crate::services::password::password_service::PasswordService;
 use crate::web::controller::role::role_controller::get_role_dto_from_role;
 use crate::web::dto::role::role_dto::RoleDto;
 use crate::web::dto::search::search_request::SearchRequest;
@@ -15,6 +16,7 @@ use crate::web::dto::user::user_dto::UserDto;
 use crate::web::extractors::user_id_extractor;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
 use actix_web_grants::proc_macro::has_permissions;
+use argon2::PasswordHash;
 use log::error;
 use mongodb::bson::oid::ObjectId;
 use std::fmt::{Display, Formatter};
@@ -212,7 +214,7 @@ pub async fn create(
 
     let mut user = User::from(user_dto);
 
-    let password_hash = match pool.services.password_service.hash_password(user.password) {
+    let password_hash = match PasswordService::hash_password(user.password) {
         Ok(e) => e.to_string(),
         Err(e) => {
             error!("Failed to hash password: {}", e);
@@ -729,35 +731,28 @@ pub async fn update_password(
                         .json(BadRequest::new("Empty new passwords are not allowed"));
                 }
 
-                let old_password_hash = match pool
-                    .services
-                    .password_service
-                    .hash_password(update_password.old_password)
-                {
-                    Ok(e) => e,
+                let parsed_hash = match PasswordHash::new(&user.password) {
+                    Ok(h) => h,
                     Err(e) => {
-                        error!("Error hashing password: {}", e);
+                        error!("Failed to parse password hash: {}", e);
                         return HttpResponse::InternalServerError()
-                            .json(InternalServerError::new("Failed to hash password"));
+                            .json(InternalServerError::new("Failed to parse password hash"));
                     }
                 };
 
-                if old_password_hash != user.password {
-                    return HttpResponse::Forbidden().finish();
+                if !PasswordService::verify_password(&update_password.old_password, &parsed_hash) {
+                    return HttpResponse::BadRequest().finish();
                 }
 
-                let new_password_hash = match pool
-                    .services
-                    .password_service
-                    .hash_password(update_password.new_password)
-                {
-                    Ok(e) => e.to_string(),
-                    Err(e) => {
-                        error!("Error hashing password: {}", e);
-                        return HttpResponse::InternalServerError()
-                            .json(InternalServerError::new("Failed to hash password"));
-                    }
-                };
+                let new_password_hash =
+                    match PasswordService::hash_password(update_password.new_password) {
+                        Ok(e) => e.to_string(),
+                        Err(e) => {
+                            error!("Error hashing password: {}", e);
+                            return HttpResponse::InternalServerError()
+                                .json(InternalServerError::new("Failed to hash password"));
+                        }
+                    };
 
                 return match pool
                     .services
@@ -847,11 +842,7 @@ pub async fn admin_update_password(
         return HttpResponse::BadRequest().json(BadRequest::new("Empty passwords are not allowed"));
     }
 
-    let password_hash = match pool
-        .services
-        .password_service
-        .hash_password(admin_update_password.password)
-    {
+    let password_hash = match PasswordService::hash_password(admin_update_password.password) {
         Ok(e) => e.to_string(),
         Err(e) => {
             error!("Error hashing password: {}", e);

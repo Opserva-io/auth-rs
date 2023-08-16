@@ -1,27 +1,12 @@
-use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHasher};
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
 
 #[derive(Clone)]
-pub struct PasswordService {
-    pub salt: SaltString,
-}
+pub struct PasswordService {}
 
 impl PasswordService {
-    /// # Summary
-    ///
-    /// Create a new instance of PasswordService.
-    ///
-    /// # Arguments
-    ///
-    /// * `salt` - The salt to use for hashing.
-    ///
-    /// # Returns
-    ///
-    /// A new instance of PasswordService.
-    pub fn new(salt: SaltString) -> PasswordService {
-        PasswordService { salt }
-    }
-
     /// # Summary
     ///
     /// Hash a password.
@@ -33,12 +18,33 @@ impl PasswordService {
     /// # Returns
     ///
     /// A Result containing the hashed password or an error.
-    pub fn hash_password(&self, password: String) -> Result<String, String> {
+    pub fn hash_password(password: String) -> Result<String, String> {
         let password = &password.as_bytes();
         let argon2 = Argon2::default();
-        match argon2.hash_password(password, &self.salt) {
+
+        let salt = SaltString::generate(&mut OsRng);
+
+        match argon2.hash_password(password, &salt) {
             Ok(e) => Ok(e.to_string()),
             Err(e) => Err(e.to_string()),
         }
+    }
+
+    /// # Summary
+    ///
+    /// Verify a password.
+    ///
+    /// # Arguments
+    ///
+    /// * `password` - The password to verify.
+    /// * `hash` - The hash to verify against.
+    ///
+    /// # Returns
+    ///
+    /// A boolean indicating whether the password is valid.
+    pub fn verify_password(password: &str, hash: &PasswordHash) -> bool {
+        Argon2::default()
+            .verify_password(&password.as_bytes(), &hash)
+            .is_ok()
     }
 }
