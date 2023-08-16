@@ -8,6 +8,7 @@ use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::Bson;
 use mongodb::error::Error as MongoError;
+use mongodb::options::FindOptions;
 use mongodb::Database;
 use std::fmt;
 use std::time::SystemTime;
@@ -164,6 +165,8 @@ impl RoleRepository {
     ///
     /// # Arguments
     ///
+    /// * `limit` - An optional i64 that holds the limit.
+    /// * `page` - An optional i64 that holds the page.
     /// * `db` - A reference to a Database instance.
     ///
     /// # Example
@@ -174,19 +177,36 @@ impl RoleRepository {
     ///   Err(e) => panic!("Failed to initialize Role repository: {:?}", e),
     /// };
     ///
-    /// let roles = match role_repository.find_all(&db).await {
-    ///   Ok(d) => d,
-    ///   Err(e) => panic!("Failed to find all Roles: {:?}", e),
-    /// };
+    /// let roles = match role_repository.find_all(Some(10), Some(1), &db).await {
     /// ```
     ///
     /// # Returns
     ///
     /// A Result with a vector of Role instances or an Error.
-    pub async fn find_all(&self, db: &Database) -> Result<Vec<Role>, Error> {
+    pub async fn find_all(
+        &self,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Role>, Error> {
+        let mut skip: Option<u64> = None;
+
+        if let Some(l) = limit {
+            if l > 1 {
+                if let Some(p) = page {
+                    if p > 1 {
+                        let res = u64::try_from((p - 1) * l).unwrap_or(0);
+                        skip = Some(res);
+                    }
+                }
+            }
+        }
+
+        let find_options = FindOptions::builder().limit(limit).skip(skip).build();
+
         let cursor = match db
             .collection::<Role>(&self.collection)
-            .find(None, None)
+            .find(None, find_options)
             .await
         {
             Ok(d) => d,
@@ -562,18 +582,16 @@ impl RoleRepository {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
+    /// * `limit` - The limit of Roles to find.
+    /// * `page` - The page of Roles to find.
     /// * `db` - The database to use.
     ///
     /// # Example
     ///
     /// ```
-    /// let role_repository = match RoleRepository::new("roles".to_string()) {
+    /// let role_repository = RoleRepository::new("roles".to_string()).unwrap();
+    /// let roles = match role_repository.search("text", Some(10), Some(1), &db).await {
     ///   Ok(d) => d,
-    ///   Err(e) => panic!("Failed to initialize Role repository: {:?}", e),
-    /// };
-    ///
-    /// match role_repository.search("text", &db).await {
-    ///   Ok(_) => (),
     ///   Err(e) => panic!("Failed to search for Roles: {:?}", e),
     /// };
     /// ```
@@ -581,10 +599,31 @@ impl RoleRepository {
     /// # Returns
     ///
     /// * `Result<Vec<Role>, Error>` - The result of the operation.
-    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Role>, Error> {
+    pub async fn search(
+        &self,
+        text: &str,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Role>, Error> {
         if text.is_empty() {
             return Err(Error::EmptyTextSearch);
         }
+
+        let mut skip: Option<u64> = None;
+
+        if let Some(l) = limit {
+            if l > 1 {
+                if let Some(p) = page {
+                    if p > 1 {
+                        let res = u64::try_from((p - 1) * l).unwrap_or(0);
+                        skip = Some(res);
+                    }
+                }
+            }
+        }
+
+        let find_options = FindOptions::builder().limit(limit).skip(skip).build();
 
         let filter = doc! {
             "$text": {
@@ -594,7 +633,7 @@ impl RoleRepository {
 
         let cursor = match db
             .collection::<Role>(&self.collection)
-            .find(filter, None)
+            .find(filter, find_options)
             .await
         {
             Ok(d) => d,

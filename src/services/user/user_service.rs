@@ -95,9 +95,9 @@ impl UserService {
     ///
     /// # Arguments
     ///
-    /// * `user_id` - The ID of the User entity that is finding all Users.
+    /// * `limit` - The maximum number of Users to return.
+    /// * `page` - The page of Users to return.
     /// * `db` - The Database to be used.
-    /// * `audit_service` - The AuditService to be used.
     ///
     /// # Example
     ///
@@ -105,16 +105,21 @@ impl UserService {
     /// let user_repository = UserRepository::new(String::from("users"));
     /// let user_service = UserService::new(user_repository);
     /// let db = mongodb::Database::new();
-    /// let users = user_service.find_all(&db);
+    /// let users = user_service.find_all(Some(10), Some(1), &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<User>` - The found User entities.
     /// * `Error` - The Error that occurred.
-    pub async fn find_all(&self, db: &Database) -> Result<Vec<User>, Error> {
+    pub async fn find_all(
+        &self,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<User>, Error> {
         info!("Finding all users");
-        self.user_repository.find_all(db).await
+        self.user_repository.find_all(limit, page, db).await
     }
 
     /// # Summary
@@ -390,6 +395,8 @@ impl UserService {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
+    /// * `limit` - The maximum number of Users to return.
+    /// * `page` - The page of Users to return.
     /// * `db` - The Database to be used.
     ///
     /// # Example
@@ -398,15 +405,21 @@ impl UserService {
     /// let user_repository = UserRepository::new(String::from("users"));
     /// let user_service = UserService::new(user_repository);
     /// let db = mongodb::Database::new();
-    /// let users = user_service.search("text", &db);
+    /// let users = user_service.search("text", Some(10), Some(1), &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<User>` - The Users that match the search criteria.
     /// * `Error` - The Error that occurred.
-    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<User>, Error> {
+    pub async fn search(
+        &self,
+        text: &str,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<User>, Error> {
         info!("Searching Users: {}", text);
-        self.user_repository.search(text, db).await
+        self.user_repository.search(text, limit, page, db).await
     }
 }

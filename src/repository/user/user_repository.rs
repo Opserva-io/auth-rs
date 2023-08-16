@@ -5,6 +5,7 @@ use futures::TryStreamExt;
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::{doc, Bson};
 use mongodb::error::Error as MongoError;
+use mongodb::options::FindOptions;
 use mongodb::Database;
 use regex::Regex;
 use std::fmt::{Display, Formatter};
@@ -190,6 +191,8 @@ impl UserRepository {
     ///
     /// # Arguments
     ///
+    /// * `limit` - The limit of the result.
+    /// * `page` - The page of the result.
     /// * `db` - The Database.
     ///
     /// # Example
@@ -197,16 +200,36 @@ impl UserRepository {
     /// ```
     /// let db = Database::new();
     /// let user_repository = UserRepository::new(String::from("users"), email_regex);
-    /// let users = user_repository.find_all(&db);
+    /// let users = user_repository.find_all(Some(10), Some(1), &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Result<Vec<User>, Error>` - The result of the operation.
-    pub async fn find_all(&self, db: &Database) -> Result<Vec<User>, Error> {
+    pub async fn find_all(
+        &self,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<User>, Error> {
+        let mut skip: Option<u64> = None;
+
+        if let Some(l) = limit {
+            if l > 1 {
+                if let Some(p) = page {
+                    if p > 1 {
+                        let res = u64::try_from((p - 1) * l).unwrap_or(0);
+                        skip = Some(res);
+                    }
+                }
+            }
+        }
+
+        let find_options = FindOptions::builder().limit(limit).skip(skip).build();
+
         let cursor = match db
             .collection::<User>(&self.collection)
-            .find(None, None)
+            .find(None, find_options)
             .await
         {
             Ok(d) => d,
@@ -615,6 +638,8 @@ impl UserRepository {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
+    /// * `limit` - The limit of the result.
+    /// * `page` - The page of the result.
     /// * `db` - The Database.
     ///
     /// # Example
@@ -622,17 +647,37 @@ impl UserRepository {
     /// ```
     /// let db = Database::new();
     /// let user_repository = UserRepository::new(String::from("users"), email_regex);
-    ///
-    /// user_repository.search(&String::from("text"), &db);
+    /// let users = user_repository.search(&String::from("text"), Some(10), Some(1), &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Result<Vec<User>, Error>` - The result of the operation.
-    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<User>, Error> {
+    pub async fn search(
+        &self,
+        text: &str,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<User>, Error> {
         if text.is_empty() {
             return Err(Error::EmptyTextSearch);
         }
+
+        let mut skip: Option<u64> = None;
+
+        if let Some(l) = limit {
+            if l > 1 {
+                if let Some(p) = page {
+                    if p > 1 {
+                        let res = u64::try_from((p - 1) * l).unwrap_or(0);
+                        skip = Some(res);
+                    }
+                }
+            }
+        }
+
+        let find_options = FindOptions::builder().limit(limit).skip(skip).build();
 
         let filter = doc! {
             "$text": {
@@ -642,7 +687,7 @@ impl UserRepository {
 
         let cursor = match db
             .collection::<User>(&self.collection)
-            .find(filter, None)
+            .find(filter, find_options)
             .await
         {
             Ok(d) => d,

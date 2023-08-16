@@ -41,6 +41,14 @@ impl EnvReader {
             Err(_) => 8080,
         };
 
+        let max_limit = match env::var("MAX_FETCH_LIMIT") {
+            Ok(d) => {
+                let res: i64 = d.trim().parse().expect("MAX_FETCH_LIMIT must be a number");
+                res
+            }
+            Err(_) => 100,
+        };
+
         let conn_string = match env::var("DB_CONNECTION_STRING") {
             Ok(d) => d,
             Err(_) => panic!("No connection string specified"),
@@ -181,7 +189,7 @@ impl EnvReader {
             audit_enabled,
         );
 
-        let server_config = ServerConfig::new(addr, port);
+        let server_config = ServerConfig::new(addr, port, max_limit);
 
         Config::new(
             server_config,

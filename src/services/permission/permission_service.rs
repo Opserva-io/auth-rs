@@ -98,7 +98,8 @@ impl PermissionService {
     ///
     /// # Arguments
     ///
-    /// * `user_id` - The ID of the User finding the Permission entities.
+    /// * `limit` - The limit of Permission entities to find.
+    /// * `page` - The page of Permission entities to find.
     /// * `db` - The Database to find the Permission entities in.
     /// * `audit` - The AuditService to be used.
     ///
@@ -108,16 +109,21 @@ impl PermissionService {
     /// let permission_repository = PermissionRepository::new(String::from("permissions"));
     /// let permission_service = PermissionService::new(permission_repository);
     /// let db = mongodb::Database::new();
-    /// let permissions = permission_service.find_all(&db);
+    /// let permissions = permission_service.find_all(limit, page, &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<Permission>` - The Permission entities.
     /// * `Error` - The Error that occurred.
-    pub async fn find_all(&self, db: &Database) -> Result<Vec<Permission>, Error> {
+    pub async fn find_all(
+        &self,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Permission>, Error> {
         info!("Finding all permissions");
-        self.permission_repository.find_all(db).await
+        self.permission_repository.find_all(limit, page, db).await
     }
 
     /// # Summary
@@ -342,6 +348,8 @@ impl PermissionService {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
+    /// * `limit` - The limit of Permission entities to find.
+    /// * `page` - The page of Permission entities to find.
     /// * `db` - The Database to be used.
     ///
     /// # Example
@@ -351,15 +359,23 @@ impl PermissionService {
     /// let permission_service = PermissionService::new(permission_repository);
     /// let db = mongodb::Database::new();
     /// let text = String::from("text");
-    /// permission_service.search(text, &db);
+    /// let permissions = permission_service.search(text, limit, page, &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<Permission>` - The Permission entities.
     /// * `Error` - The Error that occurred.
-    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Permission>, Error> {
+    pub async fn search(
+        &self,
+        text: &str,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Permission>, Error> {
         info!("Searching for Permission by text: {}", text);
-        self.permission_repository.search(text, db).await
+        self.permission_repository
+            .search(text, limit, page, db)
+            .await
     }
 }

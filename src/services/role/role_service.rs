@@ -98,9 +98,9 @@ impl RoleService {
     ///
     /// # Arguments
     ///
-    /// * `user_id` - The id of the User finding the Roles.
+    /// * `limit` - The limit of Role entities to find.
+    /// * `page` - The page of Role entities to find.
     /// * `db` - The Database to be used.
-    /// * `audit_service` - The AuditService to be used.
     ///
     /// # Example
     ///
@@ -109,16 +109,21 @@ impl RoleService {
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
     ///
-    /// let roles = role_service.find_all(&db);
+    /// let roles = role_service.find_all(Some(100), Some(1), &db);
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<Role>` - The Role entities.
     /// * `Error` - The Error that occurred.
-    pub async fn find_all(&self, db: &Database) -> Result<Vec<Role>, Error> {
+    pub async fn find_all(
+        &self,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Role>, Error> {
         info!("Finding all roles");
-        self.role_repository.find_all(db).await
+        self.role_repository.find_all(limit, page, db).await
     }
 
     /// # Summary
@@ -378,9 +383,9 @@ impl RoleService {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
-    /// * `user_id` - The id of the User searching for the Role entities.
+    /// * `limit` - The limit of Role entities to find.
+    /// * `page` - The page of Role entities to find.
     /// * `db` - The Database to be used.
-    /// * `audit_service` - The AuditService to be used.
     ///
     /// # Example
     ///
@@ -388,16 +393,22 @@ impl RoleService {
     /// let role_repository = RoleRepository::new(String::from("roles"));
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
-    /// let text = "text";
-    /// let result = role_service.search(text, &db);
+    ///
+    /// let result = role_service.search("text", Some(100), Some(1), &db).await;
     /// ```
     ///
     /// # Returns
     ///
     /// * `Vec<Role>` - The vector of Role entities.
     /// * `Error` - The Error that occurred.
-    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Role>, Error> {
+    pub async fn search(
+        &self,
+        text: &str,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Role>, Error> {
         info!("Searching for Role by text: {}", text);
-        self.role_repository.search(text, db).await
+        self.role_repository.search(text, limit, page, db).await
     }
 }

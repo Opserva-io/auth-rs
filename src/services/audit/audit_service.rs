@@ -73,14 +73,21 @@ impl AuditService {
     ///
     /// # Arguments
     ///
+    /// * `limit` - The limit of Audits to find.
+    /// * `page` - The page of Audits to find.
     /// * `db` - The Database to find the Audits in.
     ///
     /// # Returns
     ///
     /// * `Result<Vec<Audit>, Error>` - The result of the operation.
-    pub async fn find_all(&self, db: &Database) -> Result<Vec<Audit>, Error> {
+    pub async fn find_all(
+        &self,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Audit>, Error> {
         info!("Finding all audits");
-        self.audit_repository.find_all(db).await
+        self.audit_repository.find_all(limit, page, &db).await
     }
 
     /// # Summary
@@ -90,25 +97,32 @@ impl AuditService {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
+    /// * `limit` - The limit of Audits to find.
+    /// * `page` - The page of Audits to find.
     /// * `db` - The database to use.
     ///
     /// # Example
     ///
     /// ```
     /// let audit_repository = AuditRepository::new("audit".to_string()).unwrap();
+    /// let audit_service = AuditService::new(audit_repository, true);
     /// let db = mongodb::Client::with_uri_str("mongodb://localhost:27017")
-    ///    .await
     ///    .unwrap()
     ///    .database("test");
-    ///
-    /// let result = audit_repository.search("", &db).await;
+    /// let res = audit_service.search("test", 1, 10, &db).await;
     /// ```
     ///
     /// # Returns
     ///
     /// * `Result<Vec<Audit>, Error>` - The result of the operation.
-    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Audit>, Error> {
+    pub async fn search(
+        &self,
+        text: &str,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Audit>, Error> {
         info!("Searching for audits: {}", text);
-        self.audit_repository.search(text, db).await
+        self.audit_repository.search(text, limit, page, db).await
     }
 }

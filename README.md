@@ -33,6 +33,10 @@ available [here](https://github.com/Opserva-io/auth-js).
 - [X] Password hashing
 - [X] JWT generation
 - [X] JWT verification
+- [X] Pagination
+- [X] OpenAPI / Swagger UI
+- [X] CORS support
+- [X] Docker support
 - [X] MongoDB integration
 - [X] MongoDB Atlas integration
 
