@@ -1,10 +1,12 @@
 use crate::repository::audit::audit_model::Action::{Create, Delete, Update};
 use crate::repository::audit::audit_model::{Audit, ResourceIdType, ResourceType};
+use crate::repository::audit::audit_repository::Error as AuditError;
 use crate::repository::role::role_model::Role;
 use crate::repository::role::role_repository::{Error, RoleRepository};
 use crate::services::audit::audit_service::AuditService;
 use crate::services::user::user_service::UserService;
 use log::{error, info};
+use mongodb::bson::oid::ObjectId;
 use mongodb::Database;
 
 #[derive(Clone)]
@@ -75,7 +77,7 @@ impl RoleService {
         let new_audit = Audit::new(
             user_id,
             Create,
-            &role.id.to_hex(),
+            role.id,
             ResourceIdType::RoleId,
             ResourceType::Role,
         );
@@ -255,7 +257,7 @@ impl RoleService {
         let new_audit = Audit::new(
             user_id,
             Update,
-            &role.id.to_hex(),
+            role.id,
             ResourceIdType::RoleId,
             ResourceType::Role,
         );
@@ -307,10 +309,17 @@ impl RoleService {
     ) -> Result<(), Error> {
         info!("Deleting Role by ID: {}", id);
 
+        let oid = match ObjectId::parse_str(id) {
+            Ok(oid) => oid,
+            Err(e) => {
+                return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
+            }
+        };
+
         let new_audit = Audit::new(
             user_id,
             Delete,
-            id,
+            oid,
             ResourceIdType::RoleId,
             ResourceType::Role,
         );

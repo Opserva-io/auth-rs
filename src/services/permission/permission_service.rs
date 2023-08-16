@@ -1,11 +1,13 @@
 use crate::repository::audit::audit_model::Action::{Create, Delete, Update};
 use crate::repository::audit::audit_model::ResourceType::Permission as PermissionResourceType;
 use crate::repository::audit::audit_model::{Audit, ResourceIdType};
+use crate::repository::audit::audit_repository::Error as AuditError;
 use crate::repository::permission::permission_model::Permission;
 use crate::repository::permission::permission_repository::{Error, PermissionRepository};
 use crate::services::audit::audit_service::AuditService;
 use crate::services::role::role_service::RoleService;
 use log::{error, info};
+use mongodb::bson::oid::ObjectId;
 use mongodb::Database;
 
 #[derive(Clone)]
@@ -75,7 +77,7 @@ impl PermissionService {
         let new_audit = Audit::new(
             user_id,
             Create,
-            &new_permission.id.to_hex(),
+            new_permission.id,
             ResourceIdType::PermissionId,
             PermissionResourceType,
         );
@@ -252,7 +254,7 @@ impl PermissionService {
         let new_audit = Audit::new(
             user_id,
             Update,
-            &permission.id.to_hex(),
+            permission.id,
             ResourceIdType::PermissionId,
             PermissionResourceType,
         );
@@ -306,10 +308,17 @@ impl PermissionService {
     ) -> Result<(), Error> {
         info!("Deleting Permission by ID: {}", id);
 
+        let oid = match ObjectId::parse_str(id) {
+            Ok(oid) => oid,
+            Err(e) => {
+                return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
+            }
+        };
+
         let new_audit = Audit::new(
             user_id,
             Delete,
-            id,
+            oid,
             ResourceIdType::PermissionId,
             PermissionResourceType,
         );

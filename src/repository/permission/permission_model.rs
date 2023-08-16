@@ -116,7 +116,7 @@ impl Display for Permission {
         write!(
             f,
             "Permission: {{ id: {}, name: {}, description: {}, created_at: {}, updated_at: {} }}",
-            self.id,
+            self.id.to_hex(),
             self.name,
             self.description.as_ref().unwrap_or(&String::from("None")),
             self.created_at,

@@ -251,7 +251,7 @@ impl Display for User {
         write!(
             f,
             "User: [id: {}, username: {}, email: {}, first_name: {}, last_name: {}, password: {}, roles: {:?}, created_at: {}, updated_at: {}, enabled: {}]",
-            self.id,
+            self.id.to_hex(),
             self.username,
             match &self.email {
                 None => String::from("None"),

@@ -1,9 +1,11 @@
 use crate::repository::audit::audit_model::Action::{Create, Delete, Update};
 use crate::repository::audit::audit_model::{Audit, ResourceIdType, ResourceType};
+use crate::repository::audit::audit_repository::Error as AuditError;
 use crate::repository::user::user_model::User;
 use crate::repository::user::user_repository::{Error, UserRepository};
 use crate::services::audit::audit_service::AuditService;
 use log::{error, info};
+use mongodb::bson::oid::ObjectId;
 use mongodb::Database;
 
 #[derive(Clone)]
@@ -72,7 +74,7 @@ impl UserService {
         let new_audit = Audit::new(
             user_id,
             Create,
-            &user.id.to_hex(),
+            user.id,
             ResourceIdType::UserId,
             ResourceType::User,
         );
@@ -212,7 +214,7 @@ impl UserService {
         let new_audit = Audit::new(
             user_id,
             Update,
-            &user.id.to_hex(),
+            user.id,
             ResourceIdType::UserId,
             ResourceType::User,
         );
@@ -263,10 +265,17 @@ impl UserService {
     ) -> Result<(), Error> {
         info!("Updating User password: {}", id);
 
+        let oid = match ObjectId::parse_str(id) {
+            Ok(oid) => oid,
+            Err(e) => {
+                return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
+            }
+        };
+
         let new_audit = Audit::new(
             user_id,
             Update,
-            id,
+            oid,
             ResourceIdType::UserId,
             ResourceType::User,
         );
@@ -315,10 +324,17 @@ impl UserService {
     ) -> Result<(), Error> {
         info!("Deleting User: {}", id);
 
+        let oid = match ObjectId::parse_str(id) {
+            Ok(oid) => oid,
+            Err(e) => {
+                return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
+            }
+        };
+
         let new_audit = Audit::new(
             user_id,
             Delete,
-            id,
+            oid,
             ResourceIdType::UserId,
             ResourceType::User,
         );

@@ -2,6 +2,7 @@ use crate::configuration::config::Config;
 use crate::errors::bad_request::BadRequest;
 use crate::errors::internal_server_error::InternalServerError;
 use crate::repository::user::user_model::User;
+use crate::repository::user::user_repository::Error;
 use crate::web::controller::user::user_controller::ConvertError;
 use crate::web::dto::authentication::login_request::LoginRequest;
 use crate::web::dto::authentication::login_response::LoginResponse;
@@ -242,7 +243,13 @@ pub async fn register(
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
             error!("Error creating User: {}", e);
-            HttpResponse::InternalServerError().json(InternalServerError::new(&e.to_string()))
+            match e {
+                Error::UsernameAlreadyTaken | Error::EmailAlreadyTaken | Error::InvalidEmail(_) => {
+                    HttpResponse::BadRequest().json(BadRequest::new(&e.to_string()))
+                }
+                _ => HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string())),
+            }
         }
     }
 }
