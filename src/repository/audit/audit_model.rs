@@ -132,7 +132,7 @@ pub struct Audit {
     pub user_id: String,
     pub action: Action,
     #[serde(rename = "resourceId")]
-    pub resource_id: String,
+    pub resource_id: ObjectId,
     #[serde(rename = "resourceIdType")]
     pub resource_id_type: ResourceIdType,
     #[serde(rename = "resourceType")]
@@ -166,7 +166,7 @@ impl Audit {
     pub fn new(
         user_id: &str,
         action: Action,
-        resource_id: &str,
+        resource_id: ObjectId,
         resource_id_type: ResourceIdType,
         resource_type: ResourceType,
     ) -> Audit {
@@ -177,7 +177,7 @@ impl Audit {
             id: ObjectId::new(),
             user_id: user_id.to_string(),
             action,
-            resource_id: resource_id.to_string(),
+            resource_id,
             resource_id_type,
             resource_type,
             created_at: now,

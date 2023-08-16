@@ -87,7 +87,7 @@ impl From<Audit> for AuditDto {
             id: value.id.to_hex(),
             user_id: value.user_id,
             action,
-            resource_id: value.resource_id,
+            resource_id: value.resource_id.to_hex(),
             resource_id_type,
             resource_type,
             created_at: value.created_at,

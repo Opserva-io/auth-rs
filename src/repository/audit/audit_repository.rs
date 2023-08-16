@@ -17,6 +17,7 @@ pub enum Error {
     EmptyCollection,
     EmptyTextSearch,
     MongoDb(MongodbError),
+    ObjectId(String),
 }
 
 impl Display for Error {
@@ -37,6 +38,7 @@ impl Display for Error {
             Error::EmptyCollection => write!(f, "Empty Audit collection"),
             Error::EmptyTextSearch => write!(f, "Empty text search"),
             Error::MongoDb(e) => write!(f, "MongoDb Error: {}", e),
+            Error::ObjectId(e) => write!(f, "ObjectId Error: {}", e),
         }
     }
 }
