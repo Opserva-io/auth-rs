@@ -7,6 +7,7 @@ use futures::TryStreamExt;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::bson::Bson;
+use mongodb::options::FindOptions;
 use mongodb::{error::Error as MongoError, Database};
 use std::fmt;
 use std::fmt::Debug;
@@ -157,21 +158,43 @@ impl PermissionRepository {
     /// # Arguments
     ///
     /// * `db` - The database to use.
+    /// * `limit` - The limit of Permissions to find.
+    /// * `page` - The page of Permissions to find.
     ///
     /// # Example
     ///
     /// ```
     /// let permission_repository = PermissionRepository::new(String::from("permissions"));
-    /// let permissions = permission_repository.find_all(&db).await;
+    /// let permissions = permission_repository.find_all(Some(10), Some(1), &db).await;
     /// ```
     ///
     /// # Returns
     ///
     /// * `Result<Vec<Permission>, Error>` - The result of the operation.
-    pub async fn find_all(&self, db: &Database) -> Result<Vec<Permission>, Error> {
+    pub async fn find_all(
+        &self,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Permission>, Error> {
+        let mut skip: Option<u64> = None;
+
+        if let Some(l) = limit {
+            if l > 1 {
+                if let Some(p) = page {
+                    if p > 1 {
+                        let res = u64::try_from((p - 1) * l).unwrap_or(0);
+                        skip = Some(res);
+                    }
+                }
+            }
+        }
+
+        let find_options = FindOptions::builder().limit(limit).skip(skip).build();
+
         let cursor = match db
             .collection::<Permission>(&self.collection)
-            .find(None, None)
+            .find(None, find_options)
             .await
         {
             Ok(d) => d,
@@ -478,6 +501,8 @@ impl PermissionRepository {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
+    /// * `limit` - The limit of Permissions to find.
+    /// * `page` - The page of Permissions to find.
     /// * `db` - The database to use.
     ///
     /// # Example
@@ -490,10 +515,31 @@ impl PermissionRepository {
     /// # Returns
     ///
     /// * `Result<Vec<Permission>, Error>` - The result of the operation.
-    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Permission>, Error> {
+    pub async fn search(
+        &self,
+        text: &str,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Permission>, Error> {
         if text.is_empty() {
             return Err(Error::EmptyTextSearch);
         }
+
+        let mut skip: Option<u64> = None;
+
+        if let Some(l) = limit {
+            if l > 1 {
+                if let Some(p) = page {
+                    if p > 1 {
+                        let res = u64::try_from((p - 1) * l).unwrap_or(0);
+                        skip = Some(res);
+                    }
+                }
+            }
+        }
+
+        let find_options = FindOptions::builder().limit(limit).skip(skip).build();
 
         let filter = doc! {
             "$text": {
@@ -503,7 +549,7 @@ impl PermissionRepository {
 
         let cursor = match db
             .collection::<Permission>(&self.collection)
-            .find(filter, None)
+            .find(filter, find_options)
             .await
         {
             Ok(d) => d,

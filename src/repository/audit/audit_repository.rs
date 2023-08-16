@@ -1,8 +1,10 @@
 use crate::repository::audit::audit_model::Audit;
 use futures::TryStreamExt;
+use log::info;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error as MongodbError;
+use mongodb::options::FindOptions;
 use mongodb::Database;
 use std::fmt::{Display, Formatter};
 
@@ -122,15 +124,37 @@ impl AuditRepository {
     ///
     /// # Arguments
     ///
+    /// * `limit` - The limit of Audits to find.
+    /// * `page` - The page of Audits to find.
     /// * `db` - The Database to find the Audits in.
     ///
     /// # Returns
     ///
     /// * `Result<Vec<Audit>, Error>` - The result of the operation.
-    pub async fn find_all(&self, db: &Database) -> Result<Vec<Audit>, Error> {
+    pub async fn find_all(
+        &self,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Audit>, Error> {
+        let mut skip: Option<u64> = None;
+
+        if let Some(l) = limit {
+            if l > 1 {
+                if let Some(p) = page {
+                    if p > 1 {
+                        let res = u64::try_from((p - 1) * l).unwrap_or(0);
+                        skip = Some(res);
+                    }
+                }
+            }
+        }
+
+        let find_options = FindOptions::builder().limit(limit).skip(skip).build();
+
         match db
             .collection::<Audit>(&self.collection)
-            .find(doc! {}, None)
+            .find(None, find_options)
             .await
         {
             Ok(r) => Ok(r.try_collect().await.unwrap_or_else(|_| vec![])),
@@ -145,6 +169,8 @@ impl AuditRepository {
     /// # Arguments
     ///
     /// * `text` - The text to search for.
+    /// * `page` - The page of Audits to find.
+    /// * `limit` - The limit of Audits to find.
     /// * `db` - The database to use.
     ///
     /// # Example
@@ -156,16 +182,37 @@ impl AuditRepository {
     ///    .unwrap()
     ///    .database("test");
     ///
-    /// let result = audit_repository.search("", &db).await;
+    /// let result = audit_repository.search("", Some(100), Some(1), &db).await;
     /// ```
     ///
     /// # Returns
     ///
     /// * `Result<Vec<Audit>, Error>` - The result of the operation.
-    pub async fn search(&self, text: &str, db: &Database) -> Result<Vec<Audit>, Error> {
+    pub async fn search(
+        &self,
+        text: &str,
+        limit: Option<i64>,
+        page: Option<i64>,
+        db: &Database,
+    ) -> Result<Vec<Audit>, Error> {
         if text.is_empty() {
             return Err(Error::EmptyTextSearch);
         }
+
+        let mut skip: Option<u64> = None;
+
+        if let Some(l) = limit {
+            if l > 1 {
+                if let Some(p) = page {
+                    if p > 1 {
+                        let res = u64::try_from((p - 1) * l).unwrap_or(0);
+                        skip = Some(res);
+                    }
+                }
+            }
+        }
+
+        let find_options = FindOptions::builder().limit(limit).skip(skip).build();
 
         let filter = doc! {
             "$text": {
@@ -175,7 +222,7 @@ impl AuditRepository {
 
         let cursor = match db
             .collection::<Audit>(&self.collection)
-            .find(filter, None)
+            .find(filter, find_options)
             .await
         {
             Ok(d) => d,

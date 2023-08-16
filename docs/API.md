@@ -27,6 +27,7 @@ CRUD operations are available for users, roles and permissions.
     - [Update](#update-2)
     - [Delete](#delete-2)
 - [Searching](#searching-3)
+- [Pagination](#pagination)
 - [Health](#health)
 
 ## OpenAPI / Swagger
@@ -35,15 +36,17 @@ OpenAPI and Swagger documentation is available via the `/swagger-ui/` endpoint.
 
 ## Audit
 
-Audit logs are available via the following endpoints, if enabled:
+`Audit` entities are available via the following endpoints, if enabled:
 * `/api/v1/audits/`
 * `/api/v1/audits/{id}`
 
 ### Read
 
-Audit logs can be retrieved by users with the appropriate authorizations.
+`Audit` entities can be retrieved by users with the appropriate authorizations.
 
 #### Find a single audit log
+
+Find a single `Audit` entity by its ID.
 
 ##### Request
 
@@ -68,6 +71,8 @@ Authorization: Bearer <access token here>
 ```
 
 #### Find all audit logs
+
+Find all `Audit` entities, within the given `page` and `limit` query parameters. 
 
 ##### Request
 
@@ -104,9 +109,8 @@ Authentication is handled using JSON Web Tokens (JWT). The following endpoints a
 
 ### Register
 
-Registering an account will create a new User entity and provide it with the `DEFAULT` role. Passwords will be hashed
-using
-[argon2](https://en.wikipedia.org/wiki/Argon2) and a custom salt.
+Registering an account will create a new `User` entity and provide it with the `DEFAULT` role. Passwords will be hashed
+using [argon2](https://en.wikipedia.org/wiki/Argon2) and a custom salt.
 
 #### Request
 
@@ -130,9 +134,8 @@ POST /api/v1/authentication/register/
 ### Login
 
 Logging in provides a `Bearer` access token that can be used to authenticate other requests that require certain
-permissions.
-This access token should be added to the `Authorization` HTTP header for all endpoints that require authentication and
-authorization.
+permissions. This access token should be added to the `Authorization` HTTP header for all endpoints that require
+authentication and authorization.
 
 #### Request
 
@@ -154,7 +157,7 @@ POST /api/v1/authentication/login/
 
 ### Current
 
-The current user can be retrieved using the access token that was obtained after logging in.
+The current `User` entity can be retrieved using the access token that was obtained after logging in.
 
 #### Request
 
@@ -169,7 +172,7 @@ Authorization: Bearer <access token here>
 {
   "id": "d594989b-48bd-43d8-ab3e-d28671f145e6",
   "username": "admin",
-  "email": "test@codedead.com",
+  "email": "test@example.com",
   "firstName": "Test",
   "lastName": "Test",
   "roles": [
@@ -191,14 +194,14 @@ Authorization: Bearer <access token here>
 
 ## Users
 
-Users can be managed using the following CRUD endpoints:
+`User` entities can be managed using the following CRUD endpoints:
 
 * `/api/v1/users/`
 * `/api/v1/users/{id}`
 
 ### Create
 
-Users can be created by other users with the appropriate authorizations.
+`User` entities can be created by other users with the appropriate authorizations.
 
 #### Request
 
@@ -250,6 +253,8 @@ Authorization: Bearer <access token here>
 
 #### Find a single user
 
+Find a `User` entity by its ID.
+
 ##### Request
 
 ```http
@@ -285,6 +290,8 @@ Authorization: Bearer <access token here>
 ```
 
 #### Find all users
+
+Find all `User` entities, within the given `page` and `limit` query parameters.
 
 ##### Request
 
@@ -325,6 +332,8 @@ Authorization: Bearer <access token here>
 
 #### Searching
 
+Search for specific `User` entities with a given `text` query parameter.
+
 ##### Request
 
 ```http
@@ -363,6 +372,8 @@ Authorization: Bearer <access token here>
 ```
 
 ### Update
+
+`User` entities can be updated by other users with the appropriate authorizations.
 
 #### Request
 
@@ -430,7 +441,7 @@ Users can also remove themselves, if they have the appropriate authorizations:
 #### Request
 
 ```http
-DELETE /api/v1/users/delete_self
+DELETE /api/v1/users/{id}/self/
 Authorization: Bearer <access token here>
 ```
 
@@ -442,7 +453,7 @@ Authorization: Bearer <access token here>
 
 ## Roles
 
-Roles can be managed using the following CRUD endpoints:
+`Role` entities can be managed using the following CRUD endpoints:
 
 * `/api/v1/roles/`
 * `/api/v1/roles/{id}`
@@ -518,6 +529,8 @@ Authorization: Bearer <access token here>
 
 #### Find all roles
 
+Find all `Role` entities, within the given `page` and `limit` query parameters.
+
 ##### Request
 
 ```http
@@ -550,6 +563,8 @@ Authorization: Bearer <access token here>
 ```
 
 #### Searching
+
+Search for specific `Role` entities with a given `text` query parameter.
 
 ##### Request
 
@@ -676,6 +691,8 @@ Authorization: Bearer <access token here>
 
 #### Find a single permission
 
+Find a `Permission` entity by its ID.
+
 ##### Request
 
 ```http
@@ -694,6 +711,8 @@ Authorization: Bearer <access token here>
 ```
 
 #### Find all permissions
+
+Find all `Permission` entities, within the given `page` and `limit` query parameters.
 
 ##### Request
 
@@ -716,6 +735,8 @@ Authorization: Bearer <access token here>
 ```
 
 #### Searching
+
+Search for specific `Permission` entities with a given `text` query parameter.
 
 ##### Request
 
@@ -764,6 +785,8 @@ Authorization: Bearer <access token here>
 
 ### Delete
 
+`Permission` entities can be deleted by users with the appropriate authorizations.
+
 #### Request
 
 ```http
@@ -801,6 +824,21 @@ fields:
 
 * `id`
 * `name`
+
+### Pagination
+
+Some endpoints, like the ones for retrieving all users, roles and permissions support pagination. You can provide a `limit`
+and `page` query parameter to control the amount of entities that are returned and the page that should be returned.
+
+If no `page` or `limit` query parameter is provided, `auth-rs` will resort to its default values. The default limit
+is `100` and the default page is `1`.
+
+#### Request
+
+```http
+GET /api/v1/users/?limit=10&page=2
+Authorization: Bearer <access token here>
+```
 
 ### Health
 

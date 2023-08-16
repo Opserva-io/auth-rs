@@ -243,9 +243,12 @@ pub async fn create(
     path = "/api/v1/roles/",
     params(
         ("text" = Option<String>, Query, description = "The text to search for", nullable = true),
+        ("limit" = Option<i64>, Query, description = "The limit of roles to retrieve", nullable = true),
+        ("page" = Option<i64>, Query, description = "The page", nullable = true),
     ),
     responses(
         (status = 200, description = "OK", body = Vec<RoleDto>),
+        (status = 204, description = "No Content"),
         (status = 500, description = "Internal Server Error", body = InternalServerError),
     ),
     tag = "Roles",
@@ -261,8 +264,23 @@ pub async fn find_all_roles(
 ) -> HttpResponse {
     let search = search.into_inner();
 
+    let mut limit = search.limit;
+    let page = search.page;
+
+    let limit_clone = limit.unwrap_or(pool.server_config.max_limit);
+    if limit.is_none()
+        || (limit.is_some() && limit_clone > pool.server_config.max_limit || limit_clone < 1)
+    {
+        limit = Some(pool.server_config.max_limit);
+    }
+
     let res = match search.text {
-        Some(t) => match pool.services.role_service.search(&t, &pool.database).await {
+        Some(t) => match pool
+            .services
+            .role_service
+            .search(&t, limit, page, &pool.database)
+            .await
+        {
             Ok(d) => d,
             Err(e) => {
                 error!("Error while searching for Roles: {}", e);
@@ -270,7 +288,12 @@ pub async fn find_all_roles(
                     .json(InternalServerError::new(&e.to_string()));
             }
         },
-        None => match pool.services.role_service.find_all(&pool.database).await {
+        None => match pool
+            .services
+            .role_service
+            .find_all(limit, page, &pool.database)
+            .await
+        {
             Ok(d) => d,
             Err(e) => {
                 error!("Error while finding all Roles: {}", e);
@@ -279,6 +302,10 @@ pub async fn find_all_roles(
             }
         },
     };
+
+    if res.is_empty() {
+        return HttpResponse::NoContent().finish();
+    }
 
     let mut role_dto_list: Vec<RoleDto> = vec![];
     for r in res {

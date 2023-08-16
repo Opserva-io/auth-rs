@@ -80,9 +80,12 @@ pub async fn create_permission(
     path = "/api/v1/permissions/",
     params(
         ("text" = Option<String>, Query, description = "The text to search for", nullable = true),
+        ("limit" = Option<i64>, Query, description = "The limit of permissions to retrieve", nullable = true),
+        ("page" = Option<i64>, Query, description = "The page", nullable = true),
     ),
     responses(
         (status = 200, description = "OK", body = Vec<PermissionDto>),
+        (status = 204, description = "No Content"),
         (status = 500, description = "Internal Server Error", body = InternalServerError),
     ),
     tag = "Permissions",
@@ -98,12 +101,22 @@ pub async fn find_all_permissions(
 ) -> HttpResponse {
     let search = search.into_inner();
 
+    let mut limit = search.limit;
+    let page = search.page;
+
+    let limit_clone = limit.unwrap_or(pool.server_config.max_limit);
+    if limit.is_none()
+        || (limit.is_some() && limit_clone > pool.server_config.max_limit || limit_clone < 1)
+    {
+        limit = Some(pool.server_config.max_limit);
+    }
+
     let res = match search.text {
         Some(t) => {
             match pool
                 .services
                 .permission_service
-                .search(&t, &pool.database)
+                .search(&t, limit, page, &pool.database)
                 .await
             {
                 Ok(d) => d,
@@ -118,7 +131,7 @@ pub async fn find_all_permissions(
             match pool
                 .services
                 .permission_service
-                .find_all(&pool.database)
+                .find_all(limit, page, &pool.database)
                 .await
             {
                 Ok(d) => d,
@@ -130,6 +143,10 @@ pub async fn find_all_permissions(
             }
         }
     };
+
+    if res.is_empty() {
+        return HttpResponse::NoContent().finish();
+    }
 
     let dto_list = res.iter().map(|p| p.into()).collect::<Vec<PermissionDto>>();
 

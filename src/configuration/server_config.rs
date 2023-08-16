@@ -2,6 +2,7 @@
 pub struct ServerConfig {
     pub address: String,
     pub port: u16,
+    pub max_limit: i64,
 }
 
 impl ServerConfig {
@@ -13,6 +14,7 @@ impl ServerConfig {
     ///
     /// * `address` - The address of the ServerConfig.
     /// * `port` - The port of the ServerConfig.
+    /// * `max_limit` - The maximum amount of entity records that can be retrieved in one call.
     ///
     /// # Example
     ///
@@ -23,7 +25,11 @@ impl ServerConfig {
     /// # Returns
     ///
     /// * `ServerConfig` - The new ServerConfig.
-    pub fn new(address: String, port: u16) -> ServerConfig {
-        ServerConfig { address, port }
+    pub fn new(address: String, port: u16, max_limit: i64) -> ServerConfig {
+        ServerConfig {
+            address,
+            port,
+            max_limit,
+        }
     }
 }
