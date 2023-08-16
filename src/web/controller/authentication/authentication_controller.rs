@@ -215,7 +215,7 @@ pub async fn register(
 
     let mut user = User::from(register_request);
 
-    let password_hash = match pool.services.password_service.hash_password(user.password) {
+    let password_hash = match PasswordService::hash_password(user.password) {
         Ok(e) => e.to_string(),
         Err(e) => {
             error!("Failed to hash password: {}", e);

@@ -100,7 +100,6 @@ impl Config {
         let user_service = UserService::new(user_repository);
         let audit_service = AuditService::new(audit_repository, db_config.audit_enabled);
         let jwt_service = JwtService::new(jwt_config);
-        let password_service = PasswordService::new();
 
         let services = Services::new(
             permission_service,
@@ -108,7 +107,6 @@ impl Config {
             user_service,
             jwt_service,
             audit_service,
-            password_service,
         );
 
         let cfg = Config {
@@ -288,16 +286,13 @@ impl Config {
         {
             Ok(d) => {
                 if d.is_none() {
-                    let password_hash = match self
-                        .services
-                        .password_service
-                        .hash_password(default_user_config.password)
-                    {
-                        Ok(e) => e,
-                        Err(e) => {
-                            panic!("Failed to hash password: {}", e);
-                        }
-                    };
+                    let password_hash =
+                        match PasswordService::hash_password(default_user_config.password) {
+                            Ok(e) => e,
+                            Err(e) => {
+                                panic!("Failed to hash password: {}", e);
+                            }
+                        };
 
                     let user = User::new(
                         default_user_config.username,
