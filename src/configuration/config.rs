@@ -17,7 +17,6 @@ use crate::services::permission::permission_service::PermissionService;
 use crate::services::role::role_service::RoleService;
 use crate::services::user::user_service::UserService;
 use crate::services::Services;
-use argon2::password_hash::SaltString;
 use log::{error, info};
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
@@ -44,7 +43,6 @@ impl Config {
     /// * `db_config` - A DbConfig instance.
     /// * `default_user_config` - A DefaultUserConfig instance.
     /// * `generate_default_user` - A bool that indicates whether to generate a default user or not.
-    /// * `salt` - A String that holds the salt.
     /// * `jwt_config` - A JwtConfig instance.
     /// * `open_api` - A bool that indicates whether to enable OpenAPI or not.
     ///
@@ -56,7 +54,6 @@ impl Config {
         db_config: DbConfig,
         default_user_config: DefaultUserConfig,
         generate_default_user: bool,
-        salt: String,
         jwt_config: JwtConfig,
         open_api: bool,
     ) -> Config {
@@ -103,14 +100,7 @@ impl Config {
         let user_service = UserService::new(user_repository);
         let audit_service = AuditService::new(audit_repository, db_config.audit_enabled);
         let jwt_service = JwtService::new(jwt_config);
-
-        let salt = match SaltString::from_b64(&salt) {
-            Ok(s) => s,
-            Err(e) => {
-                panic!("Failed to generate salt: {}", e);
-            }
-        };
-        let password_service = PasswordService::new(salt);
+        let password_service = PasswordService::new();
 
         let services = Services::new(
             permission_service,

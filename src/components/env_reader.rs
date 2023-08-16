@@ -79,11 +79,6 @@ impl EnvReader {
             Err(_) => String::from("audits"),
         };
 
-        let salt = match env::var("HASH_SALT") {
-            Ok(d) => d,
-            Err(_) => panic!("No salt specified"),
-        };
-
         let jwt_secret = match env::var("JWT_SECRET") {
             Ok(d) => d,
             Err(_) => panic!("No JWT secret specified"),
@@ -196,7 +191,6 @@ impl EnvReader {
             db_config,
             default_user_config,
             generate_default_user,
-            salt,
             JwtConfig::new(jwt_secret, jwt_expiration),
             enable_openapi,
         )
