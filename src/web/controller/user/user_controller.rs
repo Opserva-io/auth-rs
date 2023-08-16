@@ -232,8 +232,13 @@ pub async fn create(
         Ok(d) => d,
         Err(e) => {
             error!("Error creating User: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new(&e.to_string()));
+            return match e {
+                Error::UsernameAlreadyTaken | Error::EmailAlreadyTaken | Error::InvalidEmail(_) => {
+                    HttpResponse::BadRequest().json(BadRequest::new(&e.to_string()))
+                }
+                _ => HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string())),
+            };
         }
     };
 
@@ -476,8 +481,13 @@ pub async fn update(
         Ok(d) => d,
         Err(e) => {
             error!("Error updating User: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new(&e.to_string()));
+            return match e {
+                Error::UsernameAlreadyTaken | Error::EmailAlreadyTaken | Error::InvalidEmail(_) => {
+                    HttpResponse::BadRequest().json(BadRequest::new(&e.to_string()))
+                }
+                _ => HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string())),
+            };
         }
     };
 
@@ -569,8 +579,15 @@ pub async fn update_self(
                     Ok(d) => d,
                     Err(e) => {
                         error!("Error updating User: {}", e);
-                        return HttpResponse::InternalServerError()
-                            .json(InternalServerError::new(&e.to_string()));
+                        return match e {
+                            Error::UsernameAlreadyTaken
+                            | Error::EmailAlreadyTaken
+                            | Error::InvalidEmail(_) => {
+                                HttpResponse::BadRequest().json(BadRequest::new(&e.to_string()))
+                            }
+                            _ => HttpResponse::InternalServerError()
+                                .json(InternalServerError::new(&e.to_string())),
+                        };
                     }
                 };
 

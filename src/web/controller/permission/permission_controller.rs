@@ -62,8 +62,13 @@ pub async fn create_permission(
         Ok(d) => d,
         Err(e) => {
             error!("Error while creating Permission: {}", e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new(&e.to_string()));
+            return match e {
+                Error::NameAlreadyTaken => {
+                    HttpResponse::BadRequest().json(BadRequest::new(&e.to_string()))
+                }
+                _ => HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string())),
+            };
         }
     };
 
@@ -234,7 +239,7 @@ pub async fn update_permission(
     permission.name = update.name;
     permission.description = update.description;
 
-    let res = pool
+    match pool
         .services
         .permission_service
         .update(
@@ -243,17 +248,20 @@ pub async fn update_permission(
             &pool.database,
             &pool.services.audit_service,
         )
-        .await;
-    let res = match res {
-        Ok(p) => p,
+        .await
+    {
+        Ok(p) => HttpResponse::Ok().json(PermissionDto::from(p)),
         Err(e) => {
             error!("Error while updating Permission with ID {}: {}", path, e);
-            return HttpResponse::InternalServerError()
-                .json(InternalServerError::new(&e.to_string()));
+            match e {
+                Error::NameAlreadyTaken => {
+                    HttpResponse::BadRequest().json(BadRequest::new(&e.to_string()))
+                }
+                _ => HttpResponse::InternalServerError()
+                    .json(InternalServerError::new(&e.to_string())),
+            }
         }
-    };
-
-    HttpResponse::Ok().json(PermissionDto::from(res))
+    }
 }
 
 #[utoipa::path(

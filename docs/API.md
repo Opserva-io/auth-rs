@@ -31,7 +31,7 @@ CRUD operations are available for users, roles and permissions.
 
 ## OpenAPI / Swagger
 
-OpenAPI and Swagger documentation is available via the `/swagger-ui` endpoint.
+OpenAPI and Swagger documentation is available via the `/swagger-ui/` endpoint.
 
 ## Audit
 
