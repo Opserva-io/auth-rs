@@ -56,7 +56,7 @@ impl RoleService {
     /// let db = mongodb::Database::new();
     /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
     /// let role = Role::new(String::from("role_name"));
-    /// let user_id = "user_id";
+    /// let user_id = Some(ObjectId::parse_str("user_id"));
     ///
     /// let role = role_service.create(role, user_id, &db, &audit_service);
     /// ```
@@ -68,24 +68,26 @@ impl RoleService {
     pub async fn create(
         &self,
         role: Role,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         audit_service: &AuditService,
     ) -> Result<Role, Error> {
         info!("Creating Role: {}", role);
 
-        let new_audit = Audit::new(
-            user_id,
-            Create,
-            role.id,
-            ResourceIdType::RoleId,
-            ResourceType::Role,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+        if user_id.is_some() {
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Create,
+                role.id,
+                ResourceIdType::RoleId,
+                ResourceType::Role,
+            );
+            match audit_service.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 
@@ -241,7 +243,7 @@ impl RoleService {
     /// let db = mongodb::Database::new();
     /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
     /// let role = Role::new(String::from("role_name"), vec!["permission_id"]);
-    /// let user_id = "user_id";
+    /// let user_id = Some(ObjectId::parse_str("user_id"));
     ///
     /// let updated_role = role_service.update(role, user_id, &db, &audit_service);
     /// ```
@@ -253,24 +255,26 @@ impl RoleService {
     pub async fn update(
         &self,
         role: Role,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         audit_service: &AuditService,
     ) -> Result<Role, Error> {
         info!("Updating Role: {}", role);
 
-        let new_audit = Audit::new(
-            user_id,
-            Update,
-            role.id,
-            ResourceIdType::RoleId,
-            ResourceType::Role,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+        if user_id.is_some() {
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Update,
+                role.id,
+                ResourceIdType::RoleId,
+                ResourceType::Role,
+            );
+            match audit_service.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 
@@ -295,9 +299,12 @@ impl RoleService {
     /// let role_repository = RoleRepository::new(String::from("roles"));
     /// let role_service = RoleService::new(role_repository);
     /// let db = mongodb::Database::new();
-    /// let user_service = UserService::new(user_repository);
-    /// let id = "id";
-    /// let result = role_service.delete(id, &db, &user_service);
+    /// let audit_service = AuditService::new(AuditRepository::new(String::from("audits")));
+    /// let id = "role_id";
+    /// let user_id = Some(ObjectId::parse_str("user_id"));
+    /// let user_service = UserService::new(UserRepository::new(String::from("users")));
+    ///
+    /// let res = role_service.delete(id, user_id, &db, &user_service, &audit_service).await;
     /// ```
     ///
     /// # Returns
@@ -307,32 +314,34 @@ impl RoleService {
     pub async fn delete(
         &self,
         id: &str,
-        user_id: &str,
+        user_id: Option<ObjectId>,
         db: &Database,
         user_service: &UserService,
         audit_service: &AuditService,
     ) -> Result<(), Error> {
         info!("Deleting Role by ID: {}", id);
 
-        let oid = match ObjectId::parse_str(id) {
-            Ok(oid) => oid,
-            Err(e) => {
-                return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
-            }
-        };
+        if user_id.is_some() {
+            let oid = match ObjectId::parse_str(id) {
+                Ok(oid) => oid,
+                Err(e) => {
+                    return Err(Error::Audit(AuditError::ObjectId(e.to_string())));
+                }
+            };
 
-        let new_audit = Audit::new(
-            user_id,
-            Delete,
-            oid,
-            ResourceIdType::RoleId,
-            ResourceType::Role,
-        );
-        match audit_service.create(new_audit, db).await {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Failed to create Audit: {}", e);
-                return Err(Error::Audit(e));
+            let new_audit = Audit::new(
+                user_id.unwrap(),
+                Delete,
+                oid,
+                ResourceIdType::RoleId,
+                ResourceType::Role,
+            );
+            match audit_service.create(new_audit, db).await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Failed to create Audit: {}", e);
+                    return Err(Error::Audit(e));
+                }
             }
         }
 

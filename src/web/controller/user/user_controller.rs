@@ -226,7 +226,12 @@ pub async fn create(
     let res = match pool
         .services
         .user_service
-        .create(user, &user_id, &pool.database, &pool.services.audit_service)
+        .create(
+            user,
+            Some(user_id),
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(d) => d,
@@ -502,7 +507,12 @@ pub async fn update(
     let res = match pool
         .services
         .user_service
-        .update(user, &user_id, &pool.database, &pool.services.audit_service)
+        .update(
+            user,
+            Some(user_id),
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(d) => d,
@@ -555,6 +565,15 @@ pub async fn update_self(
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                let user_id = match ObjectId::parse_str(token) {
+                    Ok(oid) => oid,
+                    Err(e) => {
+                        error!("Error parsing user ID {}: {}", token, e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()));
+                    }
+                };
+
                 let mut user = match pool
                     .services
                     .user_service
@@ -600,7 +619,12 @@ pub async fn update_self(
                 let res = match pool
                     .services
                     .user_service
-                    .update(user, token, &pool.database, &pool.services.audit_service)
+                    .update(
+                        user,
+                        Some(user_id),
+                        &pool.database,
+                        &pool.services.audit_service,
+                    )
                     .await
                 {
                     Ok(d) => d,
@@ -664,6 +688,15 @@ pub async fn update_password(
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                let user_oid = match ObjectId::parse_str(token) {
+                    Ok(oid) => oid,
+                    Err(e) => {
+                        error!("Error parsing user ID {}: {}", token, e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()));
+                    }
+                };
+
                 let user = match pool
                     .services
                     .user_service
@@ -732,7 +765,7 @@ pub async fn update_password(
                     .update_password(
                         &user.id.to_hex(),
                         &new_password_hash,
-                        token,
+                        Some(user_oid),
                         &pool.database,
                         &pool.services.audit_service,
                     )
@@ -833,7 +866,7 @@ pub async fn admin_update_password(
         .update_password(
             &user.id.to_hex(),
             &password_hash,
-            &user_id,
+            Some(user_id),
             &pool.database,
             &pool.services.audit_service,
         )
@@ -884,7 +917,7 @@ pub async fn delete(
         .user_service
         .delete(
             &id.into_inner(),
-            &user_id,
+            Some(user_id),
             &pool.database,
             &pool.services.audit_service,
         )
@@ -924,6 +957,15 @@ pub async fn delete_self(req: HttpRequest, pool: web::Data<Config>) -> HttpRespo
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                let user_oid = match ObjectId::parse_str(token) {
+                    Ok(oid) => oid,
+                    Err(e) => {
+                        error!("Error parsing user ID {}: {}", token, e);
+                        return HttpResponse::InternalServerError()
+                            .json(InternalServerError::new(&e.to_string()));
+                    }
+                };
+
                 let username = match pool.services.jwt_service.verify_jwt_token(token) {
                     Ok(user) => user,
                     Err(e) => {
@@ -937,7 +979,7 @@ pub async fn delete_self(req: HttpRequest, pool: web::Data<Config>) -> HttpRespo
                     .user_service
                     .delete(
                         &username,
-                        token,
+                        Some(user_oid),
                         &pool.database,
                         &pool.services.audit_service,
                     )

@@ -53,7 +53,7 @@ pub async fn create_permission(
         .permission_service
         .create(
             new_permission,
-            &user_id,
+            Some(user_id),
             &pool.database,
             &pool.services.audit_service,
         )
@@ -261,7 +261,7 @@ pub async fn update_permission(
         .permission_service
         .update(
             permission,
-            &user_id,
+            Some(user_id),
             &pool.database,
             &pool.services.audit_service,
         )
@@ -317,7 +317,7 @@ pub async fn delete_permission(
         .permission_service
         .delete(
             &path,
-            &user_id,
+            Some(user_id),
             &pool.database,
             &pool.services.role_service,
             &pool.services.audit_service,

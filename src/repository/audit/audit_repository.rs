@@ -1,6 +1,5 @@
 use crate::repository::audit::audit_model::Audit;
 use futures::TryStreamExt;
-use log::info;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::error::Error as MongodbError;
