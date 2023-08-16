@@ -201,7 +201,7 @@ impl Display for Audit {
         write!(
             f,
             "Audit {{ id: {}, user_id: {}, action: {}, resource_id: {}, resource_type: {}, created_at: {} }}",
-            self.id, self.user_id, self.action, self.resource_id, self.resource_type, self.created_at
+            self.id, self.user_id, self.action, self.resource_id.to_hex(), self.resource_type, self.created_at
         )
     }
 }

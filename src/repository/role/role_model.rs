@@ -179,6 +179,6 @@ impl Display for Role {
     ///
     /// * `std::fmt::Result` - The result of the display.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Role: {{ id: {}, name: {}, description: {}, permissions: {:?}, created_at: {}, updated_at: {} }}", self.id, self.name, self.description.as_ref().unwrap_or(&String::from("None")), self.permissions.as_ref().unwrap_or(&vec![]), self.created_at, self.updated_at)
+        write!(f, "Role: {{ id: {}, name: {}, description: {}, permissions: {:?}, created_at: {}, updated_at: {} }}", self.id.to_hex(), self.name, self.description.as_ref().unwrap_or(&String::from("None")), self.permissions.as_ref().unwrap_or(&vec![]), self.created_at, self.updated_at)
     }
 }
