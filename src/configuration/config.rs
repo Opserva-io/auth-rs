@@ -297,8 +297,8 @@ impl Config {
                     let user = User::new(
                         default_user_config.username,
                         default_user_config.email,
-                        "".to_string(),
-                        "".to_string(),
+                        None,
+                        None,
                         password_hash,
                         roles,
                         default_user_config.enabled,

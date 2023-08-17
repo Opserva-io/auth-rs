@@ -45,8 +45,8 @@ impl From<Role> for RoleDto {
             name: value.name,
             description: value.description,
             permissions: None,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
+            created_at: value.created_at.to_rfc3339(),
+            updated_at: value.updated_at.to_rfc3339(),
         }
     }
 }
@@ -81,8 +81,8 @@ impl From<&Role> for RoleDto {
             name: value.name.clone(),
             description: value.description.clone(),
             permissions: None,
-            created_at: value.created_at.clone(),
-            updated_at: value.updated_at.clone(),
+            created_at: value.created_at.to_rfc3339(),
+            updated_at: value.updated_at.to_rfc3339(),
         }
     }
 }

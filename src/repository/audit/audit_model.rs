@@ -137,8 +137,9 @@ pub struct Audit {
     pub resource_id_type: ResourceIdType,
     #[serde(rename = "resourceType")]
     pub resource_type: ResourceType,
+    #[serde(with = "mongodb::bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     #[serde(rename = "createdAt")]
-    pub created_at: String,
+    pub created_at: DateTime<Utc>,
 }
 
 impl Audit {
@@ -171,7 +172,6 @@ impl Audit {
         resource_type: ResourceType,
     ) -> Audit {
         let now: DateTime<Utc> = SystemTime::now().into();
-        let now: String = now.to_rfc3339();
 
         Audit {
             id: ObjectId::new(),

@@ -117,6 +117,7 @@ A couple of dependencies are required in order to build `auth-rs`:
 * [log](https://crates.io/crates/log)
 * [utoipa](https://crates.io/crates/utoipa)
 * [utoipa-swagger-ui](https://crates.io/crates/utoipa-swagger-ui)
+* [bson](https://crates.io/crates/bson)
 
 ## About
 

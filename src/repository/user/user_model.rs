@@ -13,15 +13,17 @@ pub struct User {
     pub username: String,
     pub email: Option<String>,
     #[serde(rename = "firstName")]
-    pub first_name: String,
+    pub first_name: Option<String>,
     #[serde(rename = "lastName")]
-    pub last_name: String,
+    pub last_name: Option<String>,
     pub password: String,
     pub roles: Option<Vec<ObjectId>>,
+    #[serde(with = "mongodb::bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     #[serde(rename = "createdAt")]
-    pub created_at: String,
+    pub created_at: DateTime<Utc>,
+    #[serde(with = "mongodb::bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     #[serde(rename = "updatedAt")]
-    pub updated_at: String,
+    pub updated_at: DateTime<Utc>,
     pub enabled: bool,
 }
 
@@ -39,12 +41,19 @@ impl User {
     /// * `password` - The password of the User.
     /// * `roles` - The roles of the User.
     /// * `enabled` - The enabled of the User.
-    /// * `salt` - The salt of the User.
     ///
     /// # Example
     ///
     /// ```
-    /// let user = User::new(String::from("User Id"), String::from("User Username"), Some(String::from("User Email")), String::from("User First Name"), String::from("User Last Name"), String::from("User Password"), Some(vec![String::from("Role Id")]), String::from("User Created At"), String::from("User Updated At"), true);
+    /// let user = User::new(
+    ///   String::from("username"),
+    ///   Some(String::from("email")),
+    ///   String::from("first_name"),
+    ///   String::from("last_name"),
+    ///   String::from("password"),
+    ///   Some(vec![String::from("role")]),
+    ///   true,
+    /// );
     /// ```
     ///
     /// # Returns
@@ -53,14 +62,13 @@ impl User {
     pub fn new(
         username: String,
         email: Option<String>,
-        first_name: String,
-        last_name: String,
+        first_name: Option<String>,
+        last_name: Option<String>,
         password: String,
         roles: Option<Vec<String>>,
         enabled: bool,
     ) -> User {
         let now: DateTime<Utc> = SystemTime::now().into();
-        let now: String = now.to_rfc3339();
 
         let roles: Option<Vec<ObjectId>> = match roles {
             None => None,
@@ -84,7 +92,7 @@ impl User {
             last_name,
             password,
             roles,
-            created_at: now.clone(),
+            created_at: now,
             updated_at: now,
             enabled,
         }
@@ -120,7 +128,6 @@ impl From<CreateUser> for User {
     /// * `User` - The new User.
     fn from(value: CreateUser) -> Self {
         let now: DateTime<Utc> = SystemTime::now().into();
-        let now: String = now.to_rfc3339();
 
         let roles: Option<Vec<ObjectId>> = match value.roles {
             None => None,
@@ -136,25 +143,15 @@ impl From<CreateUser> for User {
             }
         };
 
-        let first_name = match value.first_name {
-            None => String::from(""),
-            Some(f) => f,
-        };
-
-        let last_name = match value.last_name {
-            None => String::from(""),
-            Some(l) => l,
-        };
-
         User {
             id: ObjectId::new(),
             username: value.username,
             email: value.email,
-            first_name,
-            last_name,
+            first_name: value.first_name,
+            last_name: value.last_name,
             password: value.password,
             roles,
-            created_at: now.clone(),
+            created_at: now,
             updated_at: now,
             enabled: true,
         }
@@ -189,27 +186,16 @@ impl From<RegisterRequest> for User {
     /// * `User` - The new User.
     fn from(value: RegisterRequest) -> Self {
         let now: DateTime<Utc> = SystemTime::now().into();
-        let now: String = now.to_rfc3339();
-
-        let first_name = match value.first_name {
-            None => String::from(""),
-            Some(f) => f,
-        };
-
-        let last_name = match value.last_name {
-            None => String::from(""),
-            Some(l) => l,
-        };
 
         User {
             id: ObjectId::new(),
             username: value.username,
             email: value.email,
-            first_name,
-            last_name,
+            first_name: value.first_name,
+            last_name: value.last_name,
             password: value.password,
             roles: None,
-            created_at: now.clone(),
+            created_at: now,
             updated_at: now,
             enabled: true,
         }
@@ -257,8 +243,8 @@ impl Display for User {
                 None => String::from("None"),
                 Some(e) => e.to_string(),
             },
-            self.first_name,
-            self.last_name,
+            self.first_name.clone().unwrap_or(String::from("")),
+            self.last_name.clone().unwrap_or(String::from("")),
             self.password,
             match &self.roles {
                 None => String::from("None"),

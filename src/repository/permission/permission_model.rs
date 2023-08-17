@@ -11,10 +11,12 @@ pub struct Permission {
     pub id: ObjectId,
     pub name: String,
     pub description: Option<String>,
+    #[serde(with = "mongodb::bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     #[serde(rename = "createdAt")]
-    pub created_at: String,
+    pub created_at: DateTime<Utc>,
+    #[serde(with = "mongodb::bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     #[serde(rename = "updatedAt")]
-    pub updated_at: String,
+    pub updated_at: DateTime<Utc>,
 }
 
 impl Permission {
@@ -38,13 +40,12 @@ impl Permission {
     /// * `Permission` - The new Permission.
     pub fn new(name: String, description: Option<String>) -> Self {
         let now: DateTime<Utc> = SystemTime::now().into();
-        let now: String = now.to_rfc3339();
 
         Permission {
             id: ObjectId::new(),
             name,
             description,
-            created_at: now.clone(),
+            created_at: now,
             updated_at: now,
         }
     }
@@ -74,13 +75,12 @@ impl From<CreatePermission> for Permission {
     /// * `Permission` - The new Permission.
     fn from(permission: CreatePermission) -> Self {
         let now: DateTime<Utc> = SystemTime::now().into();
-        let now: String = now.to_rfc3339();
 
         Permission {
             id: ObjectId::new(),
             name: permission.name,
             description: permission.description,
-            created_at: now.clone(),
+            created_at: now,
             updated_at: now,
         }
     }
