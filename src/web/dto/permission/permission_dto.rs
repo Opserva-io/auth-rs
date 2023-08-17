@@ -42,8 +42,8 @@ impl From<Permission> for PermissionDto {
             id: permission.id.to_hex(),
             name: permission.name,
             description: permission.description,
-            created_at: permission.created_at,
-            updated_at: permission.updated_at,
+            created_at: permission.created_at.to_rfc3339(),
+            updated_at: permission.updated_at.to_rfc3339(),
         }
     }
 }
@@ -77,8 +77,8 @@ impl From<&Permission> for PermissionDto {
             id: value.id.to_hex(),
             name: value.name.clone(),
             description: value.description.clone(),
-            created_at: value.created_at.clone(),
-            updated_at: value.updated_at.clone(),
+            created_at: value.created_at.to_rfc3339(),
+            updated_at: value.updated_at.to_rfc3339(),
         }
     }
 }

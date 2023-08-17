@@ -90,7 +90,7 @@ impl From<Audit> for AuditDto {
             resource_id: value.resource_id.to_hex(),
             resource_id_type,
             resource_type,
-            created_at: value.created_at,
+            created_at: value.created_at.to_rfc3339(),
         }
     }
 }
