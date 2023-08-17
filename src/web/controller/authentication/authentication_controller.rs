@@ -227,10 +227,17 @@ pub async fn register(
     user.password = password_hash;
     user.roles = default_roles;
 
+    let user_id = user.id.clone();
+
     match pool
         .services
         .user_service
-        .create(user, None, &pool.database, &pool.services.audit_service)
+        .create(
+            user,
+            Some(user_id),
+            &pool.database,
+            &pool.services.audit_service,
+        )
         .await
     {
         Ok(_) => HttpResponse::Ok().finish(),
