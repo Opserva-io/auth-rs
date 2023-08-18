@@ -20,6 +20,7 @@ use crate::services::Services;
 use log::{error, info};
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
+use mongodb::error::ErrorKind;
 use mongodb::options::{ClientOptions, IndexOptions, ServerApi, ServerApiVersion};
 use mongodb::{Client, Database, IndexModel};
 use regex::Regex;
@@ -127,6 +128,8 @@ impl Config {
             cfg.create_role_indexes(&db_config.role_collection).await;
             cfg.create_user_indexes(&db_config.user_collection).await;
             cfg.create_audit_indexes(&db_config.audit_collection).await;
+            cfg.create_or_delete_audit_ttl_index(db_config.audit_ttl, &db_config.audit_collection)
+                .await;
         }
 
         cfg
@@ -505,6 +508,67 @@ impl Config {
             .create_index(model, None)
             .await
             .expect("Creating an index should succeed");
+    }
+
+    /// # Summary
+    ///
+    /// Create or delete a TTL index for the Audit collection.
+    ///
+    /// # Arguments
+    ///
+    /// * `expire_after` - A u64 that holds the TTL in seconds.
+    /// * `audit_collection` - A string slice that holds the name of the Audit collection.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the index could not be created or deleted (unless Error Command code 27 applies).
+    pub async fn create_or_delete_audit_ttl_index(
+        &self,
+        expire_after: u64,
+        audit_collection: &str,
+    ) {
+        if expire_after > 0 {
+            info!("Creating TTL index for the Audit collection");
+
+            let duration = std::time::Duration::from_secs(expire_after);
+
+            // Define the TTL index model
+            let model = IndexModel::builder()
+                .keys(doc! {
+                    "createdAt": 1
+                })
+                .options(IndexOptions::builder().expire_after(Some(duration)).build())
+                .build();
+
+            self.database
+                .collection::<Audit>(audit_collection)
+                .create_index(model, None)
+                .await
+                .expect("Creating an index should succeed");
+        } else {
+            info!("Deleting TTL index for the Audit collection");
+
+            match self
+                .database
+                .collection::<Audit>(audit_collection)
+                .drop_index("createdAt_1", None)
+                .await
+            {
+                Ok(_) => {}
+                Err(e) => match e.kind.as_ref() {
+                    ErrorKind::Command(e) => {
+                        if e.code == 27 {
+                            info!("TTL index for the Audit collection does not exist");
+                        } else {
+                            panic!("Failed to delete TTL index: {:?}", e);
+                        }
+                    }
+                    _ => {
+                        panic!("Failed to delete TTL index: {:?}", e);
+                    }
+                },
+            }
+        }
     }
 
     /// # Summary

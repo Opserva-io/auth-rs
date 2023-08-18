@@ -147,6 +147,14 @@ impl EnvReader {
             Err(_) => false,
         };
 
+        let audit_ttl = match env::var("DB_AUDIT_TTL") {
+            Ok(d) => {
+                let res: u64 = d.trim().parse().expect("DB_AUDIT_TTL must be a number");
+                res
+            }
+            Err(_) => 0,
+        };
+
         let create_indexes = match env::var("DB_CREATE_INDEXES") {
             Ok(d) => {
                 let res: bool = d
@@ -182,6 +190,7 @@ impl EnvReader {
             audit_collection,
             create_indexes,
             audit_enabled,
+            audit_ttl,
         );
 
         let server_config = ServerConfig::new(addr, port, max_limit);
