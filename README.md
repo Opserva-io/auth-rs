@@ -111,13 +111,11 @@ A couple of dependencies are required in order to build `auth-rs`:
 * [dotenvy](https://crates.io/crates/dotenvy)
 * [argon2](https://crates.io/crates/argon2)
 * [regex](https://crates.io/crates/regex)
-* [email_address](https://crates.io/crates/email_address)
 * [jsonwebtoken](https://crates.io/crates/jsonwebtoken)
 * [env_logger](https://crates.io/crates/env_logger)
 * [log](https://crates.io/crates/log)
 * [utoipa](https://crates.io/crates/utoipa)
 * [utoipa-swagger-ui](https://crates.io/crates/utoipa-swagger-ui)
-* [bson](https://crates.io/crates/bson)
 
 ## About
 
