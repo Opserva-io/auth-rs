@@ -3,7 +3,7 @@ name = "auth-rs"
 description = "Authorization and authentication service"
 version = "0.2.0"
 edition = "2021"
-rust-version = "1.72.1"
+rust-version = "1.73.0"
 authors = ["CodeDead <admin@codedead.com>"]
 readme = "README.md"
 license = "GPL-3.0-only"
@@ -23,12 +23,12 @@ serde_json = "1.0"
 futures = "0.3.28"
 dotenvy = "0.15.7"
 argon2 = "0.5.2"
-regex = "1.9.5"
+regex = "1.10.0"
 jsonwebtoken = "8.3.0"
 env_logger = "0.10.0"
 log = "0.4.20"
-utoipa = "3.5.0"
-utoipa-swagger-ui = { version = "3.1.5", features = ["actix-web"] }
+utoipa = "4.0.0"
+utoipa-swagger-ui = { version = "4.0.0", features = ["actix-web"] }
 
 [profile.dev]
 panic = "abort"
