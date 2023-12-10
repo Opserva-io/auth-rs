@@ -9,7 +9,7 @@ use crate::web::dto::permission::update_permission::UpdatePermission;
 use crate::web::dto::search::search_request::SearchRequest;
 use crate::web::extractors::user_id_extractor;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
-use actix_web_grants::proc_macro::has_permissions;
+use actix_web_grants::protect;
 use log::error;
 
 #[utoipa::path(
@@ -27,7 +27,7 @@ use log::error;
     )
 )]
 #[post("/")]
-#[has_permissions("CAN_CREATE_PERMISSION")]
+#[protect("CAN_CREATE_PERMISSION")]
 pub async fn create_permission(
     pool: web::Data<Config>,
     info: web::Json<CreatePermission>,
@@ -94,7 +94,7 @@ pub async fn create_permission(
     )
 )]
 #[get("/")]
-#[has_permissions("CAN_READ_PERMISSION")]
+#[protect("CAN_READ_PERMISSION")]
 pub async fn find_all_permissions(
     search: web::Query<SearchRequest>,
     pool: web::Data<Config>,
@@ -170,7 +170,7 @@ pub async fn find_all_permissions(
     )
 )]
 #[get("/{id}")]
-#[has_permissions("CAN_READ_PERMISSION")]
+#[protect("CAN_READ_PERMISSION")]
 pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     let res = match pool
         .services
@@ -211,7 +211,7 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
     )
 )]
 #[put("/{id}")]
-#[has_permissions("CAN_UPDATE_PERMISSION")]
+#[protect("CAN_UPDATE_PERMISSION")]
 pub async fn update_permission(
     path: web::Path<String>,
     update: web::Json<UpdatePermission>,
@@ -298,7 +298,7 @@ pub async fn update_permission(
     )
 )]
 #[delete("/{id}")]
-#[has_permissions("CAN_DELETE_PERMISSION")]
+#[protect("CAN_DELETE_PERMISSION")]
 pub async fn delete_permission(
     path: web::Path<String>,
     pool: web::Data<Config>,

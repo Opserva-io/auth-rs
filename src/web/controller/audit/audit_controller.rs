@@ -3,7 +3,7 @@ use crate::errors::internal_server_error::InternalServerError;
 use crate::web::dto::audit::audit_dto::AuditDto;
 use crate::web::dto::search::search_request::SearchRequest;
 use actix_web::{get, web, HttpResponse};
-use actix_web_grants::proc_macro::has_permissions;
+use actix_web_grants::protect;
 use log::error;
 
 #[utoipa::path(
@@ -25,7 +25,7 @@ use log::error;
     )
 )]
 #[get("/")]
-#[has_permissions("CAN_READ_AUDIT")]
+#[protect("CAN_READ_AUDIT")]
 pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>) -> HttpResponse {
     let search = search.into_inner();
 
@@ -94,7 +94,7 @@ pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>
     )
 )]
 #[get("/{id}")]
-#[has_permissions("CAN_READ_AUDIT")]
+#[protect("CAN_READ_AUDIT")]
 pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     let res = match pool
         .services

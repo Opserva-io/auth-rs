@@ -15,7 +15,7 @@ use crate::web::dto::user::update_user::{UpdateOwnUser, UpdateUser};
 use crate::web::dto::user::user_dto::UserDto;
 use crate::web::extractors::user_id_extractor;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
-use actix_web_grants::proc_macro::has_permissions;
+use actix_web_grants::proc_macro::protect;
 use argon2::PasswordHash;
 use log::error;
 use mongodb::bson::oid::ObjectId;
@@ -170,7 +170,7 @@ async fn convert_user_to_dto(user: User, pool: &Config) -> Result<UserDto, Conve
     )
 )]
 #[post("/")]
-#[has_permissions("CAN_CREATE_USER")]
+#[protect("CAN_CREATE_USER")]
 pub async fn create(
     user_dto: web::Json<CreateUser>,
     pool: web::Data<Config>,
@@ -277,7 +277,7 @@ pub async fn create(
     )
 )]
 #[get("/")]
-#[has_permissions("CAN_READ_USER")]
+#[protect("CAN_READ_USER")]
 pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>) -> HttpResponse {
     let search = search.into_inner();
 
@@ -358,7 +358,7 @@ pub async fn find_all(search: web::Query<SearchRequest>, pool: web::Data<Config>
     )
 )]
 #[get("/{id}")]
-#[has_permissions("CAN_READ_USER")]
+#[protect("CAN_READ_USER")]
 pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     let id = id.into_inner();
 
@@ -410,7 +410,7 @@ pub async fn find_by_id(id: web::Path<String>, pool: web::Data<Config>) -> HttpR
     )
 )]
 #[put("/{id}")]
-#[has_permissions("CAN_UPDATE_USER")]
+#[protect("CAN_UPDATE_USER")]
 pub async fn update(
     id: web::Path<String>,
     user_dto: web::Json<UpdateUser>,
@@ -548,7 +548,7 @@ pub async fn update(
     )
 )]
 #[put("/{id}/self/")]
-#[has_permissions("CAN_UPDATE_SELF")]
+#[protect("CAN_UPDATE_SELF")]
 pub async fn update_self(
     req: HttpRequest,
     user_dto: web::Json<UpdateOwnUser>,
@@ -661,7 +661,7 @@ pub async fn update_self(
     )
 )]
 #[put("/{id}/self/password/")]
-#[has_permissions("CAN_UPDATE_SELF")]
+#[protect("CAN_UPDATE_SELF")]
 pub async fn update_password(
     req: HttpRequest,
     update_password: web::Json<UpdatePassword>,
@@ -779,7 +779,7 @@ pub async fn update_password(
     )
 )]
 #[put("/{id}/password/")]
-#[has_permissions("CAN_UPDATE_USER")]
+#[protect("CAN_UPDATE_USER")]
 pub async fn admin_update_password(
     id: web::Path<String>,
     admin_update_password: web::Json<AdminUpdatePassword>,
@@ -868,7 +868,7 @@ pub async fn admin_update_password(
     )
 )]
 #[delete("/{id}")]
-#[has_permissions("CAN_DELETE_USER")]
+#[protect("CAN_DELETE_USER")]
 pub async fn delete(
     id: web::Path<String>,
     pool: web::Data<Config>,
@@ -923,7 +923,7 @@ pub async fn delete(
     )
 )]
 #[delete("/{id}/self/")]
-#[has_permissions("CAN_DELETE_SELF")]
+#[protect("CAN_DELETE_SELF")]
 pub async fn delete_self(req: HttpRequest, pool: web::Data<Config>) -> HttpResponse {
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
