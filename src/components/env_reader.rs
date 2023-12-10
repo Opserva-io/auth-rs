@@ -49,6 +49,17 @@ impl EnvReader {
             Err(_) => 100,
         };
 
+        let workers = match env::var("SERVER_WORKERS") {
+            Ok(d) => {
+                let res: usize = d
+                    .trim()
+                    .parse()
+                    .expect("SERVER_WORKERS must be a valid usize");
+                res
+            }
+            Err(_) => 0,
+        };
+
         let conn_string = match env::var("DB_CONNECTION_STRING") {
             Ok(d) => d,
             Err(_) => panic!("No connection string specified"),
@@ -193,7 +204,7 @@ impl EnvReader {
             audit_ttl,
         );
 
-        let server_config = ServerConfig::new(addr, port, max_limit);
+        let server_config = ServerConfig::new(addr, port, max_limit, workers);
 
         Config::new(
             server_config,

@@ -40,12 +40,13 @@ async fn main() -> std::io::Result<()> {
 
     let addr = config.server_config.address.clone();
     let port = config.server_config.port;
+    let workers = config.server_config.workers;
 
     info!("Starting server at {}:{}", addr, port);
 
     let openapi = ApiDoc::openapi();
 
-    HttpServer::new(move || {
+    let mut server = HttpServer::new(move || {
         let logger = Logger::default();
         let mut app = App::new()
             .wrap(logger)
@@ -64,7 +65,12 @@ async fn main() -> std::io::Result<()> {
 
         app
     })
-    .bind((addr, port))?
-    .run()
-    .await
+    .bind((addr, port))
+    .expect("Failed to bind server");
+
+    if workers > 0 {
+        server = server.workers(workers);
+    }
+
+    server.run().await
 }

@@ -16,6 +16,7 @@ The following environment variables can be used to configure `auth-rs`:
 |--------------------------|---------------|----------------------------------------------|-------------|-------------------------------------------------------------------------|
 | SERVER_ADDR              | `0.0.0.0`     | `false`                                      | `IPAddress` | The server address                                                      |
 | SERVER_PORT              | `8080`        | `false`                                      | `u16`       | The port that the server will use                                       |
+| SERVER_WORKERS           | `0`           | `false`                                      | `usize`     | Sets number of workers to start (per bind address).                     |
 | MAX_FETCH_LIMIT          | `100`         | `false`                                      | `i64`       | The maximum amount of entity records that can be retrieved in one call  |
 | DB_CONNECTION_STRING     | N/A           | `true`                                       | `String`    | The MongoDB connection string                                           |
 | DB_DATABASE              | N/A           | `true`                                       | `String`    | The MongoDB Database that will be used by `auth-rs`                     |
@@ -36,6 +37,9 @@ The following environment variables can be used to configure `auth-rs`:
 | DEFAULT_USER_PASSWORD    | N/A           | `true` if `GENERATE_DEFAULT_USER` is enabled | `String`    | The default `User`'s password                                           |
 | DEFAULT_USER_ENABLED     | N/A           | `true` if `GENERATE_DEFAULT_USER` is enabled | `bool`      | Sets whether the default user is enabled or not                         |
 | ENABLE_OPENAPI           | `true`        | `false`                                      | `bool`      | Enables or disables the OpenAPI endpoint                                |
+
+
+> *Note*: `SERVER_WORKERS` will use the number of logical cores available on the system, if set to zero.
 
 > *Note*: The audit trail feature is disabled by default and will have a noticeable performance impact when enabled.
 > Audit trails can be set to expire automatically after a set amount of seconds by changing the `DB_AUDIT_TTL` environment variable
