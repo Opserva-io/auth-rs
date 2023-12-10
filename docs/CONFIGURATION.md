@@ -16,6 +16,7 @@ The following environment variables can be used to configure `auth-rs`:
 |--------------------------|---------------|----------------------------------------------|-------------|-------------------------------------------------------------------------|
 | SERVER_ADDR              | `0.0.0.0`     | `false`                                      | `IPAddress` | The server address                                                      |
 | SERVER_PORT              | `8080`        | `false`                                      | `u16`       | The port that the server will use                                       |
+| SERVER_WORKERS           | `0`           | `false`                                      | `usize`     | Sets number of workers to start (per bind address).                     |
 | MAX_FETCH_LIMIT          | `100`         | `false`                                      | `i64`       | The maximum amount of entity records that can be retrieved in one call  |
 | DB_CONNECTION_STRING     | N/A           | `true`                                       | `String`    | The MongoDB connection string                                           |
 | DB_DATABASE              | N/A           | `true`                                       | `String`    | The MongoDB Database that will be used by `auth-rs`                     |
