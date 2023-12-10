@@ -1,9 +1,9 @@
 [package]
 name = "auth-rs"
 description = "Authorization and authentication service"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
-rust-version = "1.73.0"
+rust-version = "1.74.1"
 authors = ["CodeDead <admin@codedead.com>"]
 readme = "README.md"
 license = "GPL-3.0-only"
@@ -14,21 +14,21 @@ keywords = ["api", "authorization", "authentication", "auth"]
 
 [dependencies]
 actix-web = "4"
-actix-cors = "0.6.4"
-actix-web-grants = "3.0.2"
-mongodb = { version = "2.7.0", features = ["bson-chrono-0_4"] }
+actix-cors = "0.6.5"
+actix-web-grants = "4.0.3"
+mongodb = { version = "2.7.1", features = ["bson-chrono-0_4"] }
 chrono = "0.4.31"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-futures = "0.3.28"
+futures = "0.3.29"
 dotenvy = "0.15.7"
 argon2 = "0.5.2"
-regex = "1.10.0"
+regex = "1.10.2"
 jsonwebtoken = "8.3.0"
-env_logger = "0.10.0"
+env_logger = "0.10.1"
 log = "0.4.20"
-utoipa = "4.0.0"
-utoipa-swagger-ui = { version = "4.0.0", features = ["actix-web"] }
+utoipa = "4.1.0"
+utoipa-swagger-ui = { version = "5.0.0", features = ["actix-web"] }
 
 [profile.dev]
 panic = "abort"

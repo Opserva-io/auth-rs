@@ -11,7 +11,7 @@ use crate::web::dto::role::update_role::UpdateRole;
 use crate::web::dto::search::search_request::SearchRequest;
 use crate::web::extractors::user_id_extractor;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
-use actix_web_grants::proc_macro::has_permissions;
+use actix_web_grants::protect;
 use log::error;
 use mongodb::bson::oid::ObjectId;
 
@@ -171,7 +171,7 @@ pub async fn validate_permissions(
     )
 )]
 #[post("/")]
-#[has_permissions("CAN_CREATE_ROLE")]
+#[protect("CAN_CREATE_ROLE")]
 pub async fn create(
     role_dto: web::Json<CreateRole>,
     pool: web::Data<Config>,
@@ -262,7 +262,7 @@ pub async fn create(
     )
 )]
 #[get("/")]
-#[has_permissions("CAN_READ_ROLE")]
+#[protect("CAN_READ_ROLE")]
 pub async fn find_all_roles(
     search: web::Query<SearchRequest>,
     pool: web::Data<Config>,
@@ -346,7 +346,7 @@ pub async fn find_all_roles(
     )
 )]
 #[get("/{id}")]
-#[has_permissions("CAN_READ_ROLE")]
+#[protect("CAN_READ_ROLE")]
 pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> HttpResponse {
     let res = match pool
         .services
@@ -393,7 +393,7 @@ pub async fn find_by_id(path: web::Path<String>, pool: web::Data<Config>) -> Htt
     )
 )]
 #[put("/{id}")]
-#[has_permissions("CAN_UPDATE_ROLE")]
+#[protect("CAN_UPDATE_ROLE")]
 pub async fn update(
     path: web::Path<String>,
     update: web::Json<UpdateRole>,
@@ -521,7 +521,7 @@ pub async fn update(
     )
 )]
 #[delete("/{id}")]
-#[has_permissions("CAN_DELETE_ROLE")]
+#[protect("CAN_DELETE_ROLE")]
 pub async fn delete(
     path: web::Path<String>,
     pool: web::Data<Config>,

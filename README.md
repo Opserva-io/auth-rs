@@ -27,18 +27,18 @@ available [here](https://github.com/Opserva-io/auth-js).
 
 ## Features
 
-- [X] Authentication
-- [X] Authorization
-- [X] Audit trail
-- [X] Password hashing
-- [X] JWT generation
-- [X] JWT verification
-- [X] Pagination
-- [X] OpenAPI / Swagger UI
-- [X] CORS support
-- [X] Docker support
-- [X] MongoDB integration
-- [X] MongoDB Atlas integration
+- Authentication
+- Authorization
+- Audit trail
+- Password hashing
+- JWT generation
+- JWT verification
+- Pagination
+- OpenAPI / Swagger UI
+- CORS support
+- Docker support
+- MongoDB integration
+- MongoDB Atlas integration
 
 ## Usage
 
