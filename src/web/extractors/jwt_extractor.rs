@@ -3,6 +3,7 @@ use actix_web::dev::ServiceRequest;
 use actix_web::error::ErrorInternalServerError;
 use actix_web::Error;
 use log::error;
+use std::collections::HashSet;
 
 /// # Summary
 ///
@@ -20,8 +21,8 @@ use log::error;
 ///
 /// # Returns
 ///
-/// * `Result<Vec<String>, Error>` - The permissions from the request.
-pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
+/// * `Result<HashSet<String>, Error>` - The permissions from the request.
+pub async fn extract(req: &ServiceRequest) -> Result<HashSet<String>, Error> {
     let res = match req.app_data::<actix_web::web::Data<Config>>() {
         None => {
             error!("Failed to get Config from request");
@@ -32,7 +33,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
         Some(e) => e,
     };
 
-    let mut permission_list: Vec<String> = vec![];
+    let mut permission_list: HashSet<String> = HashSet::<String>::new();
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
@@ -47,19 +48,17 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                             Ok(e) => match e {
                                 Some(e) => e,
                                 None => {
-                                    let response: Vec<String> = vec![];
-                                    return Ok(response);
+                                    return Ok(HashSet::<String>::new());
                                 }
                             },
                             Err(e) => {
                                 error!("Failed to find user by ID: {}", e);
-                                return Ok(vec![]);
+                                return Ok(HashSet::<String>::new());
                             }
                         };
 
                         if !user.enabled {
-                            let response: Vec<String> = vec![];
-                            return Ok(response);
+                            return Ok(HashSet::<String>::new());
                         }
 
                         if user.roles.is_some() {
@@ -77,8 +76,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                                 Ok(e) => e,
                                 Err(e) => {
                                     error!("Failed to find roles by id vec: {}", e);
-                                    let response: Vec<String> = vec![];
-                                    return Ok(response);
+                                    return Ok(HashSet::<String>::new());
                                 }
                             };
 
@@ -108,7 +106,7 @@ pub async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
                                         if !permissions.is_empty() {
                                             for p in permissions {
                                                 if !permission_list.contains(&p.name) {
-                                                    permission_list.push(p.name);
+                                                    permission_list.insert(p.name);
                                                 }
                                             }
                                         }
