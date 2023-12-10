@@ -15,7 +15,7 @@ use crate::web::dto::user::update_user::{UpdateOwnUser, UpdateUser};
 use crate::web::dto::user::user_dto::UserDto;
 use crate::web::extractors::user_id_extractor;
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse};
-use actix_web_grants::proc_macro::protect;
+use actix_web_grants::protect;
 use argon2::PasswordHash;
 use log::error;
 use mongodb::bson::oid::ObjectId;
